@@ -122,9 +122,7 @@ RUN \
   \
   # Confirm Version
   ansible --version && \
-  aws --version && \
   echo $SHELL && \
-  gcloud --version && \
   kubectl version --client && \
   python3 --version && \
   python3.8 --version && \
