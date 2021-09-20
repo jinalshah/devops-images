@@ -166,7 +166,12 @@ RUN \
 #  gcloud config set core/disable_usage_reporting true && \
 #  gcloud config set component_manager/disable_update_check true && \
 #  gcloud config set metrics/environment github_docker_image && \
-  rm -rf /tmp/google-cloud-sdk.tar.gz &&
+  rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  \
+  # Cleanup
+  rm -rf /tmp/* && \
+  rm -rf /var/tmp/* && \
+  rm ~/.wget-hsts
 
 FROM base AS aws-devops
 
@@ -189,7 +194,12 @@ RUN \
   # AWS Session Manager Plugin Installation
   cd /tmp && \
   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
-  yum install -y session-manager-plugin.rpm
+  yum install -y session-manager-plugin.rpm && \
+  \
+  # Cleanup
+  rm -rf /tmp/* && \
+  rm -rf /var/tmp/* && \
+  rm ~/.wget-hsts
 
 FROM base AS gcp-devops
 
@@ -203,6 +213,11 @@ RUN \
 #  gcloud config set core/disable_usage_reporting true && \
 #  gcloud config set component_manager/disable_update_check true && \
 #  gcloud config set metrics/environment github_docker_image && \
-  rm -rf /tmp/google-cloud-sdk.tar.gz &&
+  rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  \
+  # Cleanup
+  rm -rf /tmp/* && \
+  rm -rf /var/tmp/* && \
+  rm ~/.wget-hsts
 
 ENTRYPOINT ["/bin/bash"]
