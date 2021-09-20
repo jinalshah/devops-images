@@ -59,7 +59,7 @@ build-image:
 
 #############################################################################################
 deploy-image:
-  stage: all-devops-build-deploy
+  stage: all-devops-deploy
 
   image: 
     name: docker:latest
