@@ -22,16 +22,7 @@ ARG PYTHON_VERSION_TO_USE
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
 
-# Customisations
-COPY scripts/*.sh /tmp/
 RUN \
-  # useradd devops && \
-  # \
-  # . /tmp/20-bashrc.sh && \
-  # \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
   # Install Packages via Yum
   yum install -y \
     glibc-langpack-en \
@@ -140,6 +131,19 @@ RUN \
   tflint --version && \
   tfsec --version && \
   packer version
+
+# Customisations
+COPY scripts/*.sh /tmp/
+RUN \
+  # useradd devops && \
+  # \
+  . /tmp/20-bashrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  \
+  # Cleanup \
+  rm -rf /tmp/* &&
 
 FROM base AS all-devops
 
