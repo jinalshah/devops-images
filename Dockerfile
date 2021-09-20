@@ -27,8 +27,8 @@ COPY scripts/*.sh /tmp/
 RUN \
   # useradd devops && \
   # \
-  . /tmp/20-bashrc.sh && \
-  \
+  # . /tmp/20-bashrc.sh && \
+  # \
   chmod +x /tmp/30-clone-all-repos.sh && \
   mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
   \
