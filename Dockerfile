@@ -94,7 +94,7 @@ RUN \
   yum clean all && \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts
+  rm -rf ~/.wget-hsts
 
 RUN \
   # Kubectl Configuration
@@ -225,7 +225,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts && \
+  rm -rf ~/.wget-hsts && \
   # Confirm Version
   aws --version
 
@@ -254,7 +254,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts && \
+  rm -rf ~/.wget-hsts && \
   # Confirm Version
   gcloud --version
 
