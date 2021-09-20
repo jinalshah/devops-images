@@ -1,8 +1,12 @@
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
-  DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops"
   DEVOPS_IMAGE_VERSION: "1.0.$CI_COMMIT_SHORT_SHA"
-  GHCR_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/all-devops"
+  ALL_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops"
+  GHCR_ALL_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/all-devops"
+  AWS_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/aws-devops"
+  GHCR_AWS_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/aws-devops"
+  GCP_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/gcp-devops"
+  GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/gcp-devops"
 
 stages:
   - all-devops-build
@@ -42,17 +46,17 @@ all-devops-build-image:
   script:
     - >
       docker build --target all-devops --pull
-      -t $DEVOPS_IMAGE_NAME:latest
-      -t $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_DEVOPS_IMAGE_NAME:latest
-      -t $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $ALL_DEVOPS_IMAGE_NAME:latest
+      -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       .
-    - docker push $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
 #############################################################################################
 
 
@@ -83,17 +87,17 @@ all-devops-deploy-image:
   script:
     - >
       docker build --target all-devops --pull
-      -t $DEVOPS_IMAGE_NAME:latest 
-      -t $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_DEVOPS_IMAGE_NAME:latest
-      -t $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $ALL_DEVOPS_IMAGE_NAME:latest 
+      -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       .
-    - docker push $DEVOPS_IMAGE_NAME:latest 
-    - docker push $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_DEVOPS_IMAGE_NAME:latest
-    - docker push $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $ALL_DEVOPS_IMAGE_NAME:latest 
+    - docker push $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
+    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
 #############################################################################################

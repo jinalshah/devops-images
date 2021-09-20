@@ -2,7 +2,7 @@
 
 This repository contains all the common DevOps tooling required for a typical project on AWS and GCP.
 
-[![pipeline status](https://gitlab.com/jinal-shah/devops/all-devops/badges/master/pipeline.svg)](https://gitlab.com/jinal-shah/devops/all-devops/-/commits/master)
+[![pipeline status](https://gitlab.com/jinal-shah/devops/images/badges/master/pipeline.svg)](https://gitlab.com/jinal-shah/devops/images/-/commits/master)
 
 ## Building and Running the Image Locally
 
