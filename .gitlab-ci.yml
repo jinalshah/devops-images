@@ -8,15 +8,6 @@ variables:
   GCP_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/gcp-devops"
   GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/gcp-devops"
 
-stages:
-  - all-devops-build
-  - all-devops-deploy
-  - aws-devops-build
-  - aws-devops-deploy
-  - gcp-devops-build
-  - gcp-devops-deploy
-
-
 ################################################################################
 ##                                                                            ##
 ##              ----==| A L L   D E V O P S   I M A G E |==----               ##
@@ -25,7 +16,7 @@ stages:
 
 #############################################################################################
 all-devops-build-image:
-  stage: all-devops-build
+  stage: build
 
   image: 
     name: docker:latest
@@ -70,7 +61,7 @@ all-devops-build-image:
 
 #############################################################################################
 all-devops-deploy-image:
-  stage: all-devops-deploy
+  stage: deploy
 
   image: 
     name: docker:latest
@@ -117,7 +108,7 @@ all-devops-deploy-image:
 
 #############################################################################################
 aws-devops-build-image:
-  stage: aws-devops-build
+  stage: build
 
   image: 
     name: docker:latest
@@ -162,7 +153,7 @@ aws-devops-build-image:
 
 #############################################################################################
 aws-devops-deploy-image:
-  stage: aws-devops-deploy
+  stage: deploy
 
   image: 
     name: docker:latest
@@ -209,7 +200,7 @@ aws-devops-deploy-image:
 
 #############################################################################################
 gcp-devops-build-image:
-  stage: gcp-devops-build
+  stage: build
 
   image: 
     name: docker:latest
@@ -254,7 +245,7 @@ gcp-devops-build-image:
 
 #############################################################################################
 gcp-devops-deploy-image:
-  stage: gcp-devops-deploy
+  stage: deploy
 
   image: 
     name: docker:latest
