@@ -13,7 +13,7 @@ stages:
   - gcp-devops-deploy
 
 #############################################################################################
-build-image:
+all-devops-build-image:
   stage: all-devops-build
 
   image: 
@@ -58,7 +58,7 @@ build-image:
 
 
 #############################################################################################
-deploy-image:
+all-devops-deploy-image:
   stage: all-devops-deploy
 
   image: 
