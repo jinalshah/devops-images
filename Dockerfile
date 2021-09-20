@@ -186,7 +186,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts && \
+  # rm ~/.wget-hsts && \
   # Confirm Version
   aws --version && \
   gcloud --version
@@ -225,7 +225,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm -rf ~/.wget-hsts && \
+  # rm -rf ~/.wget-hsts && \
   # Confirm Version
   aws --version
 
@@ -254,7 +254,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm -rf ~/.wget-hsts && \
+  # rm -rf ~/.wget-hsts && \
   # Confirm Version
   gcloud --version
 
