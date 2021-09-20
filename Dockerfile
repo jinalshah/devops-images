@@ -171,7 +171,10 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts
+  rm ~/.wget-hsts && \
+  # Confirm Version
+  aws --version && \
+  gcloud --version
 
 FROM base AS aws-devops
 
@@ -199,7 +202,9 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts
+  rm ~/.wget-hsts && \
+  # Confirm Version
+  aws --version
 
 FROM base AS gcp-devops
 
@@ -218,6 +223,8 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  rm ~/.wget-hsts
+  rm ~/.wget-hsts && \
+  # Confirm Version
+  gcloud --version
 
 ENTRYPOINT ["/bin/bash"]
