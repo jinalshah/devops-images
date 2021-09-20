@@ -1,6 +1,6 @@
 FROM centos:latest AS base
 
-LABEL name=all-devops
+LABEL name=devops
 
 ARG GCLOUD_VERSION=345.0.0
 ARG PACKER_VERSION=1.7.3
@@ -12,9 +12,18 @@ ARG PYTHON_VERSION_TO_USE=python3.8
 
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
-ENV TF_PLUGIN_CACHE_DIR=/opt/terraform/plugin-cache
 
+# Customisations
+COPY scripts/*.sh /tmp/
 RUN \
+  # useradd devops && \
+  # \
+  . /tmp/20-bashrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  \
+  # Install Packages via Yum
   yum install -y \
     glibc-langpack-en \
     epel-release \
@@ -62,42 +71,8 @@ RUN \
   \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade ansible && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade ansible-lint[yamllint] && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade paramiko && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade mkdocs-material && \
-  \
-  # AWS Configuration
-  cd /tmp && \
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-  unzip awscliv2.zip && \
-  /tmp/aws/install && \
-  \
-  # AWS Session Manager Plugin Installation
-  cd /tmp && \
-  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
-  yum install -y session-manager-plugin.rpm && \
-  \
-  # GCP / gcloud Configuration
-  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
-  tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
-  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.bashrc --command-completion=true --path-update=true --quiet && \
-  source ~/.bashrc && \
-  gcloud components install beta docker-credential-gcr --quiet && \
-#  gcloud config set core/disable_usage_reporting true && \
-#  gcloud config set component_manager/disable_update_check true && \
-#  gcloud config set metrics/environment github_docker_image && \
-  rm -rf /tmp/google-cloud-sdk.tar.gz && \
-  \
-  # Kubectl Configuration
-  wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
-  chmod +x /tmp/kubectl && \
-  mv /tmp/kubectl /usr/local/bin && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade paramiko && \
   \
   # Ansible Configuration
   mkdir -p /etc/ansible/roles && \
@@ -109,9 +84,15 @@ RUN \
   yum clean metadata && \
   yum clean all && \
   rm -rf /tmp/* && \
-  rm -rf /var/tmp/*
+  rm -rf /var/tmp/* && \
+  rm ~/.wget-hsts
 
 RUN \
+  # Kubectl Configuration
+  wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
+  chmod +x /tmp/kubectl && \
+  mv /tmp/kubectl /usr/local/bin && \
+  \
   # Install tfswitch and Install latest version of Terraform
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
   tfswitch --latest && \
@@ -134,8 +115,12 @@ RUN \
   chmod +x /tmp/packer && \
   mv /tmp/packer /usr/local/bin && \
   \
-  mkdir -p ${TF_PLUGIN_CACHE_DIR} && \
+  # Cleanup
+  rm -rf /tmp/* && \
+  rm -rf /var/tmp/* && \
+  rm ~/.wget-hsts && \
   \
+  # Confirm Version
   ansible --version && \
   aws --version && \
   echo $SHELL && \
@@ -149,22 +134,75 @@ RUN \
   tfsec --version && \
   packer version
 
-# Customisations
-COPY scripts/*.sh /tmp/
+FROM base AS all-devops
+
 RUN \
-  # useradd devops && \
-  # \
-  mkdir -p ${TF_PLUGIN_CACHE_DIR}/linux_amd64 && \
-  . /tmp/10-terraform-providers.sh && \
-  chmod -R 777 ${TF_PLUGIN_CACHE_DIR} && \
+  # AWS Python Requirements
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
   \
-  . /tmp/20-bashrc.sh && \
+  # AWS Configuration
+  cd /tmp && \
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  unzip awscliv2.zip && \
+  /tmp/aws/install && \
   \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  # AWS Session Manager Plugin Installation
+  cd /tmp && \
+  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
+  yum install -y session-manager-plugin.rpm && \
   \
-  # Cleanup \
-  rm -rf /tmp/* && \
-  rm ~/.wget-hsts
+  # GCP / gcloud Configuration
+  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+  tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.bashrc --command-completion=true --path-update=true --quiet && \
+  source ~/.bashrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
+#  gcloud config set core/disable_usage_reporting true && \
+#  gcloud config set component_manager/disable_update_check true && \
+#  gcloud config set metrics/environment github_docker_image && \
+  rm -rf /tmp/google-cloud-sdk.tar.gz &&
+
+FROM base AS aws-devops
+
+RUN \
+  # AWS Python Requirements
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
+  \
+  # AWS Configuration
+  cd /tmp && \
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  unzip awscliv2.zip && \
+  /tmp/aws/install && \
+  \
+  # AWS Session Manager Plugin Installation
+  cd /tmp && \
+  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
+  yum install -y session-manager-plugin.rpm
+
+FROM base AS gcp-devops
+
+RUN \
+  # GCP / gcloud Configuration
+  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+  tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.bashrc --command-completion=true --path-update=true --quiet && \
+  source ~/.bashrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
+#  gcloud config set core/disable_usage_reporting true && \
+#  gcloud config set component_manager/disable_update_check true && \
+#  gcloud config set metrics/environment github_docker_image && \
+  rm -rf /tmp/google-cloud-sdk.tar.gz &&
 
 ENTRYPOINT ["/bin/bash"]
