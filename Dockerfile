@@ -134,6 +134,9 @@ RUN \
 
 FROM base AS all-devops
 
+ARG GCLOUD_VERSION
+ARG PYTHON_VERSION_TO_USE
+
 RUN \
   # AWS Python Requirements
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
@@ -176,6 +179,8 @@ RUN \
 
 FROM base AS aws-devops
 
+ARG PYTHON_VERSION_TO_USE
+
 RUN \
   # AWS Python Requirements
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
@@ -205,6 +210,8 @@ RUN \
   aws --version
 
 FROM base AS gcp-devops
+
+ARG GCLOUD_VERSION
 
 RUN \
   # GCP / gcloud Configuration
