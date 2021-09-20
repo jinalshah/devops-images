@@ -16,6 +16,13 @@ stages:
   - gcp-devops-build
   - gcp-devops-deploy
 
+
+################################################################################
+##                                                                            ##
+##              ----==| A L L   D E V O P S   I M A G E |==----               ##
+##                                                                            ##
+################################################################################
+
 #############################################################################################
 all-devops-build-image:
   stage: all-devops-build
@@ -100,4 +107,188 @@ all-devops-deploy-image:
     - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
     - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
     - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
+
+################################################################################
+##                                                                            ##
+##                     ----==| A W S   I M A G E |==----                      ##
+##                                                                            ##
+################################################################################
+
+#############################################################################################
+aws-devops-build-image:
+  stage: aws-devops-build
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs: 
+      - branches
+      - tags
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  except:
+    - main
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest
+      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
+
+
+
+#############################################################################################
+aws-devops-deploy-image:
+  stage: aws-devops-deploy
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs:
+      - main
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest 
+      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $AWS_DEVOPS_IMAGE_NAME:latest 
+    - docker push $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
+    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
+
+################################################################################
+##                                                                            ##
+##                     ----==| G C P   I M A G E |==----                      ##
+##                                                                            ##
+################################################################################
+
+#############################################################################################
+gcp-devops-build-image:
+  stage: gcp-devops-build
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs: 
+      - branches
+      - tags
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  except:
+    - main
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
+
+
+
+#############################################################################################
+gcp-devops-deploy-image:
+  stage: gcp-devops-deploy
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs:
+      - main
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest 
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $GCP_DEVOPS_IMAGE_NAME:latest 
+    - docker push $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
+    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
 #############################################################################################
