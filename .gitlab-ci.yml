@@ -1,0 +1,91 @@
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops.image-base.centos"
+  DEVOPS_IMAGE_VERSION: "1.0.$CI_COMMIT_SHORT_SHA"
+  GHCR_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/all-devops/all-devops.image-base.centos"
+
+#############################################################################################
+build-image:
+  stage: build
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs: 
+      - branches
+      - tags
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  except:
+    - master
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --pull
+      -t $DEVOPS_IMAGE_NAME:latest
+      -t $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
+
+
+
+#############################################################################################
+deploy-image:
+  stage: deploy
+
+  image: 
+    name: docker:latest
+
+  services:
+    - docker:dind
+
+  only:
+    refs:
+      - master
+    changes:
+      - Dockerfile
+      - "*.sh"
+      - .gitlab-ci.yml
+
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+  script:
+    - >
+      docker build --pull
+      -t $DEVOPS_IMAGE_NAME:latest 
+      -t $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      .
+    - docker push $DEVOPS_IMAGE_NAME:latest 
+    - docker push $DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $DEVOPS_IMAGE_NAME:$TIMESTAMP
+    - docker push $GHCR_DEVOPS_IMAGE_NAME:latest
+    - docker push $GHCR_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+    - docker push $GHCR_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#############################################################################################
