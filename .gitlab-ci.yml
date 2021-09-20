@@ -2,11 +2,11 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   DEVOPS_IMAGE_VERSION: "1.0.$CI_COMMIT_SHORT_SHA"
   ALL_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops"
-  GHCR_ALL_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/all-devops"
+  GHCR_ALL_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/all-devops"
   AWS_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/aws-devops"
-  GHCR_AWS_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/aws-devops"
+  GHCR_AWS_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/aws-devops"
   GCP_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/gcp-devops"
-  GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/gcp-devops"
+  GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/gcp-devops"
 
 ################################################################################
 ##                                                                            ##
