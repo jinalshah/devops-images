@@ -32,7 +32,7 @@ build-image:
       - .gitlab-ci.yml
 
   except:
-    - master
+    - main
 
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
@@ -69,7 +69,7 @@ deploy-image:
 
   only:
     refs:
-      - master
+      - main
     changes:
       - Dockerfile
       - "*.sh"
