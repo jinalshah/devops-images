@@ -27,15 +27,15 @@ docker run -it all-devops:latest
 ```bash
 export IMAGE_VERSION=1.6
 docker build \
--t registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:latest \
--t registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:${IMAGE_VERSION} .
+-t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest \
+-t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION} .
 ```
 
 ### Push the Image to GitLab
 
 ```bash
-docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:latest && \
-docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:${IMAGE_VERSION}
+docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest && \
+docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION}
 ```
 
 ### Building the Image with GitLab Tags and Pushing the Image to GitLab
@@ -43,10 +43,10 @@ docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-ba
 ```bash
 export IMAGE_VERSION=1.6
 docker build \
--t registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:latest \
--t registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:${IMAGE_VERSION} . && \
-docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:latest && \
-docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos:${IMAGE_VERSION}
+-t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest \
+-t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION} . && \
+docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest && \
+docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION}
 ```
 
 ### Running the the Remote Image
