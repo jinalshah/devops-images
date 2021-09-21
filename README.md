@@ -57,14 +57,32 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops.image-bas
 
 ## Tips and Troubleshooting
 
-### kubectl Command Completion
+### Issue with `source ~/.zshrc` on builds
 
-The kubectl command completion has been commented in the file [scripts/10-zshrc.sh](./scripts/10-zshrc.sh).
+#### Temporarily disabled source ~/.zshrc
+
+Temporarily disabled `source ~/.zshrc` for the GCP builds for the same reason above.
 
 This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source).
 
+#### kubectl Command Completion
+
+The kubectl command completion has been commented in the file [scripts/10-zshrc.sh](./scripts/10-zshrc.sh).
+
 As a work-around / temporary fix - we use the sed command for all the stage builds that uncomments the command `# source <(kubectl completion zsh)` in the `~/.zshrc` file.
 
-### Temporarily disabled source ~/.zshrc
+#### Temporarily Disable and Re-enable `$ZSH/oh-my-zsh.sh` from `~/.zshrc`
 
-Temporarily disables `source ~/.zshrc` for the GCP builds for the same reason above.
+Comment Source Lines in `~/.zshrc`:
+
+```bash
+sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+```
+
+Unomment Source Lines in `~/.zshrc` on all stage builds:
+
+```bash
+  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
+  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
+  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+```

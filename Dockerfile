@@ -85,6 +85,8 @@ RUN \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"crcandy\"/g' ~/.zshrc && \
+  # Temporarily Disable any Source Lines in the ~/.zshrc due to bug
+  sed -i 's/source $ZSH\/oh-my-zsh.sh/# source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc && \
   \
   # Customisations
   # useradd devops && \
@@ -189,15 +191,16 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zhrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  source ~/.zshrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
-  # Enable kubectl Command Completion
+  # Enable kubectl Command Completion and Sourcing of ohmyzsh
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
+  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -243,9 +246,10 @@ RUN \
   cd /tmp && \
   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
   yum install -y session-manager-plugin.rpm && \
-  # Enable kubectl Command Completion
+  # Enable kubectl Command Completion and Sourcing of ohmyzsh
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
+  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -276,15 +280,16 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  source ~/.zshrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
-  # Enable kubectl Command Completion
+  # Enable kubectl Command Completion and Sourcing of ohmyzsh
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
+  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
