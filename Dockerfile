@@ -164,6 +164,7 @@ ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+SHELL ["/bin/bash", "-c"]
 RUN \
   # AWS Python Requirements
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
@@ -189,8 +190,8 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zhrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  source ~/.zshrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
@@ -220,6 +221,7 @@ ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+SHELL ["/bin/bash", "-c"]
 RUN \
   # AWS Python Requirements
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
@@ -265,13 +267,14 @@ ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+SHELL ["/bin/bash", "-c"]
 RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  source ~/.zshrc && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
