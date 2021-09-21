@@ -30,7 +30,7 @@ alias kr='kubectl run \$*'
 complete -C '/usr/local/bin/aws_completer' aws
 alias aws-ssm='aws ssm start-session --target $1'
 
-# source <(kubectl completion bash)
+source <(kubectl completion bash)
 
 EOF
 fi
