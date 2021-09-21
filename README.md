@@ -52,5 +52,15 @@ docker push registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-ba
 ### Running the the Remote Image
 
 ```bash
-docker run -it registry.gitlab.com/jinal-shah/devops/all-devops/all-devops.image-base.centos
+docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos
 ```
+
+## Tips and Troubleshooting
+
+### kubectl Command Completion
+
+The kubectl command completion has been commented in the file [scripts/10-zshrc.sh](./scripts/10-zshrc.sh).
+
+This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source).
+
+As a work-around / temporary fix - we use the sed command for all the stage builds that uncomments the command `# source <(kubectl completion zsh)` in the `~/.zshrc` file.
