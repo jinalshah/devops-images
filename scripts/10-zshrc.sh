@@ -30,7 +30,7 @@ autoload -Uz compinit && compinit
 complete -C '/usr/local/bin/aws_completer' aws
 alias aws-ssm='aws ssm start-session --target $1'
 
-source <(kubectl completion zsh)
+# source <(kubectl completion zsh)
 
 EOF
 fi
