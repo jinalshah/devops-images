@@ -132,19 +132,6 @@ RUN \
   tfsec --version && \
   packer version
 
-# Customisations
-COPY scripts/*.sh /tmp/
-RUN \
-  # useradd devops && \
-  # \
-  . /tmp/20-bashrc.sh && \
-  \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
-  # Cleanup \
-  rm -rf /tmp/*
-
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
 #;;              ----==| A L L   D E V O P S   I M A G E |==----               ;;
@@ -201,6 +188,19 @@ RUN \
   aws --version && \
   gcloud --version
 
+# Customisations
+COPY scripts/*.sh /tmp/
+RUN \
+  # useradd devops && \
+  # \
+  . /tmp/20-bashrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  \
+  # Cleanup \
+  rm -rf /tmp/*
+
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
 #;;              ----==| A W S   D E V O P S   I M A G E |==----               ;;
@@ -245,6 +245,19 @@ RUN \
   # Confirm Version
   aws --version
 
+# Customisations
+COPY scripts/*.sh /tmp/
+RUN \
+  # useradd devops && \
+  # \
+  . /tmp/20-bashrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  \
+  # Cleanup \
+  rm -rf /tmp/*
+
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
 #;;              ----==| G C P   D E V O P S   I M A G E |==----               ;;
@@ -280,5 +293,18 @@ RUN \
   # rm -rf ~/.wget-hsts && \
   # Confirm Version
   gcloud --version
+
+# Customisations
+COPY scripts/*.sh /tmp/
+RUN \
+  # useradd devops && \
+  # \
+  . /tmp/20-bashrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
+  \
+  # Cleanup \
+  rm -rf /tmp/*
 
 ENTRYPOINT ["/bin/bash"]
