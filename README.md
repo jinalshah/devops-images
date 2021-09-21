@@ -64,3 +64,7 @@ The kubectl command completion has been commented in the file [scripts/10-zshrc.
 This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source).
 
 As a work-around / temporary fix - we use the sed command for all the stage builds that uncomments the command `# source <(kubectl completion zsh)` in the `~/.zshrc` file.
+
+### Temporarily disabled source ~/.zshrc
+
+Temporarily disables `source ~/.zshrc` for the GCP builds for the same reason above.
