@@ -22,6 +22,8 @@ ARG PYTHON_VERSION_TO_USE
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
 
+COPY scripts/*.sh /tmp/
+
 RUN \
   # Install Packages via Yum
   yum install -y \
@@ -45,6 +47,7 @@ RUN \
     wget \
     unzip \
     zip \
+    zsh \
     && \
   \
   # Install binaries to compile Python 3.8
@@ -78,6 +81,18 @@ RUN \
   mkdir -p /etc/ansible/roles && \
   wget -q -O /etc/ansible/ansible.cfg https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg && \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
+  \
+  # Download, Install and Configure OhMyZsh
+  sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+  sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"crcandy\"/g' ~/.zshrc && \
+  \
+  # Customisations
+  # useradd devops && \
+  # \
+  . /tmp/10-zshrc.sh && \
+  \
+  chmod +x /tmp/30-clone-all-repos.sh && \
+  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
   \
   # Cleanup \
   yum clean packages && \
@@ -172,8 +187,8 @@ RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
-  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.bashrc --command-completion=true --path-update=true --quiet && \
-  source ~/.bashrc && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zhrc --command-completion=true --path-update=true --quiet && \
+  source ~/.zshrc && \
   gcloud components install beta docker-credential-gcr --quiet && \
 #  gcloud config set core/disable_usage_reporting true && \
 #  gcloud config set component_manager/disable_update_check true && \
@@ -187,19 +202,6 @@ RUN \
   # Confirm Version
   aws --version && \
   gcloud --version
-
-# Customisations
-COPY scripts/*.sh /tmp/
-RUN \
-  # useradd devops && \
-  # \
-  . /tmp/20-bashrc.sh && \
-  \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
-  # Cleanup \
-  rm -rf /tmp/*
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -245,19 +247,6 @@ RUN \
   # Confirm Version
   aws --version
 
-# Customisations
-COPY scripts/*.sh /tmp/
-RUN \
-  # useradd devops && \
-  # \
-  . /tmp/20-bashrc.sh && \
-  \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
-  # Cleanup \
-  rm -rf /tmp/*
-
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
 #;;              ----==| G C P   D E V O P S   I M A G E |==----               ;;
@@ -279,8 +268,8 @@ RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
-  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.bashrc --command-completion=true --path-update=true --quiet && \
-  source ~/.bashrc && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
+  source ~/.zshrc && \
   gcloud components install beta docker-credential-gcr --quiet && \
 #  gcloud config set core/disable_usage_reporting true && \
 #  gcloud config set component_manager/disable_update_check true && \
@@ -294,17 +283,4 @@ RUN \
   # Confirm Version
   gcloud --version
 
-# Customisations
-COPY scripts/*.sh /tmp/
-RUN \
-  # useradd devops && \
-  # \
-  . /tmp/20-bashrc.sh && \
-  \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
-  # Cleanup \
-  rm -rf /tmp/*
-
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/zsh"]
