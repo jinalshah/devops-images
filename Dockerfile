@@ -194,6 +194,8 @@ RUN \
 #  gcloud config set component_manager/disable_update_check true && \
 #  gcloud config set metrics/environment github_docker_image && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  # Enable kubectl Command Completion
+  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -239,6 +241,8 @@ RUN \
   cd /tmp && \
   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
   yum install -y session-manager-plugin.rpm && \
+  # Enable kubectl Command Completion
+  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -275,6 +279,8 @@ RUN \
 #  gcloud config set component_manager/disable_update_check true && \
 #  gcloud config set metrics/environment github_docker_image && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  # Enable kubectl Command Completion
+  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   \
   # Cleanup
   rm -rf /tmp/* && \
