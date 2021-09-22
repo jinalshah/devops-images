@@ -59,11 +59,13 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops.image-bas
 
 ### Issue with `source ~/.zshrc` on builds
 
-#### Temporarily disabled source ~/.zshrc
-
-Temporarily disabled `source ~/.zshrc` for the GCP builds for the same reason above.
+If you run the command `source ~/.zshrc` within the Dockerfile it fails.
 
 This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source).
+
+#### Temporarily disabled source ~/.zshrc
+
+Temporarily disabled `source ~/.zshrc` for the GCP builds and instead temporarily call the full path of the gcloud sdk `/usr/lib/google-cloud-sdk/bin/gcloud`
 
 #### kubectl Command Completion
 
