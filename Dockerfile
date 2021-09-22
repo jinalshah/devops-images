@@ -1,8 +1,8 @@
-ARG GCLOUD_VERSION=345.0.0
-ARG PACKER_VERSION=1.7.3
-ARG TERRAGRUNT_VERSION=0.30.4
-ARG TFLINT_VERSION=0.29.1
-ARG TFSEC_VERSION=0.40.4
+ARG GCLOUD_VERSION=358.0.0
+ARG PACKER_VERSION=1.7.5
+ARG TERRAGRUNT_VERSION=0.32.3
+ARG TFLINT_VERSION=0.32.1
+ARG TFSEC_VERSION=0.58.9
 ARG PYTHON_VERSION=3.8.12
 ARG PYTHON_VERSION_TO_USE=python3.8
 
@@ -190,11 +190,9 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zhrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  /usr/lib/google-cloud-sdk/bin/gcloud components install beta docker-credential-gcr --quiet && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set core/disable_usage_reporting true && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set component_manager/disable_update_check true && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set metrics/environment github_docker_image && \
+  gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud config set core/disable_usage_reporting true && \
+  # gcloud config set component_manager/disable_update_check true && \
   rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
@@ -202,7 +200,6 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  # rm ~/.wget-hsts && \
   # Confirm Version
   aws --version && \
   gcloud --version
@@ -248,7 +245,6 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  # rm -rf ~/.wget-hsts && \
   # Confirm Version
   aws --version
 
@@ -275,11 +271,9 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
-  # source ~/.zshrc && \
-  /usr/lib/google-cloud-sdk/bin/gcloud components install beta docker-credential-gcr --quiet && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set core/disable_usage_reporting true && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set component_manager/disable_update_check true && \
-  # /usr/lib/google-cloud-sdk/bin/gcloud config set metrics/environment github_docker_image && \
+  gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud config set core/disable_usage_reporting true && \
+  # gcloud config set component_manager/disable_update_check true && \
   rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
@@ -287,7 +281,6 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
-  # rm -rf ~/.wget-hsts && \
   # Confirm Version
   gcloud --version
 

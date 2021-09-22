@@ -61,19 +61,11 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops.image-bas
 
 If you run the command `source ~/.zshrc` within the Dockerfile it fails.
 
-This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source).
+This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source) within a file.
 
-#### Temporarily disabled source ~/.zshrc
+#### Workaround examples
 
-Temporarily disabled `source ~/.zshrc` for the GCP builds and instead temporarily call the full path of the gcloud sdk `/usr/lib/google-cloud-sdk/bin/gcloud`
-
-#### kubectl Command Completion
-
-The kubectl command completion has been commented in the file [scripts/10-zshrc.sh](./scripts/10-zshrc.sh).
-
-As a work-around / temporary fix - we use the sed command for all the stage builds that uncomments the command `# source <(kubectl completion zsh)` in the `~/.zshrc` file.
-
-#### Temporarily Disable and Re-enable `$ZSH/oh-my-zsh.sh` from `~/.zshrc`
+##### Temporarily Disable and Re-enable `$ZSH/oh-my-zsh.sh` from `~/.zshrc`
 
 Comment Source Lines in `~/.zshrc`:
 
