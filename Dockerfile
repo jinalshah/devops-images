@@ -191,10 +191,12 @@ RUN \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zhrc --command-completion=true --path-update=true --quiet && \
   # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
+  rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
+  rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
   # Cleanup
@@ -274,10 +276,12 @@ RUN \
   tar -zxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   # source ~/.zshrc && \
-  # gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud components install beta docker-credential-gcr --quiet && \
   # gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   # gcloud config set metrics/environment github_docker_image && \
+  rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
+  rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
   # Cleanup
