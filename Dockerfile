@@ -76,6 +76,7 @@ RUN \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade ansible-lint[yamllint] && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade mkdocs-material && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade paramiko && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pre-commit && \
   \
   # Ansible Configuration
   mkdir -p /etc/ansible/roles && \
