@@ -102,6 +102,8 @@ RUN \
   yum clean all && \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
+  rm -rf $(find / -regex ".*/__pycache__") && \
+  rm -rf /root/.cache/pip/* && \
   rm -rf ~/.wget-hsts
 
 RUN \
@@ -135,6 +137,7 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
+  rm -rf /root/.cache/pip/* && \
   rm ~/.wget-hsts && \
   \
   # Confirm Version
@@ -195,13 +198,14 @@ RUN \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
-  rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
+  rm -rf $(find / -regex ".*/__pycache__") && \
+  rm -rf /root/.cache/pip/* && \
   # Confirm Version
   aws --version && \
   gcloud --version
@@ -250,6 +254,8 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
+  rm -rf $(find / -regex ".*/__pycache__") && \
+  rm -rf /root/.cache/pip/* && \
   # Confirm Version
   aws --version
 
@@ -288,6 +294,8 @@ RUN \
   # Cleanup
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
+  rm -rf $(find / -regex ".*/__pycache__") && \
+  rm -rf /root/.cache/pip/* && \
   # Confirm Version
   gcloud --version
 
