@@ -7,6 +7,8 @@ variables:
   GHCR_AWS_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/aws-devops"
   GCP_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/gcp-devops"
   GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/gcp-devops"
+  # Adding For Container Scanning
+  DOCKER_IMAGE: $ALL_DEVOPS_IMAGE_NAME:latest
 
 ################################################################################
 ##                                                                            ##
@@ -283,3 +285,7 @@ gcp-devops-deploy-image:
     - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
     - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
 #############################################################################################
+
+# Container Scanning
+include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
