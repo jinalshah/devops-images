@@ -172,6 +172,7 @@ RUN \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade cfn-lint && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
@@ -230,6 +231,7 @@ RUN \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
+  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade cfn-lint && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
