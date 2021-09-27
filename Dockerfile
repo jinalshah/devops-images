@@ -287,7 +287,6 @@ RUN \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
-  rm -rf $(find /usr/lib/google-cloud-sdk/ -regex ".*/__pycache__") && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
