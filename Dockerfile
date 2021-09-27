@@ -85,7 +85,7 @@ RUN \
   \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
-  sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"crcandy\"/g' ~/.zshrc && \
+  sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
   \
   # Customisations
   # useradd devops && \

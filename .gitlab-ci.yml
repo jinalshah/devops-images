@@ -43,7 +43,7 @@ all-devops-build-image:
 
   script:
     - >
-      docker build --target all-devops --pull
+      docker build --network host --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -84,7 +84,7 @@ all-devops-deploy-image:
 
   script:
     - >
-      docker build --target all-devops --pull
+      docker build --network host --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest 
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -135,7 +135,7 @@ aws-devops-build-image:
 
   script:
     - >
-      docker build --target aws-devops --pull
+      docker build --network host --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -176,7 +176,7 @@ aws-devops-deploy-image:
 
   script:
     - >
-      docker build --target aws-devops --pull
+      docker build --network host --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest 
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -227,7 +227,7 @@ gcp-devops-build-image:
 
   script:
     - >
-      docker build --target gcp-devops --pull
+      docker build --network host --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -268,7 +268,7 @@ gcp-devops-deploy-image:
 
   script:
     - >
-      docker build --target gcp-devops --pull
+      docker build --network host --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest 
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
