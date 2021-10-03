@@ -2,3 +2,6 @@ site_name: DevOps Images
 site_url: https://jinal-shah.gitlab.io/devops/images
 theme:
   name: material
+
+extra:
+  generator: false
