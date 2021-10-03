@@ -1,1 +1,4 @@
-site_name: My Docs
+site_name: DevOps Images
+site_url: https://jinal-shah.gitlab.io/devops/images
+theme:
+  name: material
