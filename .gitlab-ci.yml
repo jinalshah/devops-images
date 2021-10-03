@@ -1,5 +1,6 @@
 # Change Running Order of Build Stages
 stages:
+  - docs
   - build
   - deploy
   - test
@@ -295,3 +296,24 @@ gcp-devops-deploy-image:
 # Container Scanning
 include:
   - template: Security/Container-Scanning.gitlab-ci.yml
+
+################################################################################
+##                                                                            ##
+##      ----==| P I P E L I N E   T O   P U B L I S H   D O C S |==----       ##
+##                                                                            ##
+################################################################################
+
+image: python:latest
+pages:
+  stage: docs
+  script:
+    - pip install mkdocs-material
+    - mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - changes:
+        - docs/**/*
+        - mkdocs.yml
+        - .gitlab-ci.yml
