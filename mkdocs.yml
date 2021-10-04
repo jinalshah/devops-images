@@ -1,4 +1,5 @@
 site_name: DevOps Images
+site_description: Repository containing a Dockerfile to build all the DevOps tooling.
 site_url: https://jinal-shah.gitlab.io/devops/images
 
 # Repository
@@ -48,8 +49,6 @@ nav:
     - build-images/gcp-devops.md
   - Troubleshooting:
     - troubleshooting/index.md
-  # - Reading the Docs:
-  #   - reading-the-docs.md
 
 plugins:
   - search
