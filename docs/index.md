@@ -1,4 +1,4 @@
-# DevOps Images
+# Getting Started
 
 ## Building and Running the Image Locally
 

@@ -1,7 +1,55 @@
 site_name: DevOps Images
 site_url: https://jinal-shah.gitlab.io/devops/images
+
+# Repository
+repo_name: jinal-shah/devops/images
+repo_url: https://gitlab.com/jinal-shah/devops/images
+
 theme:
   name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.instant    
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+
+nav:
+  - index.md
+  - Use Images:
+    - use-images/index.md
+    - use-images/all-devops.md
+    - use-images/aws-devops.md
+    - use-images/gcp-devops.md
+  - Build Images: 
+    - build-images/index.md
+    - build-images/build-images.md
+  - Troubleshooting:
+    - troubleshooting/index.md
+    - troubleshooting/troubleshooting.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - toc:
+      permalink: true
 
 extra:
   generator: false
