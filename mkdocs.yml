@@ -12,13 +12,13 @@ theme:
   favicon: assets/images/devops.png
   palette:
     - scheme: default
-      primary: blue
+      primary: blue-grey
       accent: amber
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
     - scheme: slate
-      primary: blue
+      primary: blue-grey
       accent: amber
       toggle:
         icon: material/weather-night
