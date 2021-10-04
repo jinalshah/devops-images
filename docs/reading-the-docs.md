@@ -1,22 +1,4 @@
-# DevOps Images
-
-[![pipeline status](https://gitlab.com/jinal-shah/devops/images/badges/main/pipeline.svg)](https://gitlab.com/jinal-shah/devops/images/-/commits/main)
-
-This repository contains all the common DevOps tooling required for a typical project on AWS or GCP.
-
-- [DevOps Images](#devops-images)
-  - [How do I use the DevOps Images?](#how-do-i-use-the-devops-images)
-  - [Reading the Documentation](#reading-the-documentation)
-    - [On the Web](#on-the-web)
-    - [Locally on your machine (To Preview as you Write)](#locally-on-your-machine-to-preview-as-you-write)
-      - [Reading the Documentation via your Host Machine](#reading-the-documentation-via-your-host-machine)
-      - [Reading the Documentation via Docker](#reading-the-documentation-via-docker)
-        - [Option 1](#option-1)
-        - [Option 2](#option-2)
-
-## How do I use the DevOps Images?
-
-The full documentation on the DevOps Images can be accessed here: [https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)
+# Reading The Docs
 
 ## Reading the Documentation
 

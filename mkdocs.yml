@@ -46,11 +46,13 @@ nav:
     - build-images/gcp-devops.md
   - Troubleshooting:
     - troubleshooting/index.md
+  - reading-the-docs.md
 
 plugins:
   - search
 
 markdown_extensions:
+  - admonition
   - codehilite
   - toc:
       permalink: true
