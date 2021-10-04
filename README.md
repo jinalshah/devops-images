@@ -6,4 +6,4 @@ This repository contains all the common DevOps tooling required for a typical pr
 
 ## How do I use the DevOps Images?
 
-The full documentation of the DevOps Images can be accessed here [https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)
+The full documentation on the DevOps Images can be accessed here: [https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)

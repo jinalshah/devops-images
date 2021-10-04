@@ -1,78 +1,77 @@
 # Getting Started
 
-## Building and Running the Image Locally
+This repository contains all the common DevOps tooling required for a typical project on AWS or GCP.
 
-### Building the Image Locally
+There are three types of DevOps Images available for use:
 
-cd into this directory
+- All-DevOps: Contains tools for both AWS and GCP environments.
+- AWS-DevOps: Contains tools for both AWS environments.
+- GCP-DevOps: Contains tools for both GCP environments.
+
+## Quick Start
+
+### All DevOps Image
+
+#### All DevOps: GitLab Container Registry
+
+Pull the Image:
 
 ```bash
-docker build -t all-devops:latest .
+docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
 ```
 
-### Running the Locally Built Image
+Run the Image:
 
 ```bash
-docker run -it all-devops:latest
+docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops:latest zsh
 ```
 
-## How the Image has been Built for GitLab and can be Pulled/Run directly on your Machine
+### AWS DevOps Image
 
-### Building the Image with GitLab Tags
+#### AWS DevOps: GitLab Container Registry
+
+Pull the Image:
 
 ```bash
-export IMAGE_VERSION=1.6
-docker build \
--t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest \
--t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION} .
+docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
 ```
 
-### Push the Image to GitLab
+Run the Image:
 
 ```bash
-docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest && \
-docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION}
+docker run -it registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest zsh
 ```
 
-### Building the Image with GitLab Tags and Pushing the Image to GitLab
+### GCP DevOps Image
+
+#### GCP DevOps: GitLab Container Registry
+
+Pull the Image:
 
 ```bash
-export IMAGE_VERSION=1.6
-docker build \
--t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest \
--t registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION} . && \
-docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:latest && \
-docker push registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos:${IMAGE_VERSION}
+docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
 ```
 
-### Running the the Remote Image
+Run the Image:
 
 ```bash
-docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops.image-base.centos
+docker run -it registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest zsh
 ```
 
-## Tips and Troubleshooting
+### Pull all three Images simultaneously
 
-### Issue with `source ~/.zshrc` on builds
-
-If you run the command `source ~/.zshrc` within the Dockerfile it fails.
-
-This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source) within a file.
-
-#### Workaround examples
-
-##### Temporarily Disable and Re-enable `$ZSH/oh-my-zsh.sh` from `~/.zshrc`
-
-Comment Source Lines in `~/.zshrc`:
+#### From the GitLab Container Registry
 
 ```bash
-sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops && \
+docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops && \
+docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops
 ```
 
-Unomment Source Lines in `~/.zshrc` on all stage builds:
+#### From the GitHub Container Registry
 
 ```bash
-  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
-  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
-  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+docker pull ghcr.io/jinalshah/devops/images/all-devops && \
+docker pull ghcr.io/jinalshah/devops/images/aws-devops && \
+docker pull ghcr.io/jinalshah/devops/images/gcp-devops
 ```
