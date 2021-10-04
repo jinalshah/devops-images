@@ -33,7 +33,9 @@ theme:
     - search.share
 
 nav:
-  - index.md
+  - Getting Started:
+    - index.md
+    - reading-the-docs.md
   - Use Images:
     - use-images/index.md
     - use-images/all-devops.md
@@ -46,7 +48,8 @@ nav:
     - build-images/gcp-devops.md
   - Troubleshooting:
     - troubleshooting/index.md
-  - reading-the-docs.md
+  # - Reading the Docs:
+  #   - reading-the-docs.md
 
 plugins:
   - search
