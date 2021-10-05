@@ -34,7 +34,7 @@ The documentation can be directly viewed on your browser:
 
 Ensure you are the root of this repository.
 
-Ensure `mkdocs` is installed on your machine. If not, you can install it using: `python3 -m pip install --upgrade mkdocs`
+Ensure `mkdocs` is installed on your machine. If not, you can install it using: `python3 -m pip install --upgrade mkdocs-material`
 
 ```bash
 mkdocs serve
