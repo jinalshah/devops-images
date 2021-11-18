@@ -4,7 +4,7 @@ ARG TERRAGRUNT_VERSION=0.32.3
 ARG TFLINT_VERSION=0.32.1
 ARG TFSEC_VERSION=0.58.9
 ARG PYTHON_VERSION=3.8.12
-ARG PYTHON_VERSION_TO_USE=python3.8
+ARG PYTHON_VERSION_TO_USE=python3.8   # If changed, update alias in scripts/10-zshrc.sh
 
 FROM centos:latest AS base
 

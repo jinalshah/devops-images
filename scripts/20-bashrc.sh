@@ -32,5 +32,7 @@ alias aws-ssm='aws ssm start-session --target $1'
 
 source <(kubectl completion bash)
 
+alias python3='/usr/local/bin/python3.8'
+
 EOF
 fi
