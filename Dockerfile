@@ -42,6 +42,7 @@ RUN \
     make \
     openssh-clients \
     python3 \
+    sqlite-devel \
     tree \
     vim \
     wget \
