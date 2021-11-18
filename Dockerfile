@@ -70,7 +70,7 @@ RUN \
   rm -rf Python* && \
   \
   # Set Python "PYTHON_VERSION_TO_USE" as default
-  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION} 10 && \
+  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 10 && \
   echo 2 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
