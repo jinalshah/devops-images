@@ -69,7 +69,7 @@ RUN \
   cd /tmp && \
   rm -rf Python* && \
   \
-  # Set Python 3.8 as default
+  # Set Python "PYTHON_VERSION_TO_USE" as default
   alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION} 10 && \
   echo 2 | alternatives --config python3 && \
   \
