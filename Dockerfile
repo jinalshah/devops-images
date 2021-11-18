@@ -4,7 +4,7 @@ ARG TERRAGRUNT_VERSION=0.32.3
 ARG TFLINT_VERSION=0.32.1
 ARG TFSEC_VERSION=0.58.9
 ARG PYTHON_VERSION=3.8.12
-ARG PYTHON_VERSION_TO_USE=python3.8   # If changed, update alias in scripts/10-zshrc.sh
+ARG PYTHON_VERSION_TO_USE=python3.8
 
 FROM centos:latest AS base
 
@@ -68,6 +68,10 @@ RUN \
   make altinstall && \
   cd /tmp && \
   rm -rf Python* && \
+  \
+  # Set Python 3.8 as default
+  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION} 10 && \
+  echo 2 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
   ${PYTHON_VERSION_TO_USE} -m pip install --upgrade -U pip  && \
