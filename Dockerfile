@@ -74,13 +74,12 @@ RUN \
   echo 2 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade -U pip  && \
   \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade ansible && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade ansible-lint[yamllint] && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade mkdocs-material && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade paramiko && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pre-commit && \
+  python3 -m pip install --upgrade ansible && \
+  python3 -m pip install --upgrade ansible-lint[yamllint] && \
+  python3 -m pip install --upgrade mkdocs-material && \
+  python3 -m pip install --upgrade paramiko && \
+  python3 -m pip install --upgrade pre-commit && \
   \
   # Ansible Configuration
   mkdir -p /etc/ansible/roles && \
@@ -175,14 +174,14 @@ ARG PYTHON_VERSION_TO_USE
 SHELL ["/bin/bash", "-c"]
 RUN \
   # AWS Python Requirements
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade cfn-lint && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
+  python3 -m pip install --upgrade --no-cache-dir -U crcmod && \
+  python3 -m pip install --upgrade pytest && \
+  python3 -m pip install --upgrade s3cmd && \
+  python3 -m pip install --upgrade boto3 && \
+  python3 -m pip install --upgrade cfn-lint && \
+  python3 -m pip install --upgrade requests && \
+  python3 -m pip install --upgrade bs4 && \
+  python3 -m pip install --upgrade lxml && \
   \
   # AWS Configuration
   cd /tmp && \
@@ -235,14 +234,14 @@ ARG PYTHON_VERSION_TO_USE
 SHELL ["/bin/bash", "-c"]
 RUN \
   # AWS Python Requirements
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade --no-cache-dir -U crcmod && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade pytest && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade s3cmd && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade boto3 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade cfn-lint && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade requests && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade bs4 && \
-  ${PYTHON_VERSION_TO_USE} -m pip install --upgrade lxml && \
+  python3 -m pip install --upgrade --no-cache-dir -U crcmod && \
+  python3 -m pip install --upgrade pytest && \
+  python3 -m pip install --upgrade s3cmd && \
+  python3 -m pip install --upgrade boto3 && \
+  python3 -m pip install --upgrade cfn-lint && \
+  python3 -m pip install --upgrade requests && \
+  python3 -m pip install --upgrade bs4 && \
+  python3 -m pip install --upgrade lxml && \
   \
   # AWS Configuration
   cd /tmp && \
