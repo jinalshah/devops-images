@@ -51,6 +51,10 @@ RUN \
     zsh \
     && \
   \
+  # GitHub CLI
+  yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
+  yum install -y gh && \
+  \
   # Install binaries to compile Python 3.8
   yum install -y \
     gcc \
