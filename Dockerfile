@@ -109,8 +109,8 @@ RUN \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
   rm -rf $(find / -regex ".*/__pycache__") && \
-  rm -rf /root/.cache/pip/* && \
-  rm -rf ~/.wget-hsts
+  rm -rf /root/.cache/pip/*
+  # rm -rf ~/.wget-hsts
 
 RUN \
   # Kubectl Configuration
