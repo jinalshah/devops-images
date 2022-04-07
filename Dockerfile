@@ -1,12 +1,12 @@
 ARG GCLOUD_VERSION=371.0.0
-ARG PACKER_VERSION=1.7.10
-ARG TERRAGRUNT_VERSION=0.36.1
-ARG TFLINT_VERSION=0.34.1
-ARG TFSEC_VERSION=1.0.11
-ARG PYTHON_VERSION=3.8.12
+ARG PACKER_VERSION=1.8.0
+ARG TERRAGRUNT_VERSION=0.36.6
+ARG TFLINT_VERSION=0.35.0
+ARG TFSEC_VERSION=1.17.0
+ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
 
-FROM centos:centos7 AS base
+FROM rockylinux:latest AS base
 
 LABEL name=devops
 
@@ -78,7 +78,7 @@ RUN \
   \
   # Set Python "PYTHON_VERSION_TO_USE" as default
   alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
-  echo 1 | alternatives --config python3 && \
+  echo 2 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
   \
