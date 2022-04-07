@@ -47,6 +47,7 @@ RUN \
     vim \
     wget \
     unzip \
+    yum-utils \
     zip \
     zsh \
     && \
