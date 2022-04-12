@@ -52,6 +52,8 @@ RUN \
     zip \
     zsh \
     && \
+  # Update All Components
+  yum update -y && \
   \
   # GitHub CLI
   yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
