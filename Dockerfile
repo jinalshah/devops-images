@@ -41,6 +41,7 @@ RUN \
     jq \
     less \
     make \
+    mysql \
     openssh-clients \
     python3 \
     sqlite-devel \
