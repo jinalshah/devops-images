@@ -179,6 +179,8 @@ RUN \
   chmod +x /tmp/ghorg/ghorg && \
   mv /tmp/ghorg/ghorg /usr/local/bin && \
   rm -rf /tmp/ghorg && \
+  mkdir -p $HOME/.config/ghorg && \
+  curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > $HOME/.config/ghorg/conf.yaml && \
   \
   # Cleanup
   rm -rf /tmp/* && \
