@@ -5,8 +5,9 @@ ARG TFLINT_VERSION=0.38.1
 ARG TFSEC_VERSION=1.26.3
 ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
+ARG MONGODB_VERSION=6.0
 
-FROM rockylinux:latest AS base
+FROM rockylinux:8 AS base
 
 LABEL name=devops
 
@@ -97,6 +98,17 @@ RUN \
   mkdir -p /etc/ansible/roles && \
   wget -q -O /etc/ansible/ansible.cfg https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg && \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
+  \
+  # MongoDB Installation
+  cat <<EOT >> /etc/yum.repos.d/mongodb-org-6.0.repo
+  [mongodb-org-6.0]
+  name=MongoDB Repository
+  baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/
+  gpgcheck=1
+  enabled=1
+  gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
+  EOT
+  yum install mongodb-mongosh && \
   \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
