@@ -113,6 +113,14 @@ RUN \
   echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
   yum install -y mongodb-mongosh && \
   \
+  # Install PostgreSQL Client
+  yum install -y \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+  yum module -y disable postgresql && \
+  yum install -y \
+    postgresql13 \
+    && \
+  \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
