@@ -131,9 +131,6 @@ RUN \
   . /tmp/10-zshrc.sh && \
   . /tmp/20-bashrc.sh && \
   \
-  chmod +x /tmp/30-clone-all-repos.sh && \
-  mv /tmp/30-clone-all-repos.sh /usr/local/bin/clone-all-repos && \
-  \
   # Cleanup \
   yum clean packages && \
   yum clean metadata && \
