@@ -5,6 +5,7 @@ ARG TFLINT_VERSION=0.38.1
 ARG TFSEC_VERSION=1.26.3
 ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
+ARG GHORG_VERSION=1.8.7
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
 
@@ -19,6 +20,7 @@ ARG TFLINT_VERSION
 ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
+ARG GHORG_VERSION
 ARG MONGODB_VERSION
 ARG MONGODB_REPO_PATH
 
@@ -101,7 +103,7 @@ RUN \
   wget -q -O /etc/ansible/ansible.cfg https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg && \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
   \
-  # MongoDB Installation
+  # MongoDB-MongoSH Installation
   touch ${MONGODB_REPO_PATH} && \
   echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
   echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
@@ -161,6 +163,14 @@ RUN \
   unzip -q /tmp/packer.zip -d /tmp && \
   chmod +x /tmp/packer && \
   mv /tmp/packer /usr/local/bin && \
+  \
+  # Install ghorg
+  wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_x86_64.tar.gz && \
+  mkdir /tmp/ghorg && \
+  tar -zxvf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
+  chmod +x /tmp/ghorg/ghorg && \
+  mv /tmp/ghorg/ghorg /usr/local/bin && \
+  rm -rf /tmp/ghorg && \
   \
   # Cleanup
   rm -rf /tmp/* && \
