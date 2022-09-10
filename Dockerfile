@@ -3,13 +3,13 @@ ARG PACKER_VERSION=1.8.2
 ARG TERRAGRUNT_VERSION=0.38.4
 ARG TFLINT_VERSION=0.38.1
 ARG TFSEC_VERSION=1.26.3
-ARG PYTHON_VERSION=3.8.13
-ARG PYTHON_VERSION_TO_USE=python3.8
+ARG PYTHON_VERSION=3.10.7
+ARG PYTHON_VERSION_TO_USE=python3.10
 ARG GHORG_VERSION=1.8.7
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
 
-FROM rockylinux:8 AS base
+FROM rockylinux:9 AS base
 
 LABEL name=devops
 
@@ -48,7 +48,7 @@ RUN \
     make \
     mysql \
     openssh-clients \
-    python3 \
+    python3-pip \
     sqlite-devel \
     tree \
     vim \
@@ -115,7 +115,7 @@ RUN \
   \
   # Install PostgreSQL Client
   yum install -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   yum module -y disable postgresql && \
   yum install -y \
     postgresql13 \
