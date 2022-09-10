@@ -103,12 +103,12 @@ RUN \
   \
   # MongoDB Installation
   touch ${MONGODB_REPO_PATH} && \
-  echo "[mongodb-org-${MONGODB_VERSION}}]" >> ${MONGODB_REPO_PATH} && \
+  echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
   echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
-  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}}/x86_64/" >> ${MONGODB_REPO_PATH} && \
+  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/x86_64/" >> ${MONGODB_REPO_PATH} && \
   echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
   echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
-  echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}}.asc" >> ${MONGODB_REPO_PATH} && \
+  echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
   yum install -y mongodb-mongosh && \
   \
   # Download, Install and Configure OhMyZsh
