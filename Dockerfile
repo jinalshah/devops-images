@@ -7,7 +7,7 @@ ARG PYTHON_VERSION=3.10.7
 ARG PYTHON_VERSION_TO_USE=python3.10
 ARG GHORG_VERSION=1.8.7
 ARG MONGODB_VERSION=6.0
-ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
+ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
 FROM rockylinux:9 AS base
 
