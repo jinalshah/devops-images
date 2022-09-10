@@ -6,6 +6,7 @@ ARG TFSEC_VERSION=1.26.3
 ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
 ARG MONGODB_VERSION=6.0
+ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
 
 FROM rockylinux:8 AS base
 
@@ -19,6 +20,7 @@ ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG MONGODB_VERSION
+ARG MONGODB_REPO_PATH
 
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
@@ -100,13 +102,13 @@ RUN \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
   \
   # MongoDB Installation
-  touch /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "[mongodb-org-6.0]" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "name=MongoDB Repository" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "gpgcheck=1" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "enabled=1" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
-  echo "gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  touch ${MONGODB_REPO_PATH} && \
+  echo "[mongodb-org-${MONGODB_VERSION}}]" >> ${MONGODB_REPO_PATH} && \
+  echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
+  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}}/x86_64/" >> ${MONGODB_REPO_PATH} && \
+  echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
+  echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
+  echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}}.asc" >> ${MONGODB_REPO_PATH} && \
   yum install -y mongodb-mongosh && \
   \
   # Download, Install and Configure OhMyZsh
