@@ -18,7 +18,7 @@ ARG TFLINT_VERSION
 ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
-
+ARG MONGODB_VERSION
 
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
@@ -100,15 +100,14 @@ RUN \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
   \
   # MongoDB Installation
-  cat <<EOT >> /etc/yum.repos.d/mongodb-org-6.0.repo
-  [mongodb-org-6.0]
-  name=MongoDB Repository
-  baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/
-  gpgcheck=1
-  enabled=1
-  gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
-  EOT
-  yum install mongodb-mongosh && \
+  touch /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "[mongodb-org-6.0]" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "name=MongoDB Repository" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "gpgcheck=1" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "enabled=1" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  echo "gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc" >> /etc/yum.repos.d/mongodb-org-6.0.repo && \
+  yum install -y mongodb-mongosh && \
   \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
