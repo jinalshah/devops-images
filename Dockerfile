@@ -37,7 +37,6 @@ RUN \
     && \
   \
   yum install -y \
-    # ansible \
     bash \
     bash-completion \
     curl \
@@ -49,6 +48,7 @@ RUN \
     mysql \
     openssh-clients \
     python3-pip \
+    python3-dnf \
     sqlite-devel \
     tree \
     vim \
