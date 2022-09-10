@@ -9,7 +9,7 @@ ARG GHORG_VERSION=1.8.7
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
 
-FROM rockylinux:8 AS base
+FROM rockylinux:9 AS base
 
 LABEL name=devops
 
@@ -115,7 +115,7 @@ RUN \
   \
   # Install PostgreSQL Client
   yum install -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   yum module -y disable postgresql && \
   yum install -y \
     postgresql13 \
