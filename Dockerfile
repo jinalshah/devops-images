@@ -74,18 +74,18 @@ RUN \
     zlib-devel \
     && \
   \
-  # # Install Python 3.8
-  # cd /tmp && \
-  # wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  # tar -zxvf Python-${PYTHON_VERSION}.tgz && \
-  # cd Python-${PYTHON_VERSION} && \
-  # ./configure --enable-optimizations && \
-  # make altinstall && \
-  # cd /tmp && \
-  # rm -rf Python* && \
-  # \
-  # python3 -m pip install --upgrade -U pip  && \
-  # \
+  # Install Python 3.8
+  cd /tmp && \
+  wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+  tar -zxvf Python-${PYTHON_VERSION}.tgz && \
+  cd Python-${PYTHON_VERSION} && \
+  ./configure --enable-optimizations && \
+  make altinstall && \
+  cd /tmp && \
+  rm -rf Python* && \
+  \
+  python3 -m pip install --upgrade -U pip  && \
+  \
   # # Set Python "PYTHON_VERSION_TO_USE" as default
   # alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
   # alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
