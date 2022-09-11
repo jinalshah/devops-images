@@ -115,12 +115,12 @@ RUN \
   yum install -y mongodb-mongosh && \
   \
   # Install PostgreSQL Client
-  yum install -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-  yum module -y disable postgresql && \
-  yum install -y \
-    postgresql14 \
-    && \
+  # yum install -y \
+  #   https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+  # yum module -y disable postgresql && \
+  # yum install -y \
+  #   postgresql14 \
+  #   && \
   \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
