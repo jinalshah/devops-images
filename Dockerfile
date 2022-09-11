@@ -7,9 +7,9 @@ ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
 ARG GHORG_VERSION=1.8.7
 ARG MONGODB_VERSION=6.0
-ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-{MONGODB_VERSION}.repo
+ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
-FROM rockylinux:8 AS base
+FROM rockylinux:9 AS base
 
 LABEL name=devops
 
@@ -37,7 +37,6 @@ RUN \
     && \
   \
   yum install -y \
-    # ansible \
     bash \
     bash-completion \
     curl \
@@ -48,7 +47,8 @@ RUN \
     make \
     mysql \
     openssh-clients \
-    python3 \
+    python3-pip \
+    python3-dnf \
     sqlite-devel \
     tree \
     vim \
@@ -86,10 +86,11 @@ RUN \
   \
   python3 -m pip install --upgrade -U pip  && \
   \
-  # Set Python "PYTHON_VERSION_TO_USE" as default
-  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
-  echo 2 | alternatives --config python3 && \
-  \
+  # # Set Python "PYTHON_VERSION_TO_USE" as default
+  # alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
+  # alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
+  # echo 1 | alternatives --config python3 && \
+  # \
   python3 -m pip install --upgrade -U pip  && \
   \
   python3 -m pip install --upgrade ansible && \
@@ -115,10 +116,10 @@ RUN \
   \
   # Install PostgreSQL Client
   yum install -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-  yum module -y disable postgresql && \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+  # yum module -y disable postgresql && \
   yum install -y \
-    postgresql13 \
+    postgresql14 \
     && \
   \
   # Download, Install and Configure OhMyZsh
