@@ -88,6 +88,7 @@ RUN \
   # \
   # # Set Python "PYTHON_VERSION_TO_USE" as default
   # alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
+  # alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
   # echo 1 | alternatives --config python3 && \
   # \
   python3 -m pip install --upgrade -U pip  && \
@@ -118,7 +119,7 @@ RUN \
     https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   yum module -y disable postgresql && \
   yum install -y \
-    postgresql13 \
+    postgresql14 \
     && \
   \
   # Download, Install and Configure OhMyZsh
