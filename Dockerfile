@@ -95,6 +95,7 @@ RUN \
   \
   python3 -m pip install --upgrade ansible && \
   python3 -m pip install --upgrade ansible-lint[yamllint] && \
+  python3 -m pip install --upgrade jmespath && \
   python3 -m pip install --upgrade mkdocs-material && \
   python3 -m pip install --upgrade paramiko && \
   python3 -m pip install --upgrade pre-commit && \
