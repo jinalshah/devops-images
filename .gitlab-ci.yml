@@ -6,7 +6,7 @@ stages:
   - test
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_CERTDIR: ""
   DEVOPS_IMAGE_VERSION: "1.0.$CI_COMMIT_SHORT_SHA"
   ALL_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops"
   GHCR_ALL_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/all-devops"
@@ -49,8 +49,6 @@ all-devops-build-image:
     - main
 
   before_script:
-    - export DOCKER_HOST="tcp://docker:2376"
-    - export DOCKER_TLS_VERIFY="1"
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
@@ -94,8 +92,6 @@ all-devops-deploy-image:
       - .gitlab-ci.yml
 
   before_script:
-    - export DOCKER_HOST="tcp://docker:2376"
-    - export DOCKER_TLS_VERIFY="1"
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
