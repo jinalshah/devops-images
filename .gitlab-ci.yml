@@ -16,6 +16,9 @@ variables:
   GHCR_GCP_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/gcp-devops"
   # Adding For Container Scanning
   DOCKER_IMAGE: $ALL_DEVOPS_IMAGE_NAME:latest
+  # Adding for Multi-Arch builds
+  BUILDX_VERSION: "v0.10.4"
+  PLATFORMS: "linux/amd64,linux/arm64"
 
 ################################################################################
 ##                                                                            ##
@@ -49,21 +52,23 @@ all-devops-build-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target all-devops --pull
+      docker-buildx build --platform $PLATFORMS --network host --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 
@@ -90,23 +95,23 @@ all-devops-deploy-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target all-devops --pull
+      docker-buildx build --platform $PLATFORMS --network host --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest 
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $ALL_DEVOPS_IMAGE_NAME:latest 
-    - docker push $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
-    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 ################################################################################
