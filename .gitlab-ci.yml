@@ -7,6 +7,8 @@ stages:
 
 variables:
   DOCKER_TLS_CERTDIR: ""
+  DOCKER_CLI_EXPERIMENTAL: enabled
+  DOCKER_BUILDKIT: "1"
   DEVOPS_IMAGE_VERSION: "1.0.$CI_COMMIT_SHORT_SHA"
   ALL_DEVOPS_IMAGE_NAME: "$CI_REGISTRY_IMAGE/all-devops"
   GHCR_ALL_DEVOPS_IMAGE_NAME: "ghcr.io/jinalshah/devops/images/all-devops"
@@ -96,8 +98,6 @@ all-devops-deploy-image:
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
     - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
     - chmod a+x /usr/local/bin/docker-buildx
     - docker-buildx create --use
@@ -146,21 +146,23 @@ aws-devops-build-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target aws-devops --pull
+      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 
@@ -187,23 +189,23 @@ aws-devops-deploy-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target aws-devops --pull
+      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest 
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $AWS_DEVOPS_IMAGE_NAME:latest 
-    - docker push $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
-    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 ################################################################################
@@ -238,21 +240,23 @@ gcp-devops-build-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target gcp-devops --pull
+      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 
@@ -279,23 +283,23 @@ gcp-devops-deploy-image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - export DOCKER_BUILDKIT=1
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
 
   script:
     - >
-      docker build --network host --target gcp-devops --pull
+      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest 
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      .
-    - docker push $GCP_DEVOPS_IMAGE_NAME:latest 
-    - docker push $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
-    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-    - docker push $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      . --push
 #############################################################################################
 
 # Container Scanning
