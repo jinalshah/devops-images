@@ -77,7 +77,7 @@ RUN \
   # Install Python 3.8
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar -zqxvf Python-${PYTHON_VERSION}.tgz && \
+  tar -zxf Python-${PYTHON_VERSION}.tgz && \
   cd Python-${PYTHON_VERSION} && \
   ./configure --enable-optimizations && \
   make altinstall && \
@@ -174,7 +174,7 @@ RUN \
   # Install ghorg
   wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_x86_64.tar.gz && \
   mkdir /tmp/ghorg && \
-  tar -zqxvf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
+  tar -zxf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
   chmod +x /tmp/ghorg/ghorg && \
   mv /tmp/ghorg/ghorg /usr/local/bin && \
   rm -rf /tmp/ghorg && \
@@ -240,7 +240,7 @@ RUN \
   \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
-  tar -zqxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
@@ -330,7 +330,7 @@ SHELL ["/bin/bash", "-c"]
 RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
-  tar -zqxvf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
