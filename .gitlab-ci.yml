@@ -61,7 +61,7 @@ all-devops-build-image:
 
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --network host --target all-devops --pull
+      docker-buildx build --platform $PLATFORMS --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -104,7 +104,7 @@ all-devops-deploy-image:
 
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --network host --target all-devops --pull
+      docker-buildx build --platform $PLATFORMS --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest 
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
