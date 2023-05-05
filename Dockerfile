@@ -36,7 +36,7 @@ RUN \
     epel-release \
     && \
   \
-  yum install -y \
+  yum install --allowerasing -y \
     bash \
     bash-completion \
     curl \
@@ -63,10 +63,10 @@ RUN \
   \
   # GitHub CLI
   yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
-  yum install -y gh && \
+  yum install --allowerasing -y gh && \
   \
   # Install binaries to compile Python 3.8
-  yum install -y \
+  yum install --allowerasing -y \
     gcc \
     openssl-devel \
     bzip2-devel \
@@ -113,13 +113,13 @@ RUN \
   echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
   echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
   echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
-  yum install -y mongodb-mongosh && \
+  yum install --allowerasing -y mongodb-mongosh && \
   \
   # Install PostgreSQL Client
-  yum install -y \
+  yum install --allowerasing -y \
     https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   # yum module -y disable postgresql && \
-  yum install -y \
+  yum install --allowerasing -y \
     postgresql14 \
     && \
   \
@@ -236,7 +236,7 @@ RUN \
   # AWS Session Manager Plugin Installation
   cd /tmp && \
   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
-  yum install -y session-manager-plugin.rpm && \
+  yum install --allowerasing -y session-manager-plugin.rpm && \
   \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
@@ -297,7 +297,7 @@ RUN \
   # AWS Session Manager Plugin Installation
   cd /tmp && \
   curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
-  yum install -y session-manager-plugin.rpm && \
+  yum install --allowerasing -y session-manager-plugin.rpm && \
   \
   # Cleanup
   rm -rf /tmp/* && \
