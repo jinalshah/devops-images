@@ -6,8 +6,8 @@ ARG TFSEC_VERSION=1.28.1               # https://github.com/aquasecurity/tfsec
 ARG GHORG_VERSION=1.9.4                # https://github.com/gabrie30/ghorg
 ARG PYTHON_VERSION=3.8.13
 ARG PYTHON_VERSION_TO_USE=python3.8
-# ARG MONGODB_VERSION=6.0
-# ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
+ARG MONGODB_VERSION=6.0
+ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
 FROM rockylinux:9 AS base
 
@@ -21,8 +21,8 @@ ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG GHORG_VERSION
-# ARG MONGODB_VERSION
-# ARG MONGODB_REPO_PATH
+ARG MONGODB_VERSION
+ARG MONGODB_REPO_PATH
 
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
@@ -106,15 +106,15 @@ RUN \
   wget -q -O /etc/ansible/hosts https://raw.githubusercontent.com/ansible/ansible/devel/examples/hosts && \
   \
   # MongoDB-MongoSH Installation
-  # touch ${MONGODB_REPO_PATH} && \
-  # echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
-  # echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
-  # echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/x86_64/" >> ${MONGODB_REPO_PATH} && \
-  # echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
-  # echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
-  # echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
-  # yum install --allowerasing -y mongodb-mongosh && \
-  # \
+  touch ${MONGODB_REPO_PATH} && \
+  echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
+  echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
+  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/x86_64/" >> ${MONGODB_REPO_PATH} && \
+  echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
+  echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
+  echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
+  yum install --allowerasing -y mongodb-mongosh && \
+  \
   # Install PostgreSQL Client
   yum install --allowerasing -y \
     https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \

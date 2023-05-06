@@ -20,7 +20,8 @@ variables:
   DOCKER_IMAGE: $ALL_DEVOPS_IMAGE_NAME:latest
   # Adding for Multi-Arch builds
   BUILDX_VERSION: "v0.10.4"
-  PLATFORMS: "linux/amd64,linux/arm64"
+  # PLATFORMS: "linux/amd64,linux/arm64"
+  PLATFORMS: "linux/amd64"
 
 ################################################################################
 ##                                                                            ##
