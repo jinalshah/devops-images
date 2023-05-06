@@ -359,7 +359,7 @@ RUN \
   \
   # AWS Session Manager Plugin Installation
   cd /tmp && \
-  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
+  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_${SESSION_MANAGER_ARCH_VALUE}/session-manager-plugin.rpm" -o "session-manager-plugin.rpm" && \
   yum install --allowerasing -y session-manager-plugin.rpm && \
   \
   # Cleanup
