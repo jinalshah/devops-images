@@ -64,13 +64,11 @@ all-devops-build-image:
   script:
     - >
       docker-buildx build --platform $PLATFORMS --target all-devops --pull
-      -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 
@@ -111,7 +109,7 @@ all-devops-deploy-image:
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 ################################################################################
@@ -156,13 +154,11 @@ aws-devops-build-image:
   script:
     - >
       docker-buildx build --platform $PLATFORMS --target aws-devops --pull
-      -t $AWS_DEVOPS_IMAGE_NAME:latest
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 
@@ -205,7 +201,7 @@ aws-devops-deploy-image:
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 ################################################################################
@@ -250,13 +246,11 @@ gcp-devops-build-image:
   script:
     - >
       docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
-      -t $GCP_DEVOPS_IMAGE_NAME:latest
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 
@@ -299,7 +293,7 @@ gcp-devops-deploy-image:
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      . --push
+      --push .
 #############################################################################################
 
 # Container Scanning
