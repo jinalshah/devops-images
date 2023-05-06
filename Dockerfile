@@ -9,6 +9,15 @@ ARG PYTHON_VERSION_TO_USE=python3.8
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
+## Determine OS Architecture
+# Use this var if you want to retrieve "arm64" insteaf of "aarch64". If you need aarch64 simply use `uname -m` in the command instead.
+# This also sets amd64 for amd64 instead of x86_64 based architectures
+ARG ARCH_VALUE=$(arch=$(uname -m); if [ "$arch" = "aarch64" ]; then echo "arm64"; elif [ "$arch" = "x86_64" ]; then echo "amd64"; else echo "unknown"; fi)
+# Same as above but sets x86_64 for amd64 instead of amd64 based architectures
+ARG GHORG_ARCH_VALUE=$(arch=$(uname -m); if [ "$arch" = "aarch64" ]; then echo "arm64"; elif [ "$arch" = "x86_64" ]; then echo "x86_64"; else echo "unknown"; fi)
+# Use this to obtain "arm" instead of "arm64" and set x86_64 for amd64 based architectures.
+ARG GCLOUD_ARCH_VALUE=$(arch=$(uname -m); [ "$arch" = "aarch64" ] && echo "arm" || echo "x86_64")
+
 FROM rockylinux:9 AS base
 
 LABEL name=devops
@@ -109,7 +118,7 @@ RUN \
   touch ${MONGODB_REPO_PATH} && \
   echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
   echo "name=MongoDB Repository" >> ${MONGODB_REPO_PATH} && \
-  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/x86_64/" >> ${MONGODB_REPO_PATH} && \
+  echo "baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/${MONGODB_VERSION}/$(uname -m)/" >> ${MONGODB_REPO_PATH} && \
   echo "gpgcheck=1" >> ${MONGODB_REPO_PATH} && \
   echo "enabled=1" >> ${MONGODB_REPO_PATH} && \
   echo "gpgkey=https://www.mongodb.org/static/pgp/server-${MONGODB_VERSION}.asc" >> ${MONGODB_REPO_PATH} && \
@@ -117,7 +126,7 @@ RUN \
   \
   # Install PostgreSQL Client
   yum install --allowerasing -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm && \
   # yum module -y disable postgresql && \
   yum install --allowerasing -y \
     postgresql14 \
@@ -145,7 +154,7 @@ RUN \
 
 RUN \
   # Kubectl Configuration
-  wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
+  wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/${ARCH_VALUE}/kubectl && \
   chmod +x /tmp/kubectl && \
   mv /tmp/kubectl /usr/local/bin && \
   \
@@ -153,26 +162,26 @@ RUN \
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
   tfswitch --latest && \
   \
-  wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64 && \
+  wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH_VALUE} && \
   chmod +x /tmp/terragrunt && \
   mv /tmp/terragrunt /usr/local/bin && \
   \
-  wget -qO /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
+  wget -qO /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_${ARCH_VALUE}.zip && \
   unzip -q /tmp/tflint.zip -d /tmp && \
   chmod +x /tmp/tflint && \
   mv /tmp/tflint /usr/local/bin && \
   \
-  wget -qO /tmp/tfsec https://github.com/liamg/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-amd64 && \
+  wget -qO /tmp/tfsec https://github.com/liamg/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-${ARCH_VALUE} && \
   chmod +x /tmp/tfsec && \
   mv /tmp/tfsec /usr/local/bin && \
   \
-  wget -qO /tmp/packer.zip https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip && \
+  wget -qO /tmp/packer.zip https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH_VALUE}.zip && \
   unzip -q /tmp/packer.zip -d /tmp && \
   chmod +x /tmp/packer && \
   mv /tmp/packer /usr/local/bin && \
   \
   # Install ghorg
-  wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_x86_64.tar.gz && \
+  wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_${GHORG_ARCH_VALUE}.tar.gz && \
   mkdir /tmp/ghorg && \
   tar -zxf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
   chmod +x /tmp/ghorg/ghorg && \
@@ -229,7 +238,7 @@ RUN \
   \
   # AWS Configuration
   cd /tmp && \
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "awscliv2.zip" && \
   unzip -q awscliv2.zip && \
   /tmp/aws/install && \
   \
@@ -239,7 +248,7 @@ RUN \
   yum install --allowerasing -y session-manager-plugin.rpm && \
   \
   # GCP / gcloud Configuration
-  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
@@ -290,7 +299,7 @@ RUN \
   \
   # AWS Configuration
   cd /tmp && \
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "awscliv2.zip" && \
   unzip -q awscliv2.zip && \
   /tmp/aws/install && \
   \
@@ -329,7 +338,7 @@ ARG PYTHON_VERSION_TO_USE
 SHELL ["/bin/bash", "-c"]
 RUN \
   # GCP / gcloud Configuration
-  wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
+  wget -q -O /tmp/google-cloud-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz" && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
