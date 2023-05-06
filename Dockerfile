@@ -9,15 +9,6 @@ ARG PYTHON_VERSION_TO_USE=python3.8
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
-## Determine OS Architecture
-# Use this var if you want to retrieve "arm64" insteaf of "aarch64". If you need aarch64 simply use `uname -m` in the command instead.
-# This also sets amd64 for amd64 instead of x86_64 based architectures
-ARG ARCH_VALUE=$(arch=$(uname -m); if [ "$arch" = "aarch64" ]; then echo "arm64"; elif [ "$arch" = "x86_64" ]; then echo "amd64"; else echo "unknown"; fi)
-# Same as above but sets x86_64 for amd64 instead of amd64 based architectures
-ARG GHORG_ARCH_VALUE=$(arch=$(uname -m); if [ "$arch" = "aarch64" ]; then echo "arm64"; elif [ "$arch" = "x86_64" ]; then echo "x86_64"; else echo "unknown"; fi)
-# Use this to obtain "arm" instead of "arm64" and set x86_64 for amd64 based architectures.
-ARG GCLOUD_ARCH_VALUE=$(arch=$(uname -m); [ "$arch" = "aarch64" ] && echo "arm" || echo "x86_64")
-
 FROM rockylinux:9 AS base
 
 LABEL name=devops
@@ -37,6 +28,29 @@ ENV CLOUDSDK_PYTHON=python3
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
 
 COPY scripts/*.sh /tmp/
+
+# Declare ARGs with default values
+ARG ARCH_VALUE="unknown"
+ARG GHORG_ARCH_VALUE="unknown"
+ARG GCLOUD_ARCH_VALUE="unknown"
+
+# Set environment variables to the ARG values
+ENV ARCH_VALUE=$ARCH_VALUE
+ENV GHORG_ARCH_VALUE=$GHORG_ARCH_VALUE
+ENV GCLOUD_ARCH_VALUE=$GCLOUD_ARCH_VALUE
+
+# Define a shell function to determine the architecture value
+RUN get_arch_value() { \
+        arch=$(uname -m); \
+        case "$arch" in \
+            aarch64) echo "${1:-arm64}";; \
+            x86_64) echo "${2:-x86_64}";; \
+            *) echo "unknown";; \
+        esac \
+    } && \
+    export ARCH_VALUE=$(get_arch_value "arm64" "amd64") && \
+    export GHORG_ARCH_VALUE=$(get_arch_value "arm64" "x86_64") && \
+    export GCLOUD_ARCH_VALUE=$(get_arch_value "arm" "x86_64")
 
 RUN \
   # Install Packages via Yum
