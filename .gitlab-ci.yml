@@ -24,12 +24,29 @@ variables:
 
 ################################################################################
 ##                                                                            ##
-##              ----==| A L L   D E V O P S   I M A G E |==----               ##
+##          ----==| C O M M O N   B U I L D   S C R I P T S |==----           ##
 ##                                                                            ##
 ################################################################################
 
+# Base Before Script
 #############################################################################################
-all-devops-build-image:
+.base_before_script: &base_before_script
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
+    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk add --no-cache curl jq
+    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    - chmod a+x /usr/local/bin/docker-buildx
+    - docker-buildx create --use
+#############################################################################################
+
+# Base Build Image
+#############################################################################################
+# Build Image: Pipeline Only Runs when working on a feature Branch to test new changes.
+# Build Image: Does not create and push the `latest` Image.
+
+.base_build_image: &base_build_image
   stage: build
 
   image: 
@@ -50,31 +67,15 @@ all-devops-build-image:
   except:
     - main
 
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
-
-  script:
-    - >
-      docker buildx build --platform $PLATFORMS --target all-devops --pull
-      -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      --push .
+  <<: *base_before_script
 #############################################################################################
 
-
-
+# Base Deploy Image
 #############################################################################################
-all-devops-deploy-image:
+# Deploy Image: Pipeline Only Runs when changes have been merged to the main branch.
+# Deploy Image: Creates and pushes the `latest` Image.
+
+.base_deploy_image: &base_deploy_image
   stage: deploy
 
   image: 
@@ -91,26 +92,40 @@ all-devops-deploy-image:
       - "*.sh"
       - .gitlab-ci.yml
 
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
+  <<: *base_before_script
+#############################################################################################
 
+
+################################################################################
+##                                                                            ##
+##              ----==| A L L   D E V O P S   I M A G E |==----               ##
+##                                                                            ##
+################################################################################
+
+all-devops-build-image:
+  <<: *base_build_image
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target all-devops --pull
-      -t $ALL_DEVOPS_IMAGE_NAME:latest 
+      docker-buildx build --platform $PLATFORMS --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+
+all-devops-deploy-image:
+  <<: *base_deploy_image
+  script:
+    - >
+      docker-buildx build --platform $PLATFORMS --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
-#############################################################################################
+
 
 ################################################################################
 ##                                                                            ##
@@ -118,91 +133,30 @@ all-devops-deploy-image:
 ##                                                                            ##
 ################################################################################
 
-#############################################################################################
-aws-devops-build-image:
-  stage: build
-
-  image: 
-    name: docker:latest
-
-  services:
-    - docker:dind
-
-  only:
-    refs: 
-      - branches
-      - tags
-    changes:
-      - Dockerfile
-      - "*.sh"
-      - .gitlab-ci.yml
-
-  except:
-    - main
-
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
-
+gcp-devops-build-image:
+  <<: *base_build_image
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target aws-devops --pull
-      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
-#############################################################################################
 
-
-
-#############################################################################################
-aws-devops-deploy-image:
-  stage: deploy
-
-  image: 
-    name: docker:latest
-
-  services:
-    - docker:dind
-
-  only:
-    refs:
-      - main
-    changes:
-      - Dockerfile
-      - "*.sh"
-      - .gitlab-ci.yml
-
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
-
+gcp-devops-deploy-image:
+  <<: *base_deploy_image
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target aws-devops --pull
-      -t $AWS_DEVOPS_IMAGE_NAME:latest 
-      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
-#############################################################################################
+
 
 ################################################################################
 ##                                                                            ##
@@ -210,98 +164,30 @@ aws-devops-deploy-image:
 ##                                                                            ##
 ################################################################################
 
-#############################################################################################
-gcp-devops-build-image:
-  stage: build
-
-  image: 
-    name: docker:latest
-
-  services:
-    - docker:dind
-
-  only:
-    refs: 
-      - branches
-      - tags
-    changes:
-      - Dockerfile
-      - "*.sh"
-      - .gitlab-ci.yml
-
-  except:
-    - main
-
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
-
+aws-devops-build-image:
+  <<: *base_build_image
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
-      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
-#############################################################################################
 
-
-
-#############################################################################################
-gcp-devops-deploy-image:
-  stage: deploy
-
-  image: 
-    name: docker:latest
-
-  services:
-    - docker:dind
-
-  only:
-    refs:
-      - main
-    changes:
-      - Dockerfile
-      - "*.sh"
-      - .gitlab-ci.yml
-
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
-    - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - export DOCKER_BUILDKIT=1
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-    - chmod a+x ~/.docker/cli-plugins/docker-buildx
-    - docker buildx create --use
-
+aws-devops-deploy-image:
+  <<: *base_deploy_image
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
-      -t $GCP_DEVOPS_IMAGE_NAME:latest 
-      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest
+      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
-#############################################################################################
 
-# Container Scanning
-include:
-  - template: Security/Container-Scanning.gitlab-ci.yml
-  - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Security/SAST-IaC.latest.gitlab-ci.yml
-  - template: Security/License-Scanning.gitlab-ci.yml
 
 ################################################################################
 ##                                                                            ##
@@ -323,3 +209,16 @@ pages:
         - docs/**/*
         - mkdocs.yml
         - .gitlab-ci.yml
+
+
+################################################################################
+##                                                                            ##
+##            ----==| C O N T A I N E R   S C A N N I N G |==----             ##
+##                                                                            ##
+################################################################################
+
+include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST-IaC.latest.gitlab-ci.yml
+  - template: Security/License-Scanning.gitlab-ci.yml
