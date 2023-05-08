@@ -101,7 +101,12 @@ variables:
 # Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
 #############################################################################################
 all-devops-build-image-arm:
+
   <<: *base_build_image
+
+  tags:
+    - saas-macos-medium-m1
+
   script:
     - >
       docker buildx build --platform "linux/arm64" --target all-devops --pull
@@ -112,7 +117,9 @@ all-devops-build-image-arm:
       --push .
 
 all-devops-build-image-amd:
+
   <<: *base_build_image
+
   script:
     - >
       docker buildx build --platform "linux/amd64" --target all-devops --pull
@@ -123,7 +130,9 @@ all-devops-build-image-amd:
       --push .
 
 # all-devops-build-image:
+#
 #   <<: *base_build_image
+#
 #   script:
 #     - >
 #       docker buildx build --platform $PLATFORMS --target all-devops --pull
@@ -137,7 +146,9 @@ all-devops-build-image-amd:
 # Builds on the Main Branch build a single Image (for ARM64 and AMD64)
 #############################################################################################
 all-devops-deploy-image:
+
   <<: *base_deploy_image
+
   script:
     - >
       docker buildx build --platform $PLATFORMS --target all-devops --pull
@@ -160,7 +171,12 @@ all-devops-deploy-image:
 # Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
 #############################################################################################
 aws-devops-build-image-arm:
+
   <<: *base_build_image
+
+  tags:
+    - saas-macos-medium-m1
+
   script:
     - >
       docker buildx build --platform "linux/arm64" --target aws-devops --pull
@@ -171,7 +187,9 @@ aws-devops-build-image-arm:
       --push .
 
 aws-devops-build-image-amd:
+
   <<: *base_build_image
+
   script:
     - >
       docker buildx build --platform "linux/amd64" --target aws-devops --pull
@@ -182,7 +200,9 @@ aws-devops-build-image-amd:
       --push .
 
 # aws-devops-build-image:
+#
 #   <<: *base_build_image
+#
 #   script:
 #     - >
 #       docker buildx build --platform $PLATFORMS --target aws-devops --pull
@@ -196,7 +216,9 @@ aws-devops-build-image-amd:
 # Builds on the Main Branch build a single Image (for ARM64 and AMD64)
 #############################################################################################
 aws-devops-deploy-image:
+
   <<: *base_deploy_image
+
   script:
     - >
       docker buildx build --platform $PLATFORMS --target aws-devops --pull
@@ -219,7 +241,12 @@ aws-devops-deploy-image:
 # Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
 #############################################################################################
 gcp-devops-build-image-arm:
+
   <<: *base_build_image
+
+  tags:
+    - saas-macos-medium-m1
+
   script:
     - >
       docker buildx build --platform "linux/arm64" --target gcp-devops --pull
@@ -230,7 +257,9 @@ gcp-devops-build-image-arm:
       --push .
 
 gcp-devops-build-image-amd:
+
   <<: *base_build_image
+
   script:
     - >
       docker buildx build --platform "linux/amd64" --target gcp-devops --pull
@@ -241,7 +270,9 @@ gcp-devops-build-image-amd:
       --push .
 
 # gcp-devops-build-image:
+#
 #   <<: *base_build_image
+#
 #   script:
 #     - >
 #       docker buildx build --platform $PLATFORMS --target gcp-devops --pull
@@ -255,7 +286,9 @@ gcp-devops-build-image-amd:
 # Builds on the Main Branch build a single Image (for ARM64 and AMD64)
 #############################################################################################
 gcp-devops-deploy-image:
+
   <<: *base_deploy_image
+
   script:
     - >
       docker buildx build --platform $PLATFORMS --target gcp-devops --pull
