@@ -35,10 +35,10 @@ variables:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-    - apk add --no-cache curl jq
-    - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
-    - chmod a+x /usr/local/bin/docker-buildx
-    - docker-buildx create --use
+    # - apk add --no-cache curl jq
+    # - curl -fsSL https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64 -o /usr/local/bin/docker-buildx
+    # - chmod a+x /usr/local/bin/docker-buildx
+    - docker buildx create --use
 #############################################################################################
 
 # Base Build Image
@@ -106,7 +106,7 @@ all-devops-build-image:
   <<: *base_build_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target all-devops --pull
+      docker buildx build --platform $PLATFORMS --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
@@ -117,7 +117,7 @@ all-devops-deploy-image:
   <<: *base_deploy_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target all-devops --pull
+      docker buildx build --platform $PLATFORMS --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -137,7 +137,7 @@ gcp-devops-build-image:
   <<: *base_build_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
+      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
@@ -148,7 +148,7 @@ gcp-devops-deploy-image:
   <<: *base_deploy_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target gcp-devops --pull
+      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -168,7 +168,7 @@ aws-devops-build-image:
   <<: *base_build_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
+      docker buildx build --platform $PLATFORMS --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
@@ -179,7 +179,7 @@ aws-devops-deploy-image:
   <<: *base_deploy_image
   script:
     - >
-      docker-buildx build --platform $PLATFORMS --target aws-devops --pull
+      docker buildx build --platform $PLATFORMS --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
