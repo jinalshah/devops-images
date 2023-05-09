@@ -47,8 +47,7 @@ variables:
   stage: build
 
   image: 
-    # name: docker:latest
-    name: arm64v8/docker:stable
+    name: docker:latest
 
   services:
     - docker:dind
@@ -108,7 +107,7 @@ all-devops-build-image-arm:
 
   script:
     - >
-      docker buildx build --platform "linux/arm64" --target all-devops --pull
+      docker buildx build --platform "linux/arm64/v8" --target all-devops --pull
       -t $ALL_DEVOPS_IMAGE_NAME:latest-arm
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -179,7 +178,7 @@ aws-devops-build-image-arm:
 
   script:
     - >
-      docker buildx build --platform "linux/arm64" --target aws-devops --pull
+      docker buildx build --platform "linux/arm64/v8" --target aws-devops --pull
       -t $AWS_DEVOPS_IMAGE_NAME:latest-arm
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
@@ -250,7 +249,7 @@ gcp-devops-build-image-arm:
 
   script:
     - >
-      docker buildx build --platform "linux/arm64" --target gcp-devops --pull
+      docker buildx build --platform "linux/arm64/v8" --target gcp-devops --pull
       -t $GCP_DEVOPS_IMAGE_NAME:latest-arm
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
