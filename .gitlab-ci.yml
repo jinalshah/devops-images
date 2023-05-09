@@ -104,9 +104,6 @@ all-devops-build-image-arm:
 
   <<: *base_build_image
 
-  tags:
-    - saas-macos-medium-m1
-
   script:
     - >
       docker buildx build --platform "linux/arm64" --target all-devops --pull
@@ -174,9 +171,6 @@ aws-devops-build-image-arm:
 
   <<: *base_build_image
 
-  tags:
-    - saas-macos-medium-m1
-
   script:
     - >
       docker buildx build --platform "linux/arm64" --target aws-devops --pull
@@ -243,9 +237,6 @@ aws-devops-deploy-image:
 gcp-devops-build-image-arm:
 
   <<: *base_build_image
-
-  tags:
-    - saas-macos-medium-m1
 
   script:
     - >
