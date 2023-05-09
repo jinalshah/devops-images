@@ -47,7 +47,8 @@ variables:
   stage: build
 
   image: 
-    name: docker:latest
+    # name: docker:latest
+    name: arm64v8/docker:stable
 
   services:
     - docker:dind
