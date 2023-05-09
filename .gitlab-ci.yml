@@ -34,6 +34,7 @@ variables:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk update && apk add --no-cache git
     - docker buildx create --use
 #############################################################################################
 
@@ -107,8 +108,10 @@ all-devops-build-image-arm:
   script:
     - >
       docker buildx build --platform "linux/arm64" --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:latest-arm
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest-arm
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
@@ -120,8 +123,10 @@ all-devops-build-image-amd:
   script:
     - >
       docker buildx build --platform "linux/amd64" --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:latest-amd
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest-amd
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
@@ -174,8 +179,10 @@ aws-devops-build-image-arm:
   script:
     - >
       docker buildx build --platform "linux/arm64" --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest-arm
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest-arm
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
@@ -187,8 +194,10 @@ aws-devops-build-image-amd:
   script:
     - >
       docker buildx build --platform "linux/amd64" --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest-amd
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest-amd
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
@@ -241,8 +250,10 @@ gcp-devops-build-image-arm:
   script:
     - >
       docker buildx build --platform "linux/arm64" --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest-arm
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest-arm
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
@@ -254,8 +265,10 @@ gcp-devops-build-image-amd:
   script:
     - >
       docker buildx build --platform "linux/amd64" --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest-amd
       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest-amd
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
