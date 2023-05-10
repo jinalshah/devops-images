@@ -47,6 +47,7 @@ nav:
     - build-images/all-devops.md
     - build-images/aws-devops.md
     - build-images/gcp-devops.md
+    - build-images/multi-platform-images.md
   - Troubleshooting:
     - troubleshooting/index.md
 

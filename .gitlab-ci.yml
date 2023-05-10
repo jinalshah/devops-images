@@ -19,7 +19,7 @@ variables:
   # Adding For Container Scanning
   DOCKER_IMAGE: $ALL_DEVOPS_IMAGE_NAME:latest
   # Adding for Multi-Arch builds
-  PLATFORMS: "linux/amd64,linux/arm64"
+  PLATFORMS: "linux/arm64,linux/amd64"
 
 ################################################################################
 ##                                                                            ##
@@ -34,6 +34,7 @@ variables:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     - echo $GHCR_PASSWORD | docker login ghcr.io --username "GHCR_USER" --password-stdin
     - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    - apk update && apk add --no-cache git
     - docker buildx create --use
 #############################################################################################
 
@@ -98,19 +99,58 @@ variables:
 ##                                                                            ##
 ################################################################################
 
-all-devops-build-image:
+# Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
+#############################################################################################
+all-devops-build-image-arm:
+
   <<: *base_build_image
+
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target all-devops --pull
+      docker buildx build --platform "linux/arm64/v8" --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:latest-arm
       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest-arm
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
 
+all-devops-build-image-amd:
+
+  <<: *base_build_image
+
+  script:
+    - >
+      docker buildx build --platform "linux/amd64" --target all-devops --pull
+      -t $ALL_DEVOPS_IMAGE_NAME:latest-amd
+      -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:latest-amd
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+
+# all-devops-build-image:
+#
+#   <<: *base_build_image
+#
+#   script:
+#     - >
+#       docker buildx build --platform $PLATFORMS --target all-devops --pull
+#       -t $ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       --push .
+#############################################################################################
+
+# Builds on the Main Branch build a single Image (for ARM64 and AMD64)
+#############################################################################################
 all-devops-deploy-image:
+
   <<: *base_deploy_image
+
   script:
     - >
       docker buildx build --platform $PLATFORMS --target all-devops --pull
@@ -121,6 +161,7 @@ all-devops-deploy-image:
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_ALL_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
+#############################################################################################
 
 
 ################################################################################
@@ -129,50 +170,58 @@ all-devops-deploy-image:
 ##                                                                            ##
 ################################################################################
 
-gcp-devops-build-image:
+# Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
+#############################################################################################
+aws-devops-build-image-arm:
+
   <<: *base_build_image
+
   script:
     - >
-      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
-      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      --push .
-
-gcp-devops-deploy-image:
-  <<: *base_deploy_image
-  script:
-    - >
-      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
-      -t $GCP_DEVOPS_IMAGE_NAME:latest
-      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
-      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
-      --push .
-
-
-################################################################################
-##                                                                            ##
-##                     ----==| G C P   I M A G E |==----                      ##
-##                                                                            ##
-################################################################################
-
-aws-devops-build-image:
-  <<: *base_build_image
-  script:
-    - >
-      docker buildx build --platform $PLATFORMS --target aws-devops --pull
+      docker buildx build --platform "linux/arm64/v8" --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest-arm
       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest-arm
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
 
+aws-devops-build-image-amd:
+
+  <<: *base_build_image
+
+  script:
+    - >
+      docker buildx build --platform "linux/amd64" --target aws-devops --pull
+      -t $AWS_DEVOPS_IMAGE_NAME:latest-amd
+      -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:latest-amd
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+
+# aws-devops-build-image:
+#
+#   <<: *base_build_image
+#
+#   script:
+#     - >
+#       docker buildx build --platform $PLATFORMS --target aws-devops --pull
+#       -t $AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       --push .
+#############################################################################################
+
+# Builds on the Main Branch build a single Image (for ARM64 and AMD64)
+#############################################################################################
 aws-devops-deploy-image:
+
   <<: *base_deploy_image
+
   script:
     - >
       docker buildx build --platform $PLATFORMS --target aws-devops --pull
@@ -183,6 +232,78 @@ aws-devops-deploy-image:
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
       -t $GHCR_AWS_DEVOPS_IMAGE_NAME:$TIMESTAMP
       --push .
+#############################################################################################
+
+
+################################################################################
+##                                                                            ##
+##                     ----==| G C P   I M A G E |==----                      ##
+##                                                                            ##
+################################################################################
+
+# Builds on Feature Branches build two separate images (one for ARM64 and one for AMD564)
+#############################################################################################
+gcp-devops-build-image-arm:
+
+  <<: *base_build_image
+
+  script:
+    - >
+      docker buildx build --platform "linux/arm64/v8" --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest-arm
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest-arm
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+
+gcp-devops-build-image-amd:
+
+  <<: *base_build_image
+
+  script:
+    - >
+      docker buildx build --platform "linux/amd64" --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest-amd
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest-amd
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+
+# gcp-devops-build-image:
+#
+#   <<: *base_build_image
+#
+#   script:
+#     - >
+#       docker buildx build --platform $PLATFORMS --target gcp-devops --pull
+#       -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+#       -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+#       --push .
+#############################################################################################
+
+# Builds on the Main Branch build a single Image (for ARM64 and AMD64)
+#############################################################################################
+gcp-devops-deploy-image:
+
+  <<: *base_deploy_image
+
+  script:
+    - >
+      docker buildx build --platform $PLATFORMS --target gcp-devops --pull
+      -t $GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:latest
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$DEVOPS_IMAGE_VERSION
+      -t $GHCR_GCP_DEVOPS_IMAGE_NAME:$TIMESTAMP
+      --push .
+#############################################################################################
 
 
 ################################################################################
