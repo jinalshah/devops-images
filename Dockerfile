@@ -284,7 +284,7 @@ RUN \
   aws --version && \
   gcloud --version
 
-ENTRYPOINT ["/bin/zsh"]
+CMD ["/bin/zsh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -346,7 +346,7 @@ RUN \
   # Confirm Version
   aws --version
 
-ENTRYPOINT ["/bin/zsh"]
+CMD ["/bin/zsh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -399,4 +399,4 @@ RUN \
   # Confirm Version
   gcloud --version
 
-ENTRYPOINT ["/bin/zsh"]
+CMD ["/bin/zsh"]
