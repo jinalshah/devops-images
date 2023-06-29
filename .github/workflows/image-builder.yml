@@ -27,6 +27,25 @@ jobs:
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
           echo "DEVOPS_IMAGE_VERSION=$GIT_TAG_VERSION_MAJOR_MINOR.$SHORT_SHA" >> $GITHUB_ENV
 
+      - name: Build Information
+        run: |
+          echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+          echo BUILD INFORMATION:
+          echo ------------------
+          [ ! -z "$GITHUB_EVENT_NAME" ]     && echo "GitHub Event:            $GITHUB_EVENT_NAME"
+          [ ! -z "$GITHUB_RUN_ID" ]         && echo "GitHub Run ID:           $GITHUB_RUN_ID"
+          [ ! -z "$GITHUB_RUN_NUMBER" ]     && echo "GitHub Run No:           $GITHUB_RUN_NUMBER"
+          [ ! -z "$GITHUB_SHA" ]            && echo "Commit SHA:              $GITHUB_SHA"
+          [ ! -z "$SHORT_SHA" ]             && echo "Short SHA:               $SHORT_SHA"
+          [ ! -z "$GITHUB_REPOSITORY" ]     && echo "Repo Name:               $GITHUB_REPOSITORY"
+          [ ! -z "$GITHUB_REF" ]            && echo "Repo Ref:                $GITHUB_REF"
+          [ ! -z "$GITHUB_HEAD_REF" ]       && echo "Head Branch:             $GITHUB_HEAD_REF"
+          [ ! -z "$GITHUB_BASE_REF" ]       && echo "Base Branch:             $GITHUB_BASE_REF"
+          [ ! -z "$RUNNER_NAME" ]           && echo "Runner Name:             $RUNNER_NAME"
+          [ ! -z "$RUNNER_OS" ]             && echo "Runner OS:               $RUNNER_OS"
+          [ ! -z "$DEVOPS_IMAGE_VERSION" ]  && echo "DevOps Image Version:    $DEVOPS_IMAGE_VERSION"
+          echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -40,6 +59,7 @@ jobs:
         name: Login to GitLab Container Registry
         uses: docker/login-action@v2
         with:
+          registry: registry.gitlab.com
           username: ${{ secrets.GITLAB_USERNAME }}
           password: ${{ secrets.GITLAB_TOKEN }}
 
