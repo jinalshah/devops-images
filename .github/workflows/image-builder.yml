@@ -7,15 +7,9 @@ on:
 
 env:
   GIT_TAG_VERSION_MAJOR_MINOR: "1.0"
-  GITLAB_ALL_DEVOPS_IMAGE_NAME: registry.gitlab.com/jinal-shah/devops/images/all-devops
-  GITHUB_ALL_DEVOPS_IMAGE_NAME: ghcr.io/jinalshah/devops/images/all-devops
-  DOCKERHUB_ALL_DEVOPS_IMAGE_NAME: js01/all-devops
-  GITLAB_AWS_DEVOPS_IMAGE_NAME: registry.gitlab.com/jinal-shah/devops/images/aws-devops
-  GITHUB_AWS_DEVOPS_IMAGE_NAME: ghcr.io/jinalshah/devops/images/aws-devops
-  DOCKERHUB_AWS_DEVOPS_IMAGE_NAME: js01/aws-devops
-  GITLAB_GCP_DEVOPS_IMAGE_NAME: registry.gitlab.com/jinal-shah/devops/images/gcp-devops
-  GITHUB_GCP_DEVOPS_IMAGE_NAME: ghcr.io/jinalshah/devops/images/gcp-devops
-  DOCKERHUB_GCP_DEVOPS_IMAGE_NAME: js01/gcp-devops
+  GITLAB_CONTAINER_REGISTRY: registry.gitlab.com/jinal-shah/devops/images
+  GCR_GITHUB_CONTAINER_REGISTRY: ghcr.io/jinalshah/devops/images
+  DOCKERHUB_CONTAINER_REGISTRY: js01
   PLATFORMS: "linux/arm64,linux/amd64"
 
 jobs:
@@ -33,27 +27,17 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push - all-devops
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{ env.PLATFORMS }}
-          target: all-devops
-          tags: |
-            ${{ env.GITLAB_ALL_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITLAB_ALL_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.GITHUB_ALL_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITHUB_ALL_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.DOCKERHUB_ALL_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.DOCKERHUB_ALL_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-          push: true
+          PLATFORMS: "{{ env.PLATFORMS }}"
+          DOCKERFILE_TARGET: 'all-devops'
 
   aws-devops:
 
@@ -68,27 +52,17 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push - aws-devops
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{ env.PLATFORMS }}
-          target: aws-devops
-          tags: |
-            ${{ env.GITLAB_AWS_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITLAB_AWS_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.GITHUB_AWS_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITHUB_AWS_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.DOCKERHUB_AWS_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.DOCKERHUB_AWS_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-          push: true
+          PLATFORMS: "{{ env.PLATFORMS }}"
+          DOCKERFILE_TARGET: 'aws-devops'
 
   gcp-devops:
 
@@ -103,24 +77,14 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push - gcp-devops
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{ env.PLATFORMS }}
-          target: gcp-devops
-          tags: |
-            ${{ env.GITLAB_GCP_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITLAB_GCP_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.GITHUB_GCP_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.GITHUB_GCP_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-            ${{ env.DOCKERHUB_GCP_DEVOPS_IMAGE_NAME }}:latest
-            ${{ env.DOCKERHUB_GCP_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
-          push: true
+          PLATFORMS: "{{ env.PLATFORMS }}"
+          DOCKERFILE_TARGET: 'gcp-devops'

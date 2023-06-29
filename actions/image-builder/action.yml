@@ -7,11 +7,17 @@ inputs:
   GIT_TAG_VERSION_MAJOR_MINOR:
     description: 'Major/Minor Version of the Image to Build'
     required: true
+  GITLAB_CONTAINER_REGISTRY:
+    description: 'GitLab DevOps Container Registry'
+    required: true
   GITLAB_USERNAME:
     description: 'GitLab Username'
     required: true
   GITLAB_TOKEN:
     description: 'GitLab Token'
+    required: true
+  GCR_GITHUB_CONTAINER_REGISTRY:
+    description: 'GitHub DevOps Container Registry'
     required: true
   GCR_GITHUB_USERNAME:
     description: 'GCR GitHub Username'
@@ -19,12 +25,21 @@ inputs:
   GCR_GITHUB_TOKEN:
     description: 'GCR GitHub Token'
     required: true
+  DOCKERHUB_CONTAINER_REGISTRY:
+    description: 'DockerHub DevOps Container Registry'
+    required: true
   DOCKERHUB_USERNAME:
     description: 'DockerHub Username'
     required: true
   DOCKERHUB_TOKEN:
     description: 'DockerHub Token'
     required: true
+  DOCKERFILE_TARGET:
+    description: 'Dockerfile Target to build the appropriate image (i.e. aws-devops, gcp-devops or all-devops'
+    required: true  
+  PLATFORMS:
+    description: 'Platforms to build the Container Images for ( i.e. linux/arm64,linux/amd64)'
+    required: true  
 
 runs:
 
@@ -83,3 +98,18 @@ runs:
         with:
           username: ${{ inputs.DOCKERHUB_USERNAME }}
           password: ${{ inputs.DOCKERHUB_TOKEN }}
+
+      - name: Build and push - ${{ inputs.DOCKERFILE_TARGET }}
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: ${{ inputs.PLATFORMS }}
+          target: ${{ inputs.DOCKERFILE_TARGET }}
+          tags: |
+            ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:latest
+            ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:${{ env.DEVOPS_IMAGE_VERSION }}
+            ${{ inputs.GCR_GITHUB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:latest
+            ${{ inputs.GCR_GITHUB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:${{ env.DEVOPS_IMAGE_VERSION }}
+            ${{ inputs.DOCKERHUB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:latest
+            ${{ inputs.DOCKERHUB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:${{ env.DEVOPS_IMAGE_VERSION }}
+          push: true
