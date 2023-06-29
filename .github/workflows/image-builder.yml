@@ -28,7 +28,8 @@ jobs:
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
           echo $GIT_TAG_VERSION_MAJOR_MINOR
           echo $SHORT_SHA
-          echo "DEVOPS_IMAGE_VERSION=$(echo $GIT_TAG_VERSION_MAJOR_MINOR).$(echo $SHORT_SHA)" >> $GITHUB_ENV
+          echo "DEVOPS_IMAGE_VERSION=$(echo $GIT_TAG_VERSION_MAJOR_MINOR).$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+          echo $DEVOPS_IMAGE_VERSION
 
       - name: Build Information
         run: |
