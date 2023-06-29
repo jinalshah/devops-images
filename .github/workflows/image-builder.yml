@@ -35,7 +35,6 @@ jobs:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -71,7 +70,6 @@ jobs:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -106,7 +104,6 @@ jobs:
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
