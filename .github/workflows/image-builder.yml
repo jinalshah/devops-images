@@ -33,6 +33,13 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push - all-devops
         uses: docker/build-push-action@v4
@@ -62,6 +69,13 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push - aws-devops
         uses: docker/build-push-action@v4
@@ -91,6 +105,13 @@ jobs:
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push - gcp-devops
         uses: docker/build-push-action@v4
