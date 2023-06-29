@@ -38,9 +38,6 @@ runs:
           [ ! -z "$DEVOPS_IMAGE_VERSION" ]  && echo "DevOps Image Version:    $DEVOPS_IMAGE_VERSION"
           echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
