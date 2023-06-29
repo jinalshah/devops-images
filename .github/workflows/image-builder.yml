@@ -31,7 +31,7 @@ jobs:
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_USERNAME: ${{ secrets.GCR_GITHUB_USERNAME }}
           GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
           DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
