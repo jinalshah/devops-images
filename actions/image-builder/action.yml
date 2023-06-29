@@ -18,6 +18,7 @@ runs:
         run: |
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
           echo "DEVOPS_IMAGE_VERSION=$(echo $GIT_TAG_VERSION_MAJOR_MINOR).$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+        shell: bash
 
       - name: Build Information
         run: |
@@ -37,6 +38,7 @@ runs:
           [ ! -z "$RUNNER_OS" ]             && echo "Runner OS:               $RUNNER_OS"
           [ ! -z "$DEVOPS_IMAGE_VERSION" ]  && echo "DevOps Image Version:    $DEVOPS_IMAGE_VERSION"
           echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+        shell: bash
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
