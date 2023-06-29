@@ -25,7 +25,7 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
-          echo "DEVOPS_IMAGE_VERSION=$(echo $GIT_TAG_VERSION_MAJOR_MINOR).$(echo $SHORT_SHA)" >> $GITHUB_ENV
+          echo "DEVOPS_IMAGE_VERSION=$(echo ${{ env.GIT_TAG_VERSION_MAJOR_MINOR }} ).$(echo ${{ env.SHORT_SHA }})" >> $GITHUB_ENV
 
       - name: Build Information
         run: |
@@ -75,9 +75,10 @@ jobs:
       #   with:
       #     context: .
       #     platforms: $PLATFORMS
-      #     push: true
+      #     target: all-devops
       #     tags: |
       #       GITLAB_ALL_DEVOPS_IMAGE_NAME:latest
       #       GITLAB_ALL_DEVOPS_IMAGE_NAME:${{ env.DEVOPS_IMAGE_VERSION }}
       #       GITHUB_ALL_DEVOPS_IMAGE_NAME:latest
       #       GITHUB_ALL_DEVOPS_IMAGE_NAME:${{ env.DEVOPS_IMAGE_VERSION }}
+      #     push: true
