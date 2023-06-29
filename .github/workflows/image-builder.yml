@@ -36,7 +36,7 @@ jobs:
           DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: "{{ env.PLATFORMS }}"
+          PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'all-devops'
 
   aws-devops:
@@ -61,7 +61,7 @@ jobs:
           DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: "{{ env.PLATFORMS }}"
+          PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'aws-devops'
 
   gcp-devops:
@@ -86,5 +86,5 @@ jobs:
           DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: "{{ env.PLATFORMS }}"
+          PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'gcp-devops'
