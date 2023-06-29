@@ -78,8 +78,8 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           target: all-devops
           tags: |
-            GITLAB_ALL_DEVOPS_IMAGE_NAME:latest
-            GITLAB_ALL_DEVOPS_IMAGE_NAME:${{ env.DEVOPS_IMAGE_VERSION }}
-            GITHUB_ALL_DEVOPS_IMAGE_NAME:latest
-            GITHUB_ALL_DEVOPS_IMAGE_NAME:${{ env.DEVOPS_IMAGE_VERSION }}
+            ${{ env.GITLAB_ALL_DEVOPS_IMAGE_NAME }}:latest
+            ${{ env.GITLAB_ALL_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
+            ${{ env.GITHUB_ALL_DEVOPS_IMAGE_NAME }}:latest
+            ${{ env.GITHUB_ALL_DEVOPS_IMAGE_NAME }}:${{ env.DEVOPS_IMAGE_VERSION }}
           push: true
