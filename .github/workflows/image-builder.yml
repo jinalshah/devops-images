@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Image Builder Prerequisites
+      - name: Image Builder
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Image Builder Prerequisites
+      - name: Image Builder
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
@@ -73,7 +73,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Image Builder Prerequisites
+      - name: Image Builder
         uses: ./actions/image-builder
         with:
           GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
