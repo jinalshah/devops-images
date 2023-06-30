@@ -105,6 +105,8 @@ runs:
           context: .
           platforms: ${{ inputs.PLATFORMS }}
           target: ${{ inputs.DOCKERFILE_TARGET }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:latest
             ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:${{ env.DEVOPS_IMAGE_VERSION }}
