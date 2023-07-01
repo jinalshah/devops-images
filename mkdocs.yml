@@ -1,10 +1,10 @@
 site_name: DevOps Images
 site_description: Repository containing a Dockerfile to build all the DevOps tooling.
-site_url: https://jinal-shah.gitlab.io/devops/images
+site_url: https://jinalshah.github.io/devops-images/
 
 # Repository
-repo_name: jinal-shah/devops/images
-repo_url: https://gitlab.com/jinal-shah/devops/images
+repo_name: jinalshah/devops-images
+repo_url: https://github.com/jinalshah/devops-images
 
 theme:
   name: material

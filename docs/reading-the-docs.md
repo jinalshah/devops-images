@@ -8,7 +8,7 @@ There are several ways to access the documentation. The options have been listed
 
 The documentation can be directly viewed on your browser:
 
-[https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)
+[https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
 
 ### Locally on your machine (To Preview as you Write)
 
@@ -35,7 +35,7 @@ Ensure you are at the root of this repository.
 Start a container:
 
 ```bash
-docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 registry.gitlab.com/jinal-shah/devops/images/all-devops
+docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 ghcr.io/jinalshah/devops/images/all-devops
 ```
 
 Navigate to the /srv directory on the container (where the root of this repository is mapped):

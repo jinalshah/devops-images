@@ -17,13 +17,13 @@ There are three types of DevOps Images available for use:
 Pull the Image:
 
 ```bash
-docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
 Run the Image:
 
 ```bash
-docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops:latest zsh
+docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest zsh
 ```
 
 ### AWS DevOps Image
@@ -33,13 +33,13 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/all-devops:latest zs
 Pull the Image:
 
 ```bash
-docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
+docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
 ```
 
 Run the Image:
 
 ```bash
-docker run -it registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest zsh
+docker run -it ghcr.io/jinalshah/devops/images/aws-devops:latest zsh
 ```
 
 ### GCP DevOps Image
@@ -49,13 +49,13 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest zs
 Pull the Image:
 
 ```bash
-docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
+docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
 ```
 
 Run the Image:
 
 ```bash
-docker run -it registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest zsh
+docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest zsh
 ```
 
 ### Pull all three Images simultaneously
@@ -63,9 +63,9 @@ docker run -it registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest zs
 #### From the GitLab Container Registry
 
 ```bash
-docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops && \
-docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops && \
-docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops
+docker pull ghcr.io/jinalshah/devops/images/all-devops && \
+docker pull ghcr.io/jinalshah/devops/images/aws-devops && \
+docker pull ghcr.io/jinalshah/devops/images/gcp-devops
 ```
 
 #### From the GitHub Container Registry

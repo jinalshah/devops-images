@@ -1,6 +1,6 @@
 # DevOps Images
 
-[![pipeline status](https://gitlab.com/jinal-shah/devops/images/badges/main/pipeline.svg)](https://gitlab.com/jinal-shah/devops/images/-/commits/main)
+[![Build and Push](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml/badge.svg)](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml)
 
 This repository contains all the common DevOps tooling required for a typical project on AWS or GCP.
 
@@ -16,7 +16,7 @@ This repository contains all the common DevOps tooling required for a typical pr
 
 ## How do I use the DevOps Images?
 
-The full documentation on the DevOps Images can be accessed here: [https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)
+The full documentation on the DevOps Images can be accessed here: [https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
 
 ## Reading the Documentation
 
@@ -26,7 +26,7 @@ There are several ways to access the documentation. The options have been listed
 
 The documentation can be directly viewed on your browser:
 
-[https://jinal-shah.gitlab.io/devops/images](https://jinal-shah.gitlab.io/devops/images)
+[https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
 
 ### Locally on your machine (To Preview as you Write)
 
@@ -53,7 +53,7 @@ Ensure you are at the root of this repository.
 Start a container:
 
 ```bash
-docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 registry.gitlab.com/jinal-shah/devops/images/all-devops
+docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 ghcr.io/jinalshah/devops/images/all-devops
 ```
 
 Navigate to the /srv directory on the container (where the root of this repository is mapped):

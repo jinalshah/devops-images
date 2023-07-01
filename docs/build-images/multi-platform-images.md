@@ -10,11 +10,11 @@ The following guides describe how to Build the Images for Multiple Platforms. Th
 
 ```bash
 export PLATFORMS="linux/arm64,linux/amd64"
-export ALL_DEVOPS_IMAGE_NAME="registry.gitlab.com/jinal-shah/devops/images/all-devops"
+export ALL_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/all-devops"
 export GHCR_ALL_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/all-devops"
-export AWS_DEVOPS_IMAGE_NAME="registry.gitlab.com/jinal-shah/devops/images/aws-devops"
+export AWS_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/aws-devops"
 export GHCR_AWS_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/aws-devops"
-export GCP_DEVOPS_IMAGE_NAME="registry.gitlab.com/jinal-shah/devops/images/gcp-devops"
+export GCP_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/gcp-devops"
 export GHCR_GCP_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/gcp-devops"
 export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 export DEVOPS_IMAGE_VERSION="1.0.$TIMESTAMP"
