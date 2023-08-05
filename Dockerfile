@@ -1,9 +1,9 @@
-ARG GCLOUD_VERSION=441.0.0             # https://cloud.google.com/sdk/docs/install
-ARG PACKER_VERSION=1.9.2               # https://developer.hashicorp.com/packer/downloads
-ARG TERRAGRUNT_VERSION=0.48.6          # https://github.com/gruntwork-io/terragrunt
+ARG GCLOUD_VERSION=437.0.1             # https://cloud.google.com/sdk/docs/install
+ARG PACKER_VERSION=1.9.1               # https://developer.hashicorp.com/packer/downloads
+ARG TERRAGRUNT_VERSION=0.48.0          # https://github.com/gruntwork-io/terragrunt
 ARG TFLINT_VERSION=0.47.0              # https://github.com/terraform-linters/tflint
 ARG TFSEC_VERSION=1.28.1               # https://github.com/aquasecurity/tfsec
-ARG GHORG_VERSION=1.9.7                # https://github.com/gabrie30/ghorg
+ARG GHORG_VERSION=1.9.6                # https://github.com/gabrie30/ghorg
 ARG PYTHON_VERSION=3.11.4
 ARG PYTHON_VERSION_TO_USE=python3.11
 ARG MONGODB_VERSION=6.0
