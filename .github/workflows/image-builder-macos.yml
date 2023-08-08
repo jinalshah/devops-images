@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "main"
-  pull_request:
+  # pull_request:
 
 env:
   GIT_TAG_VERSION_MAJOR_MINOR: "1.0"
@@ -15,9 +15,9 @@ env:
 
 jobs:
 
-  all-devops-macos:
+  all-devops:
 
-    runs-on: macos-13-xl
+    runs-on: macos-13
 
     steps:
 
@@ -27,77 +27,74 @@ jobs:
       - name: Install Docker
         run: brew install docker
 
-  # all-devops:
+      - name: Image Builder
+        uses: ./actions/image-builder
+        with:
+          GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+          GCR_GITHUB_USERNAME: ${{ secrets.GCR_GITHUB_USERNAME }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PLATFORMS: ${{ env.PLATFORMS }}
+          DOCKERFILE_TARGET: 'all-devops'
 
-  #   runs-on: ubuntu-latest
+  aws-devops:
 
-  #   steps:
+    runs-on: macos-13
 
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
+    steps:
 
-  #     - name: Image Builder
-  #       uses: ./actions/image-builder
-  #       with:
-  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
-  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-  #         GCR_GITHUB_USERNAME: ${{ secrets.GCR_GITHUB_USERNAME }}
-  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  #         PLATFORMS: ${{ env.PLATFORMS }}
-  #         DOCKERFILE_TARGET: 'all-devops'
+      - name: Checkout
+        uses: actions/checkout@v3
 
-  # aws-devops:
+      - name: Install Docker
+        run: brew install docker
 
-  #   runs-on: ubuntu-latest
+      - name: Image Builder
+        uses: ./actions/image-builder
+        with:
+          GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PLATFORMS: ${{ env.PLATFORMS }}
+          DOCKERFILE_TARGET: 'aws-devops'
 
-  #   steps:
+  gcp-devops:
 
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
+    runs-on: macos-13
 
-  #     - name: Image Builder
-  #       uses: ./actions/image-builder
-  #       with:
-  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
-  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-  #         GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
-  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  #         PLATFORMS: ${{ env.PLATFORMS }}
-  #         DOCKERFILE_TARGET: 'aws-devops'
+    steps:
 
-  # gcp-devops:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-  #   runs-on: ubuntu-latest
+      - name: Install Docker
+        run: brew install docker
 
-  #   steps:
-
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-
-  #     - name: Image Builder
-  #       uses: ./actions/image-builder
-  #       with:
-  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
-  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-  #         GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
-  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  #         PLATFORMS: ${{ env.PLATFORMS }}
-  #         DOCKERFILE_TARGET: 'gcp-devops'
+      - name: Image Builder
+        uses: ./actions/image-builder
+        with:
+          GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PLATFORMS: ${{ env.PLATFORMS }}
+          DOCKERFILE_TARGET: 'gcp-devops'
