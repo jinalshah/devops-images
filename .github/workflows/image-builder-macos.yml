@@ -1,0 +1,103 @@
+name: devops-image-builder
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+
+env:
+  GIT_TAG_VERSION_MAJOR_MINOR: "1.0"
+  GITLAB_CONTAINER_REGISTRY: registry.gitlab.com/jinal-shah/devops/images
+  GCR_GITHUB_CONTAINER_REGISTRY: ghcr.io/jinalshah/devops/images
+  DOCKERHUB_CONTAINER_REGISTRY: js01
+  PLATFORMS: "linux/arm64,linux/amd64"
+
+jobs:
+
+  all-devops-macos:
+
+    runs-on: macos-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Docker
+        run: brew install docker
+
+  # all-devops:
+
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+  #     - name: Image Builder
+  #       uses: ./actions/image-builder
+  #       with:
+  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+  #         GCR_GITHUB_USERNAME: ${{ secrets.GCR_GITHUB_USERNAME }}
+  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  #         PLATFORMS: ${{ env.PLATFORMS }}
+  #         DOCKERFILE_TARGET: 'all-devops'
+
+  # aws-devops:
+
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+  #     - name: Image Builder
+  #       uses: ./actions/image-builder
+  #       with:
+  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+  #         GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  #         PLATFORMS: ${{ env.PLATFORMS }}
+  #         DOCKERFILE_TARGET: 'aws-devops'
+
+  # gcp-devops:
+
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+  #     - name: Image Builder
+  #       uses: ./actions/image-builder
+  #       with:
+  #         GIT_TAG_VERSION_MAJOR_MINOR: "{{ env.GIT_TAG_VERSION_MAJOR_MINOR }}"
+  #         GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
+  #         GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+  #         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+  #         GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
+  #         GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
+  #         GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
+  #         DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
+  #         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  #         PLATFORMS: ${{ env.PLATFORMS }}
+  #         DOCKERFILE_TARGET: 'gcp-devops'
