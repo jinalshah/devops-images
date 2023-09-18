@@ -7,7 +7,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: '00 04 * * 0'
+    - cron: '00 03 * * 0'
 
 env:
   GIT_TAG_VERSION_MAJOR_MINOR: "1.0"
