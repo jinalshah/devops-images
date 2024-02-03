@@ -116,7 +116,7 @@ runs:
             echo PYTHON_VERSION_TO_USE=${{ inputs.PYTHON_VERSION_TO_USE }}
             echo MONGODB_VERSION=${{ inputs.MONGODB_VERSION }}
             echo MONGODB_REPO_PATH=${{ inputs.MONGODB_REPO_PATH }}
-
+        shell: bash
 
       # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
