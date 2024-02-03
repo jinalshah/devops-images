@@ -40,6 +40,37 @@ inputs:
   PLATFORMS:
     description: 'Platforms to build the Container Images for ( i.e. linux/arm64,linux/amd64)'
     required: true  
+# App Versions
+  GCLOUD_VERSION:
+    description: 'Google Cloud CLI Version'
+    required: false
+  PACKER_VERSION:
+    description: 'Packer Version'
+    required: false
+  TERRAGRUNT_VERSION:
+    description: 'Terragrunt Version'
+    required: false
+  TFLINT_VERSION:
+    description: 'TFLint Version'
+    required: false
+  TFSEC_VERSION:
+    description: 'TFSec Version'
+    required: false
+  GHORG_VERSION:
+    description: 'GHOrg Version'
+    required: false
+  PYTHON_VERSION:
+    description: 'Python Version'
+    required: false
+  PYTHON_VERSION_TO_USE:
+    description: 'Specific Python Version to Use'
+    required: false
+  MONGODB_VERSION:
+    description: 'MongoDB Version'
+    required: false
+  MONGODB_REPO_PATH:
+    description: 'MongoDB Repository Path'
+    required: false
 
 runs:
 
