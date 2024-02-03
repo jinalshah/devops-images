@@ -1,3 +1,14 @@
+# ARG GCLOUD_VERSION=461.0.0              # https://cloud.google.com/sdk/docs/install
+# ARG PACKER_VERSION=1.10.0               # https://developer.hashicorp.com/packer/downloads
+# ARG TERRAGRUNT_VERSION=0.54.22          # https://github.com/gruntwork-io/terragrunt
+# ARG TFLINT_VERSION=0.50.2               # https://github.com/terraform-linters/tflint
+# ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
+# ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
+# ARG PYTHON_VERSION=3.11.4
+# ARG PYTHON_VERSION_TO_USE=python3.11
+# ARG MONGODB_VERSION=6.0
+# ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
+
 FROM rockylinux:9 AS base
 
 LABEL name=devops
