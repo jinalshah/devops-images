@@ -139,7 +139,7 @@ runs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            GCLOUD_VERSION=${{ env.GCLOUD_VERSION }}
+            GCLOUD_VERSION=${{ inputs.GCLOUD_VERSION }}
             PACKER_VERSION=${{ env.PACKER_VERSION }}
             TERRAGRUNT_VERSION=${{ env.TERRAGRUNT_VERSION }}
             TFLINT_VERSION=${{ env.TFLINT_VERSION }}
