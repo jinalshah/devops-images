@@ -42,6 +42,17 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'all-devops'
+          # App Versions
+          GCLOUD_VERSION: ${{ env.GCLOUD_VERSION }}
+          PACKER_VERSION: ${{ env.PACKER_VERSION }}
+          TERRAGRUNT_VERSION: ${{ env.TERRAGRUNT_VERSION }}
+          TFLINT_VERSION: ${{ env.TFLINT_VERSION }}
+          TFSEC_VERSION: ${{ env.TFSEC_VERSION }}
+          GHORG_VERSION: ${{ env.GHORG_VERSION }}
+          PYTHON_VERSION: ${{ env.PYTHON_VERSION }}
+          PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
+          MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
+          MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
 
   aws-devops:
 
@@ -67,6 +78,17 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'aws-devops'
+          # App Versions
+          GCLOUD_VERSION: ${{ env.GCLOUD_VERSION }}
+          PACKER_VERSION: ${{ env.PACKER_VERSION }}
+          TERRAGRUNT_VERSION: ${{ env.TERRAGRUNT_VERSION }}
+          TFLINT_VERSION: ${{ env.TFLINT_VERSION }}
+          TFSEC_VERSION: ${{ env.TFSEC_VERSION }}
+          GHORG_VERSION: ${{ env.GHORG_VERSION }}
+          PYTHON_VERSION: ${{ env.PYTHON_VERSION }}
+          PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
+          MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
+          MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
 
   gcp-devops:
 
@@ -92,3 +114,14 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           PLATFORMS: ${{ env.PLATFORMS }}
           DOCKERFILE_TARGET: 'gcp-devops'
+          # App Versions
+          GCLOUD_VERSION: ${{ env.GCLOUD_VERSION }}
+          PACKER_VERSION: ${{ env.PACKER_VERSION }}
+          TERRAGRUNT_VERSION: ${{ env.TERRAGRUNT_VERSION }}
+          TFLINT_VERSION: ${{ env.TFLINT_VERSION }}
+          TFSEC_VERSION: ${{ env.TFSEC_VERSION }}
+          GHORG_VERSION: ${{ env.GHORG_VERSION }}
+          PYTHON_VERSION: ${{ env.PYTHON_VERSION }}
+          PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
+          MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
+          MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
