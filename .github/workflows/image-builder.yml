@@ -53,6 +53,7 @@ jobs:
           PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
           MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
+        secrets: inherit
 
   aws-devops:
 
@@ -89,6 +90,7 @@ jobs:
           PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
           MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
+        secrets: inherit
 
   gcp-devops:
 
@@ -125,3 +127,4 @@ jobs:
           PYTHON_VERSION_TO_USE: ${{ env.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ env.MONGODB_VERSION }}
           MONGODB_REPO_PATH: ${{ env.MONGODB_REPO_PATH }}
+        secrets: inherit
