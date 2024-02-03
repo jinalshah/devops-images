@@ -107,6 +107,17 @@ runs:
           target: ${{ inputs.DOCKERFILE_TARGET }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            GCLOUD_VERSION=${{ vars.GCLOUD_VERSION }}
+            PACKER_VERSION=${{ vars.PACKER_VERSION }}
+            TERRAGRUNT_VERSION=${{ vars.TERRAGRUNT_VERSION }}
+            TFLINT_VERSION=${{ vars.TFLINT_VERSION }}
+            TFSEC_VERSION=${{ vars.TFSEC_VERSION }}
+            GHORG_VERSION=${{ vars.GHORG_VERSION }}
+            PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
+            PYTHON_VERSION_TO_USE=${{ vars.PYTHON_VERSION_TO_USE }}
+            MONGODB_VERSION=${{ vars.MONGODB_VERSION }}
+            MONGODB_REPO_PATH=${{ vars.MONGODB_REPO_PATH }}
           tags: |
             ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:latest
             ${{ inputs.GITLAB_CONTAINER_REGISTRY }}/${{ inputs.DOCKERFILE_TARGET }}:${{ env.DEVOPS_IMAGE_VERSION }}
