@@ -1,11 +1,11 @@
-# ARG GCLOUD_VERSION=461.0.0              # https://cloud.google.com/sdk/docs/install
-# ARG PACKER_VERSION=1.10.0               # https://developer.hashicorp.com/packer/downloads
-# ARG TERRAGRUNT_VERSION=0.54.22          # https://github.com/gruntwork-io/terragrunt
-# ARG TFLINT_VERSION=0.50.2               # https://github.com/terraform-linters/tflint
+# ARG GCLOUD_VERSION=465.0.0              # https://cloud.google.com/sdk/docs/install
+# ARG PACKER_VERSION=1.10.1               # https://developer.hashicorp.com/packer/downloads
+# ARG TERRAGRUNT_VERSION=0.55.9           # https://github.com/gruntwork-io/terragrunt
+# ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
 # ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
 # ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
-# ARG PYTHON_VERSION=3.11.4
-# ARG PYTHON_VERSION_TO_USE=python3.11
+# ARG PYTHON_VERSION=3.12.2
+# ARG PYTHON_VERSION_TO_USE=python3.12
 # ARG MONGODB_VERSION=6.0
 # ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
@@ -65,7 +65,7 @@ RUN \
   yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
   yum install --allowerasing -y gh && \
   \
-  # Install binaries to compile Python 3.11
+  # Install binaries to compile Python 3
   yum install --allowerasing -y \
     gcc \
     openssl-devel \
@@ -74,7 +74,7 @@ RUN \
     zlib-devel \
     && \
   \
-  # Install Python 3.11
+  # Install Python 3
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
   tar -zxf Python-${PYTHON_VERSION}.tgz && \
@@ -200,7 +200,7 @@ RUN \
   echo $SHELL && \
   kubectl version --client && \
   python3 --version && \
-  python3.11 --version && \
+  ${PYTHON_VERSION_TO_USE} --version && \
   terraform version && \
   terragrunt -version && \
   tflint --version && \
