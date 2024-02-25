@@ -1,13 +1,13 @@
-# ARG GCLOUD_VERSION=465.0.0              # https://cloud.google.com/sdk/docs/install
-# ARG PACKER_VERSION=1.10.1               # https://developer.hashicorp.com/packer/downloads
-# ARG TERRAGRUNT_VERSION=0.55.9           # https://github.com/gruntwork-io/terragrunt
-# ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
-# ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
-# ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
-# ARG PYTHON_VERSION=3.12.2
-# ARG PYTHON_VERSION_TO_USE=python3.12
-# ARG MONGODB_VERSION=6.0
-# ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
+ARG GCLOUD_VERSION=465.0.0              # https://cloud.google.com/sdk/docs/install
+ARG PACKER_VERSION=1.10.1               # https://developer.hashicorp.com/packer/downloads
+ARG TERRAGRUNT_VERSION=0.55.9           # https://github.com/gruntwork-io/terragrunt
+ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
+ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
+ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
+ARG PYTHON_VERSION=3.12.2
+ARG PYTHON_VERSION_TO_USE=python3.12
+ARG MONGODB_VERSION=6.0
+ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
 FROM rockylinux:9 AS base
 
