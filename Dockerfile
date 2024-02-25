@@ -84,8 +84,6 @@ RUN \
   cd /tmp && \
   rm -rf Python* && \
   \
-  python3 -m pip install --upgrade -U pip  && \
-  \
   # # Set Python "PYTHON_VERSION_TO_USE" as default
   # alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
   # alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
