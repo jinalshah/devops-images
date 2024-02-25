@@ -91,12 +91,13 @@ RUN \
   # \
   python3 -m pip install --upgrade -U pip  && \
   \
-  python3 -m pip install --upgrade ansible && \
-  python3 -m pip install --upgrade ansible-lint[yamllint] && \
-  python3 -m pip install --upgrade jmespath && \
-  python3 -m pip install --upgrade mkdocs-material && \
-  python3 -m pip install --upgrade paramiko && \
-  python3 -m pip install --upgrade pre-commit && \
+  python3 -m pip install --upgrade \
+    ansible \
+    ansible-lint[yamllint] \
+    jmespath \
+    mkdocs-material \
+    paramiko \
+    pre-commit && \
   \
   # MongoDB-MongoSH Installation
   touch ${MONGODB_REPO_PATH} && \
@@ -237,14 +238,15 @@ RUN \
     export GCLOUD_ARCH_VALUE=$(get_arch_value "arm" "x86_64") && \
     export SESSION_MANAGER_ARCH_VALUE=$(get_arch_value "arm64" "64bit") && \
   # AWS Python Requirements
-  python3 -m pip install --upgrade --no-cache-dir -U crcmod && \
-  python3 -m pip install --upgrade pytest && \
-  python3 -m pip install --upgrade s3cmd && \
-  python3 -m pip install --upgrade boto3 && \
-  python3 -m pip install --upgrade cfn-lint && \
-  python3 -m pip install --upgrade requests && \
-  python3 -m pip install --upgrade bs4 && \
-  python3 -m pip install --upgrade lxml && \
+  python3 -m pip install --upgrade --no-cache-dir -U \
+    crcmod  \
+    pytest  \
+    s3cmd  \
+    boto3  \
+    cfn-lint  \
+    requests  \
+    bs4  \
+    lxml && \
   \
   # AWS Configuration
   cd /tmp && \
@@ -311,14 +313,15 @@ RUN \
     export GCLOUD_ARCH_VALUE=$(get_arch_value "arm" "x86_64") && \
     export SESSION_MANAGER_ARCH_VALUE=$(get_arch_value "arm64" "64bit") && \
   # AWS Python Requirements
-  python3 -m pip install --upgrade --no-cache-dir -U crcmod && \
-  python3 -m pip install --upgrade pytest && \
-  python3 -m pip install --upgrade s3cmd && \
-  python3 -m pip install --upgrade boto3 && \
-  python3 -m pip install --upgrade cfn-lint && \
-  python3 -m pip install --upgrade requests && \
-  python3 -m pip install --upgrade bs4 && \
-  python3 -m pip install --upgrade lxml && \
+  python3 -m pip install --upgrade --no-cache-dir -U \
+    crcmod \
+    pytest \
+    s3cmd \
+    boto3 \
+    cfn-lint \
+    requests \
+    bs4 \
+    lxml && \
   \
   # AWS Configuration
   cd /tmp && \
