@@ -180,7 +180,7 @@ RUN \
   \
   # Install Helm
   curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
-  chmod 700 /tmp/get_helm.sh && \
+  chmod +x /tmp/get_helm.sh && \
   ./tmp/get_helm.sh && \
   \
   # Install ghorg
