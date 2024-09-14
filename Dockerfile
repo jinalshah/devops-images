@@ -178,6 +178,11 @@ RUN \
   chmod +x /tmp/packer && \
   mv /tmp/packer /usr/local/bin && \
   \
+  # Install Helm
+  curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
+  chmod 700 /tmp/get_helm.sh && \
+  ./tmp/get_helm.sh && \
+  \
   # Install ghorg
   wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_${GHORG_ARCH_VALUE}.tar.gz && \
   mkdir /tmp/ghorg && \
