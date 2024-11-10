@@ -4,7 +4,7 @@ ARG TERRAGRUNT_VERSION=0.55.9           # https://github.com/gruntwork-io/terrag
 ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
 ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
 ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
-ARG PYTHON_VERSION=3.12.2
+ARG PYTHON_VERSION=3.12.4
 ARG PYTHON_VERSION_TO_USE=python3.12
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
@@ -85,8 +85,9 @@ RUN \
   rm -rf Python* && \
   \
   # Set Python "PYTHON_VERSION_TO_USE" as default
-  alternatives --install /usr/bin/python3 python3 /usr/local/bin/python${PYTHON_VERSION_TO_USE} 100 && \
-  alternatives --set python3 /usr/local/bin/python${PYTHON_VERSION_TO_USE} && \
+  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
+  alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
+  echo 1 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
   \
