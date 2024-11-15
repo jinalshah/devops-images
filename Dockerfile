@@ -1,8 +1,7 @@
-ARG GCLOUD_VERSION=465.0.0              # https://cloud.google.com/sdk/docs/install
-ARG PACKER_VERSION=1.10.1               # https://developer.hashicorp.com/packer/downloads
-ARG TERRAGRUNT_VERSION=0.55.9           # https://github.com/gruntwork-io/terragrunt
+ARG GCLOUD_VERSION=501.0.0              # https://cloud.google.com/sdk/docs/install
+ARG PACKER_VERSION=1.11.2               # https://developer.hashicorp.com/packer/downloads
+ARG TERRAGRUNT_VERSION=0.68.14           # https://github.com/gruntwork-io/terragrunt
 ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
-ARG TFSEC_VERSION=1.28.5                # https://github.com/aquasecurity/tfsec
 ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
 ARG PYTHON_VERSION=3.12.4
 ARG PYTHON_VERSION_TO_USE=python3.12
@@ -17,7 +16,6 @@ ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
 ARG TFLINT_VERSION
-ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG GHORG_VERSION
@@ -25,7 +23,7 @@ ARG MONGODB_VERSION
 ARG MONGODB_REPO_PATH
 
 ENV CLOUDSDK_PYTHON=python3
-ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
+ENV PATH=/usr/lib/google-cloud-sdk/bin:$PATH
 
 COPY scripts/*.sh /tmp/
 
@@ -117,6 +115,15 @@ RUN \
     postgresql14 \
     && \
   \
+  # Install Trivy
+  echo "[trivy]" > /etc/yum.repos.d/trivy.repo && \
+  echo "name=Trivy repository" >> /etc/yum.repos.d/trivy.repo && \
+  echo "baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/\$basearch/" >> /etc/yum.repos.d/trivy.repo && \
+  echo "gpgcheck=1" >> /etc/yum.repos.d/trivy.repo && \
+  echo "enabled=1" >> /etc/yum.repos.d/trivy.repo && \
+  echo "gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key" >> /etc/yum.repos.d/trivy.repo && \
+  yum install --allowerasing -y trivy && \
+  \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
@@ -169,10 +176,6 @@ RUN \
   chmod +x /tmp/tflint && \
   mv /tmp/tflint /usr/local/bin && \
   \
-  wget -qO /tmp/tfsec https://github.com/liamg/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-${ARCH_VALUE} && \
-  chmod +x /tmp/tfsec && \
-  mv /tmp/tfsec /usr/local/bin && \
-  \
   wget -qO /tmp/packer.zip https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH_VALUE}.zip && \
   unzip -q /tmp/packer.zip -d /tmp && \
   chmod +x /tmp/packer && \
@@ -208,7 +211,7 @@ RUN \
   terraform version && \
   terragrunt -version && \
   tflint --version && \
-  tfsec --version && \
+  trivy --version && \
   packer version
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -223,7 +226,6 @@ ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
 ARG TFLINT_VERSION
-ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
@@ -298,7 +300,6 @@ ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
 ARG TFLINT_VERSION
-ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
@@ -362,7 +363,6 @@ ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
 ARG TFLINT_VERSION
-ARG TFSEC_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
