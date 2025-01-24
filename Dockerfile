@@ -3,6 +3,7 @@ ARG PACKER_VERSION=1.11.2               # https://developer.hashicorp.com/packer
 ARG TERRAGRUNT_VERSION=0.68.14           # https://github.com/gruntwork-io/terragrunt
 ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
 ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
+ARG K9S_VERSION=0.32.7                  # https://github.com/derailed/k9s
 ARG PYTHON_VERSION=3.12.4
 ARG PYTHON_VERSION_TO_USE=python3.12
 ARG MONGODB_VERSION=6.0
@@ -19,6 +20,7 @@ ARG TFLINT_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG GHORG_VERSION
+ARG K9S_VERSION
 ARG MONGODB_VERSION
 ARG MONGODB_REPO_PATH
 
@@ -198,6 +200,11 @@ RUN \
   rm -rf /tmp/ghorg && \
   mkdir -p $HOME/.config/ghorg && \
   curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > $HOME/.config/ghorg/conf.yaml && \
+  \
+  # Install k9s
+  wget -qO /tmp/k9s.rpm https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_${ARCH_VALUE}.rpm && \
+  yum install -y /tmp/k9s.rpm && \
+  rm -rf /tmp/k9s.rpm && \
   \
   # Install Taskfile (go-task)
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -b /usr/local/bin/ -d && \
