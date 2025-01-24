@@ -167,15 +167,18 @@ RUN \
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
   tfswitch --latest && \
   \
+  # Install Terragrunt
   wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH_VALUE} && \
   chmod +x /tmp/terragrunt && \
   mv /tmp/terragrunt /usr/local/bin && \
   \
+  # Install TFLint
   wget -qO /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_${ARCH_VALUE}.zip && \
   unzip -q /tmp/tflint.zip -d /tmp && \
   chmod +x /tmp/tflint && \
   mv /tmp/tflint /usr/local/bin && \
   \
+  # Install Packer
   wget -qO /tmp/packer.zip https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH_VALUE}.zip && \
   unzip -q /tmp/packer.zip -d /tmp && \
   chmod +x /tmp/packer && \
@@ -195,6 +198,9 @@ RUN \
   rm -rf /tmp/ghorg && \
   mkdir -p $HOME/.config/ghorg && \
   curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > $HOME/.config/ghorg/conf.yaml && \
+  \
+  # Install Taskfile (go-task)
+  sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -b /usr/local/bin/ -d && \
   \
   # Cleanup
   rm -rf /tmp/* && \
