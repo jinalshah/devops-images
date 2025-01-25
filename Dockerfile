@@ -202,10 +202,10 @@ RUN \
   curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > $HOME/.config/ghorg/conf.yaml && \
   \
   # Install k9s
-  # wget -qO /tmp/k9s.rpm https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_${ARCH_VALUE}.rpm && \
-  # yum install -y /tmp/k9s.rpm && \
-  # rm -rf /tmp/k9s.rpm && \
-  # \
+  wget -qO /tmp/k9s.rpm https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_${ARCH_VALUE}.rpm && \
+  yum install -y /tmp/k9s.rpm && \
+  rm -rf /tmp/k9s.rpm && \
+  \
   # Install Taskfile (go-task)
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -b /usr/local/bin/ -d && \
   \

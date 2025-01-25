@@ -49,6 +49,7 @@ jobs:
           TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
           TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
           GHORG_VERSION: ${{ vars.GHORG_VERSION }}
+          K9S_VERSION: ${{ vars.K9S_VERSION }}
           PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
           PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
@@ -85,6 +86,7 @@ jobs:
           TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
           TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
           GHORG_VERSION: ${{ vars.GHORG_VERSION }}
+          K9S_VERSION: ${{ vars.K9S_VERSION }}
           PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
           PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
@@ -121,6 +123,7 @@ jobs:
           TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
           TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
           GHORG_VERSION: ${{ vars.GHORG_VERSION }}
+          K9S_VERSION: ${{ vars.K9S_VERSION }}
           PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
           PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
           MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
