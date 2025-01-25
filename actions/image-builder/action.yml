@@ -57,7 +57,10 @@ inputs:
     description: 'TFSec Version'
     required: false
   GHORG_VERSION:
-    description: 'GHOrg Version'
+    description: 'Ghorg Version'
+    required: false
+  K9S_VERSION:
+    description: 'K9S Version'
     required: false
   PYTHON_VERSION:
     description: 'Python Version'
@@ -112,6 +115,7 @@ runs:
             echo TFLINT_VERSION=${{ inputs.TFLINT_VERSION }}
             TFSEC_VERSION=${{ inputs.TFSEC_VERSION }}
             echo GHORG_VERSION=${{ inputs.GHORG_VERSION }}
+            echo K9S_VERSION=${{ inputs.K9S_VERSION }}
             echo PYTHON_VERSION=${{ inputs.PYTHON_VERSION }}
             echo PYTHON_VERSION_TO_USE=${{ inputs.PYTHON_VERSION_TO_USE }}
             echo MONGODB_VERSION=${{ inputs.MONGODB_VERSION }}
@@ -159,6 +163,7 @@ runs:
             TFLINT_VERSION=${{ inputs.TFLINT_VERSION }}
             TFSEC_VERSION=${{ inputs.TFSEC_VERSION }}
             GHORG_VERSION=${{ inputs.GHORG_VERSION }}
+            K9S_VERSION=${{ inputs.K9S_VERSION }}
             PYTHON_VERSION=${{ inputs.PYTHON_VERSION }}
             PYTHON_VERSION_TO_USE=${{ inputs.PYTHON_VERSION_TO_USE }}
             MONGODB_VERSION=${{ inputs.MONGODB_VERSION }}
