@@ -41,6 +41,7 @@ RUN \
     bash-completion \
     curl \
     findutils \
+    fish \
     git \
     jq \
     less \
