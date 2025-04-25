@@ -115,7 +115,7 @@ RUN \
     https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm && \
   # yum module -y disable postgresql && \
   yum install --allowerasing -y \
-    postgresql14 \
+    postgresql17 \
     && \
   \
   # Install Trivy
