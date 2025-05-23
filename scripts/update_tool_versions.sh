@@ -37,7 +37,7 @@ log_version_update() {
     issue_number="${issue_url##*/}"
   fi
 
-  # Add a comment with the update details
+  # Add a comment with the update details (beautified with Markdown)
   gh issue comment "$issue_number" --repo "$repo" --body "$log_body"
 }
 
@@ -52,7 +52,7 @@ update_var() {
       gh variable set "$var_name" --body "$new_value" --repo "$repo"
     fi
     CHANGED=1
-    CHANGE_LOG+="- $var_name: $current_value → $new_value\n"
+    CHANGE_LOG+="| $var_name | $current_value | $new_value |\n"
   else
     echo "$var_name unchanged ($new_value)"
   fi
@@ -70,7 +70,7 @@ update_var PYTHON_VERSION_TO_USE "$PYTHON_VERSION_TO_USE"
 
 if [[ $CHANGED -eq 1 ]]; then
   if [[ "$DRY_RUN" == "0" ]]; then
-    log_version_update "Updated versions on $(date -u):\n$CHANGE_LOG"
+    log_version_update "### :sparkles: Automated Version Update :sparkles:\n\n**Date:** $(date -u)\n\n| Variable | Old Version | New Version |\n|---|---|---|\n$CHANGE_LOG"
     echo "Triggering image-builder workflow..."
     gh workflow run image-builder.yml
   else
