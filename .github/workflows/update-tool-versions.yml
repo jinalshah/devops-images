@@ -1,0 +1,35 @@
+name: Update Tool Versions
+
+description: 'Fetch latest tool versions, update GitHub variables, and trigger image build if needed.'
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Every day at 2am UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not update variables or trigger build)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  update-tool-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Run update_tool_versions.sh
+        run: scripts/update_tool_versions.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == true && '1' || '0' }}
