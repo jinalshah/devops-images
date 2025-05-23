@@ -70,7 +70,7 @@ update_var PYTHON_VERSION_TO_USE "$PYTHON_VERSION_TO_USE"
 
 if [[ $CHANGED -eq 1 ]]; then
   if [[ "$DRY_RUN" == "0" ]]; then
-    log_version_update "### :sparkles: Automated Version Update :sparkles:\n\n**Date:** $(date -u)\n\n| Variable | Old Version | New Version |\n|---|---|---|\n$CHANGE_LOG"
+    log_version_update $'### :sparkles: Automated Version Update :sparkles:\n\n**Date:** '"$(date -u)"$'\n\n| Variable | Old Version | New Version |\n|---|---|---|\n'"$CHANGE_LOG"
     echo "Triggering image-builder workflow..."
     gh workflow run image-builder.yml
   else
