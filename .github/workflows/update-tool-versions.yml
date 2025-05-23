@@ -16,6 +16,9 @@ on:
 jobs:
   update-tool-versions:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
