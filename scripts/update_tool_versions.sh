@@ -15,8 +15,10 @@ K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest 
 PYTHON_VERSION=$(curl -s 'https://api.github.com/repos/python/cpython/tags?per_page=20' | jq -r '.[].name' | grep -E '^v3\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V | tail -n1)
 PYTHON_VERSION_TO_USE="python${PYTHON_VERSION%.*}"
 
+repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+
 # Fetch current GitHub variable values
-gh_var() { gh variable get "$1" --json value | jq -r .value; }
+gh_var() { gh variable get "$1" --repo "$repo" | grep -v '^$' | tail -n1; }
 
 CHANGED=0
 DRY_RUN=${DRY_RUN:-0}
@@ -31,7 +33,8 @@ log_version_update() {
   # Find or create the log issue
   issue_number=$(gh issue list --repo "$repo" --state open --search "$log_issue_title" --json number,title | jq -r ".[] | select(.title==\"$log_issue_title\") | .number")
   if [[ -z "$issue_number" ]]; then
-    issue_number=$(gh issue create --repo "$repo" --title "$log_issue_title" --body "This issue tracks all automated version updates." --json number | jq -r .number)
+    issue_url=$(gh issue create --repo "$repo" --title "$log_issue_title" --body "This issue tracks all automated version updates." | tail -n1)
+    issue_number="${issue_url##*/}"
   fi
 
   # Add a comment with the update details
@@ -46,7 +49,7 @@ update_var() {
   if [[ "$current_value" != "$new_value" ]]; then
     echo "Updating $var_name: $current_value -> $new_value"
     if [[ "$DRY_RUN" == "0" ]]; then
-      gh variable set "$var_name" --body "$new_value"
+      gh variable set "$var_name" --body "$new_value" --repo "$repo"
     fi
     CHANGED=1
     CHANGE_LOG+="- $var_name: $current_value → $new_value\n"
