@@ -35,6 +35,8 @@ log_version_update() {
   if [[ -z "$issue_number" ]]; then
     issue_url=$(gh issue create --repo "$repo" --title "$log_issue_title" --body "This issue tracks all automated version updates." | tail -n1)
     issue_number="${issue_url##*/}"
+    # Assign the issue to the current user
+    gh issue edit "$issue_number" --repo "$repo" --add-assignee "$(gh api user --jq .login)"
   fi
 
   # Add a comment with the update details (beautified with Markdown)
