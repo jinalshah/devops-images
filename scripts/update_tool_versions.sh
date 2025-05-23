@@ -52,7 +52,7 @@ update_var() {
       gh variable set "$var_name" --body "$new_value" --repo "$repo"
     fi
     CHANGED=1
-    CHANGE_LOG+="| $var_name | $current_value | $new_value |\n"
+    CHANGE_LOG+="| $var_name | $current_value | $new_value |"$'\n'
   else
     echo "$var_name unchanged ($new_value)"
   fi
