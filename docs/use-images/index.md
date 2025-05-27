@@ -48,7 +48,7 @@ services:
       - ./:/workspace
 ```
 
-## Customizing Containers
+## Customising Containers
 
 To add your own tools or configuration, extend the image in your own Dockerfile:
 
