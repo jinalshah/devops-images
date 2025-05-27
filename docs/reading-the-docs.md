@@ -14,7 +14,7 @@ The documentation can be directly viewed on your browser:
 
 #### Reading the Documentation via your Host Machine
 
-Ensure you are the root of this repository.
+Ensure you are at the root of this repository.
 
 Ensure `mkdocs` is installed on your machine. If not, you can install it using: `python3 -m pip install --upgrade mkdocs-material`
 
@@ -44,7 +44,7 @@ Navigate to the /srv directory on the container (where the root of this reposito
 cd /srv
 ```
 
-Server the Documents so that they are accessible from your Host Machine:
+Serve the Documents so that they are accessible from your Host Machine:
 
 ```bash
 mkdocs serve -a 0.0.0.0:8000
@@ -65,3 +65,15 @@ docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
 Then access the documentation on your browser by visiting:
 
 [http://localhost:8000](http://localhost:8000)
+
+---
+
+## Troubleshooting
+
+- If you encounter a port conflict on 8000, either stop the conflicting service or use `mkdocs serve -a 0.0.0.0:8080` and visit [http://localhost:8080](http://localhost:8080).
+- Ensure Docker is running if using the Docker method.
+- For any issues, please open an issue on the repository.
+
+## Contributing to Documentation
+
+If you spot outdated or missing information, please edit the relevant Markdown files in the `docs/` directory and submit a pull request.

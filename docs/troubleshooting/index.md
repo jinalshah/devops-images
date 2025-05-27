@@ -18,10 +18,29 @@ Comment Source Lines in `~/.zshrc`:
 sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
 ```
 
-Unomment Source Lines in `~/.zshrc` on all stage builds:
+Uncomment Source Lines in `~/.zshrc` on all stage builds:
 
 ```bash
-  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
+sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
   sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
   sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
 ```
+
+---
+
+### Common Docker Build Issues
+
+- **Permission denied errors:**
+  - Ensure you have the correct permissions on files and directories being copied into the image.
+  - Use `chmod` or `chown` as needed in your Dockerfile.
+- **Network issues during build:**
+  - Retry the build; sometimes network hiccups cause package install failures.
+  - Check your internet connection or proxy settings.
+- **Build cache not updating:**
+  - Use `--no-cache` with `docker build` to force a fresh build.
+
+---
+
+## Need More Help?
+
+If you encounter an issue not listed here, please open an issue on the repository with details and steps to reproduce.
