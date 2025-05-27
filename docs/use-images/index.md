@@ -64,4 +64,112 @@ RUN pip install <your-tool>
 
 ---
 
+## Using Tools Without Accessing the Container Shell
+
+You do not need to open an interactive shell to use the tools provided in these images. You can run any tool directly using `docker run` with the desired command. This is useful for scripting, automation, or CI/CD pipelines.
+
+### Examples
+
+#### Run a Tool Directly
+
+```bash
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ansible --version
+docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest aws --version
+docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud --version
+```
+
+#### Run a Tool on Local Files (Mount a Volume)
+
+If you want to operate on files from your host, mount a directory:
+
+```bash
+docker run --rm -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest ansible-playbook /workspace/playbook.yml
+```
+
+#### Use in Scripts or CI/CD
+
+You can use these images in your automation scripts or CI/CD pipelines to run tools in a consistent environment, without needing to install them locally.
+
+---
+
+## Running Tools on Local Files Mounted to /srv
+
+You can also mount your current working directory to `/srv` in the container. This is useful if you want to follow a convention or if some tools/scripts expect files in `/srv`.
+
+### Example
+
+```bash
+docker run --rm -v "$(pwd)":/srv ghcr.io/jinalshah/devops/images/all-devops:latest ansible-playbook /srv/playbook.yml
+```
+
+Replace `playbook.yml` with your file or script as needed. This approach works for any tool in the image.
+
+---
+
+## Passing Environment Variables
+
+You can pass environment variables from your host to the container using the `-e` flag. This is useful for credentials and configuration:
+
+```bash
+docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
+```
+
+You can also use `--env-file` to pass multiple variables from a file.
+
+## Mounting Authentication Directories
+
+To use your existing AWS, GCP, or SSH credentials inside the container, mount the relevant directories from your host:
+
+- **AWS CLI:**
+
+  ```bash
+  docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
+  ```
+
+- **Google Cloud SDK:**
+
+  ```bash
+  docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
+  ```
+
+- **SSH Keys:**
+
+  ```bash
+  docker run --rm -v ~/.ssh:/root/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
+  ```
+
+> **Tip:** You can combine multiple `-v` flags to mount several directories at once.
+
+## Troubleshooting Common Docker Issues
+
+- **File Permissions:** Files created by the container may be owned by root. Use the `--user $(id -u):$(id -g)` flag to run as your user:
+
+  ```bash
+  docker run --rm --user $(id -u):$(id -g) -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest touch /workspace/test.txt
+  ```
+
+- **Networking:** If you have trouble accessing the internet or internal resources, check your Docker network settings.
+- **Volume Mounts on macOS/Windows:** Ensure the path syntax is correct and that Docker Desktop has access to your files.
+
+## Example: Using in GitHub Actions or CI/CD
+
+You can use these images in your CI/CD pipelines. Example for GitHub Actions:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jinalshah/devops/images/all-devops:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: ansible --version
+```
+
+## Support & Feature Requests
+
+For issues, feature requests, or to request new tools in the images, please open an issue on the repository.
+
+---
+
 For more details, see the [Getting Started](../index.md) and [Building Images](../build-images/index.md) sections.

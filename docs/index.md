@@ -58,6 +58,10 @@ Run the Image:
 docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest zsh
 ```
 
+## How to Use Tools Without Accessing the Container
+
+See [Using Tools Without Accessing the Container Shell](use-images/index.md#using-tools-without-accessing-the-container-shell) for tips on running tools directly from the images, without needing to open an interactive shell.
+
 ## Contributing to Documentation
 
 If you notice outdated or missing information, contributions are welcome! Edit the relevant Markdown files in the `docs/` directory and submit a pull request.
