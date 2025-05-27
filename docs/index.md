@@ -5,14 +5,14 @@ This repository contains all the common DevOps tooling required for a typical pr
 There are three types of DevOps Images available for use:
 
 - All-DevOps: Contains tools for both AWS and GCP environments.
-- AWS-DevOps: Contains tools for both AWS environments.
-- GCP-DevOps: Contains tools for both GCP environments.
+- AWS-DevOps: Contains tools for AWS environments.
+- GCP-DevOps: Contains tools for GCP environments.
 
 ## Quick Start
 
 ### All DevOps Image
 
-#### All DevOps: GitLab Container Registry
+#### All DevOps: GitHub Container Registry
 
 Pull the Image:
 
@@ -28,7 +28,7 @@ docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest zsh
 
 ### AWS DevOps Image
 
-#### AWS DevOps: GitLab Container Registry
+#### AWS DevOps: GitHub Container Registry
 
 Pull the Image:
 
@@ -44,7 +44,7 @@ docker run -it ghcr.io/jinalshah/devops/images/aws-devops:latest zsh
 
 ### GCP DevOps Image
 
-#### GCP DevOps: GitLab Container Registry
+#### GCP DevOps: GitHub Container Registry
 
 Pull the Image:
 
@@ -58,20 +58,20 @@ Run the Image:
 docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest zsh
 ```
 
-### Pull all three Images simultaneously
+## Contributing to Documentation
 
-#### From the GitLab Container Registry
+If you notice outdated or missing information, contributions are welcome! Edit the relevant Markdown files in the `docs/` directory and submit a pull request.
 
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops && \
-docker pull ghcr.io/jinalshah/devops/images/aws-devops && \
-docker pull ghcr.io/jinalshah/devops/images/gcp-devops
-```
+## Support & Feature Requests
 
-#### From the GitHub Container Registry
+For issues, feature requests, or to request new tools in the images, please open an issue on the repository.
 
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops && \
-docker pull ghcr.io/jinalshah/devops/images/aws-devops && \
-docker pull ghcr.io/jinalshah/devops/images/gcp-devops
-```
+## Registries
+
+Images are available on both GitHub and GitLab Container Registries. See the [Using the DevOps Images](use-images/index.md) section for full details.
+
+## More Information
+
+- [Building Images](build-images/index.md)
+- [Troubleshooting](troubleshooting/index.md)
+- [Using Images](use-images/index.md)
