@@ -1,6 +1,6 @@
 name: 'Container Image Builder'
 
-description: 'Builder Container Images'
+description: 'Build Container Images'
 
 inputs:
 
