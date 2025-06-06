@@ -62,7 +62,7 @@ Navigate to the /srv directory on the container (where the root of this reposito
 cd /srv
 ```
 
-Server the Documents so that they are accessible from your Host Machine:
+Serve the documents so that they are accessible from your host machine:
 
 ```bash
 mkdocs serve -a 0.0.0.0:8000
