@@ -76,7 +76,7 @@ if [[ $CHANGED -eq 1 ]]; then
     echo "Triggering image-builder workflow..."
     gh workflow run image-builder.yml
   else
-    echo "[DRY RUN] Would trigger image-builder workflow and log:\n$CHANGE_LOG"
+    printf '[DRY RUN] Would trigger image-builder workflow and log:\n%s\n' "$CHANGE_LOG"
   fi
 else
   echo "No version changes detected. Workflow not triggered."
