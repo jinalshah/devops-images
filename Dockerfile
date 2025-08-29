@@ -43,6 +43,7 @@ RUN \
     findutils \
     fish \
     git \
+    iputils \
     jq \
     less \
     make \
@@ -51,6 +52,7 @@ RUN \
     python3-pip \
     python3-dnf \
     sqlite-devel \
+    telnet \
     tree \
     vim \
     wget \
