@@ -39,6 +39,7 @@ RUN \
   yum install --allowerasing -y \
     bash \
     bash-completion \
+    bind-utils \
     curl \
     findutils \
     fish \
