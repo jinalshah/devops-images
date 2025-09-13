@@ -49,6 +49,7 @@ RUN \
     less \
     make \
     mysql \
+    nmap-ncat \
     openssh-clients \
     python3-pip \
     python3-dnf \
