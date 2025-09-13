@@ -12,6 +12,7 @@ All images come equipped with certain universal tools such as:
 - Python 3.X
 - SSH
 - DNS tools (dig, nslookup)
+- Network tools (ncat, telnet)
 - vim
 
 Additional details on what the images contain can be found within the [Dockerfile](../../Dockerfile).
@@ -79,6 +80,8 @@ docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest aws --version
 docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud --version
 docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest dig google.com
 docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest nslookup google.com
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat google.com 80
 ```
 
 #### Run a Tool on Local Files (Mount a Volume)
