@@ -54,6 +54,7 @@ RUN \
     python3-pip \
     python3-dnf \
     sqlite-devel \
+    sudo \
     telnet \
     tree \
     vim \
@@ -136,10 +137,33 @@ RUN \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
   \
   # Customisations
-  # useradd devops && \
-  # \
   . /tmp/10-zshrc.sh && \
   . /tmp/20-bashrc.sh && \
+  \
+  # Create devops user with home directory and zsh shell
+  useradd --create-home --shell /bin/zsh devops && \
+  \
+  # Configure passwordless sudo for wheel group
+  echo '%wheel ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/wheel && \
+  chmod 0440 /etc/sudoers.d/wheel && \
+  \
+  # Add devops user to wheel group
+  usermod -aG wheel devops && \
+  \
+  # Copy shell configuration and oh-my-zsh to devops user
+  cp -r /root/.oh-my-zsh /home/devops/.oh-my-zsh && \
+  cp /root/.zshrc /home/devops/.zshrc && \
+  cp /root/.bashrc /home/devops/.bashrc && \
+  \
+  # Create ghorg config directory and download config
+  mkdir -p /home/devops/.config/ghorg && \
+  curl -sSL https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > /home/devops/.config/ghorg/conf.yaml && \
+  \
+  # Fix ownership BEFORE running setup scripts so devops user can write to dotfiles
+  chown -R devops:devops /home/devops && \
+  \
+  # Run setup scripts as devops user
+  su - devops -c '/bin/bash -lc ". /tmp/10-zshrc.sh && . /tmp/20-bashrc.sh"' && \
   \
   # Cleanup \
   yum clean packages && \
