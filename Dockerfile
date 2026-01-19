@@ -147,7 +147,6 @@ RUN \
   cp -r /root/.oh-my-zsh /home/devops/.oh-my-zsh && \
   cp /root/.zshrc /home/devops/.zshrc && \
   cp /root/.bashrc /home/devops/.bashrc && \
-  su - devops -c '/bin/bash -lc ". /tmp/10-zshrc.sh && . /tmp/20-bashrc.sh"' && \
   mkdir -p /home/devops/.config/ghorg && \
   curl -sSL https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > /home/devops/.config/ghorg/conf.yaml && \
   chown -R devops:devops /home/devops && \
