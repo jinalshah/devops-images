@@ -53,6 +53,7 @@ RUN \
     openssh-clients \
     python3-pip \
     python3-dnf \
+    sudo \
     sqlite-devel \
     telnet \
     tree \
@@ -136,10 +137,19 @@ RUN \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
   \
   # Customisations
-  # useradd devops && \
-  # \
   . /tmp/10-zshrc.sh && \
   . /tmp/20-bashrc.sh && \
+  \
+  useradd --create-home --shell /bin/zsh devops && \
+  usermod -aG wheel devops && \
+  echo '%wheel ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/wheel && \
+  chmod 0440 /etc/sudoers.d/wheel && \
+  cp -r /root/.oh-my-zsh /home/devops/.oh-my-zsh && \
+  cp /root/.zshrc /home/devops/.zshrc && \
+  cp /root/.bashrc /home/devops/.bashrc && \
+  mkdir -p /home/devops/.config/ghorg && \
+  curl -sSL https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > /home/devops/.config/ghorg/conf.yaml && \
+  chown -R devops:devops /home/devops && \
   \
   # Cleanup \
   yum clean packages && \
