@@ -78,24 +78,29 @@ RUN \
     libffi-devel \
     zlib-devel
 
-# Install Python 3 (uses cache mount to avoid overlay filesystem issues with newer Python tarballs)
+# Install Python 3 (uses cache mount to download tarball, then copies to /tmp for building)
 RUN --mount=type=cache,target=/var/cache/python-build \
-  cd /var/cache/python-build && \
-  wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  rm -rf python-src && mkdir -p python-src && \
-  tar -xzf Python-${PYTHON_VERSION}.tgz -C python-src --strip-components=1 \
+  set -eux; \
+  TAR="/var/cache/python-build/Python-${PYTHON_VERSION}.tgz"; \
+  if [ ! -f "$TAR" ]; then \
+    wget -q -O "$TAR" https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz; \
+  fi; \
+  rm -rf /tmp/python-src; \
+  mkdir -p /tmp/python-src; \
+  tar -xzf "$TAR" -C /tmp/python-src --strip-components=1 \
     --no-same-owner --no-same-permissions \
-    --exclude='*/iOS/*' --exclude='*/Android/*' --exclude='*/wasm/*' && \
-  cd python-src && \
-  ./configure --enable-optimizations && \
-  make altinstall && \
-  cd / && \
+    --exclude='*/iOS/*' --exclude='*/Android/*' --exclude='*/wasm/*'; \
+  cd /tmp/python-src; \
+  ./configure --enable-optimizations; \
+  make -j"$(nproc)" altinstall; \
+  cd /; \
+  rm -rf /tmp/python-src; \
   # Set Python "PYTHON_VERSION_TO_USE" as default
-  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
-  alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
-  echo 1 | alternatives --config python3 && \
+  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100; \
+  alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200; \
+  echo 1 | alternatives --config python3; \
   \
-  python3 -m pip install --upgrade -U pip  && \
+  python3 -m pip install --upgrade -U pip; \
   \
   python3 -m pip install --upgrade \
     ansible \
