@@ -82,7 +82,7 @@ RUN \
   # Install Python 3
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar -zxf Python-${PYTHON_VERSION}.tgz && \
+  tar -zxf Python-${PYTHON_VERSION}.tgz --exclude='*/iOS/*' --exclude='*/Android/*' && \
   cd Python-${PYTHON_VERSION} && \
   ./configure --enable-optimizations && \
   make altinstall && \
