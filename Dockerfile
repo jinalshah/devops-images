@@ -163,7 +163,7 @@ RUN \
   chown -R devops:devops /home/devops && \
   \
   # Run setup scripts as devops user
-  su - devops -c '/bin/bash -lc ". /tmp/10-zshrc.sh && . /tmp/20-bashrc.sh"' && \
+  su - devops -c ". /tmp/10-zshrc.sh && . /tmp/20-bashrc.sh" && \
   \
   # Cleanup \
   yum clean packages && \
