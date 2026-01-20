@@ -53,7 +53,6 @@ RUN \
     openssh-clients \
     python3-pip \
     python3-dnf \
-    sudo \
     sqlite-devel \
     sudo \
     telnet \
