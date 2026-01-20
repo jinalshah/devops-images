@@ -85,7 +85,7 @@ RUN --mount=type=cache,target=/var/cache/python-build \
   rm -rf python-src && mkdir -p python-src && \
   tar -xzf Python-${PYTHON_VERSION}.tgz -C python-src --strip-components=1 \
     --no-same-owner --no-same-permissions \
-    --exclude='*/iOS/*' --exclude='*/Android/*' && \
+    --exclude='*/iOS/*' --exclude='*/Android/*' --exclude='*/wasm/*' && \
   cd python-src && \
   ./configure --enable-optimizations && \
   make altinstall && \
