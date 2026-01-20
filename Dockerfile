@@ -76,19 +76,20 @@ RUN \
     openssl-devel \
     bzip2-devel \
     libffi-devel \
-    zlib-devel \
-    && \
-  \
-  # Install Python 3
-  cd /tmp && \
+    zlib-devel
+
+# Install Python 3 (uses cache mount to avoid overlay filesystem issues with newer Python tarballs)
+RUN --mount=type=cache,target=/var/cache/python-build \
+  cd /var/cache/python-build && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar -zxf Python-${PYTHON_VERSION}.tgz --exclude='*/iOS/*' --exclude='*/Android/*' && \
-  cd Python-${PYTHON_VERSION} && \
+  rm -rf python-src && mkdir -p python-src && \
+  tar -xzf Python-${PYTHON_VERSION}.tgz -C python-src --strip-components=1 \
+    --no-same-owner --no-same-permissions \
+    --exclude='*/iOS/*' --exclude='*/Android/*' && \
+  cd python-src && \
   ./configure --enable-optimizations && \
   make altinstall && \
-  cd /tmp && \
-  rm -rf Python* && \
-  \
+  cd / && \
   # Set Python "PYTHON_VERSION_TO_USE" as default
   alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
   alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
@@ -102,8 +103,9 @@ RUN \
     jmespath \
     mkdocs-material \
     paramiko \
-    pre-commit && \
-  \
+    pre-commit
+
+RUN \
   # MongoDB-MongoSH Installation
   touch ${MONGODB_REPO_PATH} && \
   echo "[mongodb-org-${MONGODB_VERSION}]" >> ${MONGODB_REPO_PATH} && \
