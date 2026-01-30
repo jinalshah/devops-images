@@ -82,7 +82,7 @@ RUN \
   # Install Python 3
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar --warning=no-unknown-keyword --no-same-owner -zxf Python-${PYTHON_VERSION}.tgz || true && \
+  tar --warning=no-unknown-keyword --no-same-owner -zxf Python-${PYTHON_VERSION}.tgz && \
   cd Python-${PYTHON_VERSION} && \
   ./configure --enable-optimizations && \
   make altinstall && \
