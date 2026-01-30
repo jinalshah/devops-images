@@ -77,12 +77,15 @@ RUN \
     bzip2-devel \
     libffi-devel \
     zlib-devel \
+    bsdtar \
     && \
   \
   # Install Python 3
+  # Using bsdtar instead of GNU tar to handle problematic filenames in Python tarball
+  # that fail under QEMU emulation during multi-platform builds
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar --warning=no-unknown-keyword --no-same-owner -zxf Python-${PYTHON_VERSION}.tgz && \
+  bsdtar -xzf Python-${PYTHON_VERSION}.tgz && \
   cd Python-${PYTHON_VERSION} && \
   ./configure --enable-optimizations && \
   make altinstall && \
