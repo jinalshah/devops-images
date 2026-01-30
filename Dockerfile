@@ -1,11 +1,11 @@
-ARG GCLOUD_VERSION=501.0.0              # https://cloud.google.com/sdk/docs/install
-ARG PACKER_VERSION=1.11.2               # https://developer.hashicorp.com/packer/downloads
-ARG TERRAGRUNT_VERSION=0.68.14           # https://github.com/gruntwork-io/terragrunt
-ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
-ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
-ARG K9S_VERSION=0.32.7                  # https://github.com/derailed/k9s
-ARG PYTHON_VERSION=3.12.4
-ARG PYTHON_VERSION_TO_USE=python3.12
+ARG GCLOUD_VERSION=554.0.0              # https://cloud.google.com/sdk/docs/install
+ARG PACKER_VERSION=1.14.3               # https://developer.hashicorp.com/packer/downloads
+ARG TERRAGRUNT_VERSION=0.99.1           # https://github.com/gruntwork-io/terragrunt
+ARG TFLINT_VERSION=0.60.0               # https://github.com/terraform-linters/tflint
+ARG GHORG_VERSION=1.11.7                # https://github.com/gabrie30/ghorg
+ARG K9S_VERSION=0.50.18                  # https://github.com/derailed/k9s
+ARG PYTHON_VERSION=3.14.2
+ARG PYTHON_VERSION_TO_USE=python3.14
 ARG MONGODB_VERSION=6.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
 
@@ -82,7 +82,7 @@ RUN \
   # Install Python 3
   cd /tmp && \
   wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-  tar -zxf Python-${PYTHON_VERSION}.tgz && \
+  tar --warning=no-unknown-keyword --no-same-owner -zxf Python-${PYTHON_VERSION}.tgz || true && \
   cd Python-${PYTHON_VERSION} && \
   ./configure --enable-optimizations && \
   make altinstall && \
