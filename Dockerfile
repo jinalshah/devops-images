@@ -202,7 +202,7 @@ RUN \
   # Install ghorg
   wget -qO /tmp/ghorg.tar.gz https://github.com/gabrie30/ghorg/releases/download/v${GHORG_VERSION}/ghorg_${GHORG_VERSION}_Linux_${GHORG_ARCH_VALUE}.tar.gz && \
   mkdir /tmp/ghorg && \
-  tar -zxf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
+  bsdtar -zxf /tmp/ghorg.tar.gz -C /tmp/ghorg && \
   chmod +x /tmp/ghorg/ghorg && \
   mv /tmp/ghorg/ghorg /usr/local/bin && \
   rm -rf /tmp/ghorg && \
@@ -289,7 +289,7 @@ RUN \
   \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz && \
-  tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  bsdtar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
@@ -404,7 +404,7 @@ RUN \
     export SESSION_MANAGER_ARCH_VALUE=$(get_arch_value "arm64" "64bit") && \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz" && \
-  tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
+  bsdtar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
