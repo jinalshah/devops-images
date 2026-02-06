@@ -149,7 +149,7 @@ runs:
           password: ${{ inputs.DOCKERHUB_TOKEN }}
 
       - name: Build and push - ${{ inputs.DOCKERFILE_TARGET }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ inputs.PLATFORMS }}
