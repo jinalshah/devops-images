@@ -1,0 +1,151 @@
+name: build-image
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: 'Dockerfile target to build (e.g., all-devops, aws-devops, gcp-devops)'
+        type: string
+        required: true
+      version_prefix:
+        description: 'Image version prefix (e.g., 1.0)'
+        type: string
+        required: true
+      gitlab_registry:
+        description: 'GitLab Container Registry path'
+        type: string
+        required: true
+      ghcr_registry:
+        description: 'GitHub Container Registry path'
+        type: string
+        required: true
+      dockerhub_registry:
+        description: 'Docker Hub registry path'
+        type: string
+        required: true
+
+jobs:
+
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+
+      - name: Set version
+        run: echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitLab Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.GITLAB_USERNAME }}
+          password: ${{ secrets.GITLAB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GCR_GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push - ${{ inputs.target }} (${{ matrix.arch }})
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          target: ${{ inputs.target }}
+          cache-from: type=gha,scope=${{ inputs.target }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.target }}-${{ matrix.arch }}
+          build-args: |
+            GCLOUD_VERSION=${{ vars.GCLOUD_VERSION }}
+            PACKER_VERSION=${{ vars.PACKER_VERSION }}
+            TERRAGRUNT_VERSION=${{ vars.TERRAGRUNT_VERSION }}
+            TFLINT_VERSION=${{ vars.TFLINT_VERSION }}
+            GHORG_VERSION=${{ vars.GHORG_VERSION }}
+            K9S_VERSION=${{ vars.K9S_VERSION }}
+            PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
+            PYTHON_VERSION_TO_USE=${{ vars.PYTHON_VERSION_TO_USE }}
+            MONGODB_VERSION=${{ vars.MONGODB_VERSION }}
+            MONGODB_REPO_PATH=${{ vars.MONGODB_REPO_PATH }}
+          tags: |
+            ${{ inputs.gitlab_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
+            ${{ inputs.ghcr_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
+            ${{ inputs.dockerhub_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
+          push: true
+
+  merge:
+
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Set version
+        run: echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitLab Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.GITLAB_USERNAME }}
+          password: ${{ secrets.GITLAB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GCR_GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest - ${{ inputs.target }}
+        run: |
+          REGISTRIES=(
+            "${{ inputs.gitlab_registry }}"
+            "${{ inputs.ghcr_registry }}"
+            "${{ inputs.dockerhub_registry }}"
+          )
+
+          for registry in "${REGISTRIES[@]}"; do
+            echo "Creating multi-arch manifest for ${registry}/${{ inputs.target }}"
+            docker buildx imagetools create \
+              -t "${registry}/${{ inputs.target }}:latest" \
+              -t "${registry}/${{ inputs.target }}:${{ env.VERSION }}" \
+              "${registry}/${{ inputs.target }}:${{ env.VERSION }}-amd64" \
+              "${registry}/${{ inputs.target }}:${{ env.VERSION }}-arm64"
+          done
+        shell: bash
