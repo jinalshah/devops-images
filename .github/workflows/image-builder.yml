@@ -15,6 +15,9 @@ env:
   GCR_GITHUB_CONTAINER_REGISTRY: ghcr.io/jinalshah/devops/images
   DOCKERHUB_CONTAINER_REGISTRY: js01
 
+permissions:
+  contents: write
+
 jobs:
 
   lint:
