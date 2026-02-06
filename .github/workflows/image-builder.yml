@@ -41,6 +41,7 @@ jobs:
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit
 
   aws-devops:
@@ -53,6 +54,7 @@ jobs:
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit
 
   gcp-devops:
@@ -65,4 +67,5 @@ jobs:
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit

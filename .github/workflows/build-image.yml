@@ -23,6 +23,11 @@ on:
         description: 'Docker Hub registry path'
         type: string
         required: true
+      push_latest:
+        description: 'Whether to push :latest tag (true for main branch, false for PRs)'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
 
@@ -140,12 +145,26 @@ jobs:
             "${{ inputs.dockerhub_registry }}"
           )
 
+          PUSH_LATEST="${{ inputs.push_latest }}"
+
           for registry in "${REGISTRIES[@]}"; do
             echo "Creating multi-arch manifest for ${registry}/${{ inputs.target }}"
-            docker buildx imagetools create \
-              -t "${registry}/${{ inputs.target }}:latest" \
-              -t "${registry}/${{ inputs.target }}:${{ env.VERSION }}" \
-              "${registry}/${{ inputs.target }}:${{ env.VERSION }}-amd64" \
-              "${registry}/${{ inputs.target }}:${{ env.VERSION }}-arm64"
+
+            # Build the imagetools command with version tag
+            cmd="docker buildx imagetools create -t \"${registry}/${{ inputs.target }}:${{ env.VERSION }}\""
+
+            # Add :latest tag only if push_latest is true
+            if [ "$PUSH_LATEST" == "true" ]; then
+              echo "Including :latest tag (main branch merge)"
+              cmd="$cmd -t \"${registry}/${{ inputs.target }}:latest\""
+            else
+              echo "Skipping :latest tag (PR build)"
+            fi
+
+            # Add source images
+            cmd="$cmd \"${registry}/${{ inputs.target }}:${{ env.VERSION }}-amd64\" \"${registry}/${{ inputs.target }}:${{ env.VERSION }}-arm64\""
+
+            # Execute the command
+            eval $cmd
           done
         shell: bash
