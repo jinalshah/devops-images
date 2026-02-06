@@ -5,6 +5,9 @@ TARGET_HOME="${1:-$HOME}"
 if [ -f "${TARGET_HOME}/.bashrc" ]; then
 cat << EOF >> "${TARGET_HOME}/.bashrc"
 
+# Terraform version switcher configuration
+export TF_INSTALL_PATH=/opt/terraform-versions
+
 export PS1='\u@\h:\W \$ '
 alias l='ls -CF'
 alias la='ls -A'
