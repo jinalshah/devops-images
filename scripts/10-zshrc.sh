@@ -1,7 +1,9 @@
 #!/bin/bash
 
-if [ -f ~/.zshrc ]; then
-cat << EOF >> ~/.zshrc
+TARGET_HOME="${1:-$HOME}"
+
+if [ -f "${TARGET_HOME}/.zshrc" ]; then
+cat << EOF >> "${TARGET_HOME}/.zshrc"
 
 alias l='ls -CF'
 alias la='ls -A'

@@ -54,6 +54,7 @@ RUN \
     python3-pip \
     python3-dnf \
     sqlite-devel \
+    sudo \
     telnet \
     tree \
     vim \
@@ -131,15 +132,21 @@ RUN \
   echo "gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key" >> /etc/yum.repos.d/trivy.repo && \
   yum install --allowerasing -y trivy && \
   \
-  # Download, Install and Configure OhMyZsh
-  sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
-  sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
+  # Create devops user with passwordless sudo
+  useradd -m -s /bin/zsh devops && \
+  echo "devops ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/devops && \
+  chmod 0440 /etc/sudoers.d/devops && \
   \
-  # Customisations
-  # useradd devops && \
-  # \
-  . /tmp/10-zshrc.sh && \
-  . /tmp/20-bashrc.sh && \
+  # Download, Install and Configure OhMyZsh for devops user
+  HOME=/home/devops sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
+  sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' /home/devops/.zshrc && \
+  \
+  # Customisations for devops user
+  . /tmp/10-zshrc.sh /home/devops && \
+  . /tmp/20-bashrc.sh /home/devops && \
+  \
+  # Fix ownership of devops home directory
+  chown -R devops:devops /home/devops && \
   \
   # Cleanup \
   yum clean packages && \
@@ -170,9 +177,13 @@ RUN \
   chmod +x /tmp/kubectl && \
   mv /tmp/kubectl /usr/local/bin && \
   \
-  # Install tfswitch and Install latest version of Terraform
+  # Install tfswitch and terraform
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
   tfswitch --latest && \
+  \
+  # Change ownership of terraform installation to devops user
+  chown -R devops:devops /root/.terraform.versions && \
+  chown -h devops:devops /usr/local/bin/terraform && \
   \
   # Install Terragrunt
   wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH_VALUE} && \
@@ -203,8 +214,9 @@ RUN \
   chmod +x /tmp/ghorg/ghorg && \
   mv /tmp/ghorg/ghorg /usr/local/bin && \
   rm -rf /tmp/ghorg && \
-  mkdir -p $HOME/.config/ghorg && \
-  curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > $HOME/.config/ghorg/conf.yaml && \
+  mkdir -p /home/devops/.config/ghorg && \
+  curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > /home/devops/.config/ghorg/conf.yaml && \
+  chown -R devops:devops /home/devops/.config && \
   \
   # Install k9s
   wget -qO /tmp/k9s.rpm https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_${ARCH_VALUE}.rpm && \
@@ -232,6 +244,9 @@ RUN \
   trivy --version && \
   packer version
 
+USER devops
+WORKDIR /home/devops
+
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
 #;;              ----==| A L L   D E V O P S   I M A G E |==----               ;;
@@ -247,6 +262,7 @@ ARG TFLINT_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Define a shell function to determine the architecture value
@@ -287,12 +303,15 @@ RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
-  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/home/devops/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  \
+  # Fix ownership of devops home directory
+  chown -R devops:devops /home/devops && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -304,6 +323,8 @@ RUN \
   aws --version && \
   gcloud --version
 
+USER devops
+WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -321,6 +342,7 @@ ARG TFLINT_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Define a shell function to determine the architecture value
@@ -366,6 +388,8 @@ RUN \
   # Confirm Version
   aws --version
 
+USER devops
+WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -384,6 +408,7 @@ ARG TFLINT_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 
+USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Define a shell function to determine the architecture value
@@ -402,12 +427,15 @@ RUN \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz" && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
-  /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
+  /usr/lib/google-cloud-sdk/install.sh --rc-path=/home/devops/.zshrc --command-completion=true --path-update=true --quiet && \
   gcloud components install beta docker-credential-gcr --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
+  \
+  # Fix ownership of devops home directory
+  chown -R devops:devops /home/devops && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -418,4 +446,6 @@ RUN \
   # Confirm Version
   gcloud --version
 
+USER devops
+WORKDIR /home/devops
 CMD ["/bin/zsh"]

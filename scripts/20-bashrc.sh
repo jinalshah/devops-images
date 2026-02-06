@@ -1,7 +1,9 @@
 #!/bin/bash
 
-if [ -f ~/.bashrc ]; then
-cat << EOF >> ~/.bashrc
+TARGET_HOME="${1:-$HOME}"
+
+if [ -f "${TARGET_HOME}/.bashrc" ]; then
+cat << EOF >> "${TARGET_HOME}/.bashrc"
 
 export PS1='\u@\h:\W \$ '
 alias l='ls -CF'
