@@ -177,18 +177,12 @@ RUN \
   chmod +x /tmp/kubectl && \
   mv /tmp/kubectl /usr/local/bin && \
   \
-  # Install tfswitch
+  # Install tfswitch and terraform
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
+  tfswitch --latest && \
   \
-  # Install latest version of Terraform as devops user (symlink creation will fail, that's ok)
-  su - devops -c "tfswitch --latest" || true && \
-  \
-  # Find the downloaded terraform binary, make it executable, and create symlink as root
-  TERRAFORM_BIN=$(find /home/devops/.terraform.versions -type f -name 'terraform_*' | sort -V | tail -1) && \
-  chmod +x "$TERRAFORM_BIN" && \
-  ln -sf "$TERRAFORM_BIN" /usr/local/bin/terraform && \
-  \
-  # Allow devops user to update the terraform symlink in the future
+  # Change ownership of terraform installation to devops user
+  chown -R devops:devops /root/.terraform.versions && \
   chown -h devops:devops /usr/local/bin/terraform && \
   \
   # Install Terragrunt
