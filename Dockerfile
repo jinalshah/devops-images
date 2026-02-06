@@ -184,12 +184,13 @@ RUN \
   # Set up terraform for devops user:
   # - Move versions from /root/ to devops home (devops can't traverse /root/)
   # - Create ~/bin and symlink terraform there (devops can't write to /usr/local/bin/)
-  # - Keep /usr/local/bin/terraform for non-interactive contexts (updated via ENV PATH below)
+  # - Keep /usr/local/bin/terraform for non-interactive contexts
   # - Configure tfswitch to use ~/bin via .tfswitch.toml
+  TERRAFORM_VERSION=$(terraform version -json | jq -r '.terraform_version') && \
   mv /root/.terraform.versions /home/devops/.terraform.versions && \
   mkdir -p /home/devops/bin && \
-  ln -sf /home/devops/.terraform.versions/terraform_$(terraform version -json | jq -r '.terraform_version') /home/devops/bin/terraform && \
-  ln -sf /home/devops/.terraform.versions/terraform_$(terraform version -json | jq -r '.terraform_version') /usr/local/bin/terraform && \
+  ln -sf /home/devops/.terraform.versions/terraform_${TERRAFORM_VERSION} /home/devops/bin/terraform && \
+  ln -sf /home/devops/.terraform.versions/terraform_${TERRAFORM_VERSION} /usr/local/bin/terraform && \
   echo 'bin = "/home/devops/bin/terraform"' > /home/devops/.tfswitch.toml && \
   \
   # Install Terragrunt
@@ -245,7 +246,7 @@ RUN \
   kubectl version --client && \
   python3 --version && \
   ${PYTHON_VERSION_TO_USE} --version && \
-  /home/devops/bin/terraform version && \
+  terraform version && \
   terragrunt -version && \
   tflint --version && \
   trivy --version && \
