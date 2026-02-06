@@ -184,11 +184,12 @@ RUN \
   # Set up terraform for devops user:
   # - Move versions from /root/ to devops home (devops can't traverse /root/)
   # - Create ~/bin and symlink terraform there (devops can't write to /usr/local/bin/)
+  # - Keep /usr/local/bin/terraform for non-interactive contexts (updated via ENV PATH below)
   # - Configure tfswitch to use ~/bin via .tfswitch.toml
   mv /root/.terraform.versions /home/devops/.terraform.versions && \
   mkdir -p /home/devops/bin && \
   ln -sf /home/devops/.terraform.versions/terraform_$(terraform version -json | jq -r '.terraform_version') /home/devops/bin/terraform && \
-  rm -f /usr/local/bin/terraform && \
+  ln -sf /home/devops/.terraform.versions/terraform_$(terraform version -json | jq -r '.terraform_version') /usr/local/bin/terraform && \
   echo 'bin = "/home/devops/bin/terraform"' > /home/devops/.tfswitch.toml && \
   \
   # Install Terragrunt
@@ -252,6 +253,7 @@ RUN \
 
 USER devops
 WORKDIR /home/devops
+ENV PATH="/home/devops/bin:/home/devops/.local/bin:${PATH}"
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
