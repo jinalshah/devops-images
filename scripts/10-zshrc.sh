@@ -5,9 +5,6 @@ TARGET_HOME="${1:-$HOME}"
 if [ -f "${TARGET_HOME}/.zshrc" ]; then
 cat << EOF >> "${TARGET_HOME}/.zshrc"
 
-# Terraform version switcher configuration
-export TF_INSTALL_PATH=/opt/terraform-versions
-
 alias l='ls -CF'
 alias la='ls -A'
 alias ll='ls -alF'

@@ -177,16 +177,18 @@ RUN \
   chmod +x /tmp/kubectl && \
   mv /tmp/kubectl /usr/local/bin && \
   \
-  # Create shared directory for terraform versions
-  mkdir -p /opt/terraform-versions && \
-  chown -R devops:devops /opt/terraform-versions && \
-  chmod 755 /opt/terraform-versions && \
-  \
-  # Install tfswitch and Install latest version of Terraform
+  # Install tfswitch
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
-  TF_INSTALL_PATH=/opt/terraform-versions tfswitch --latest && \
-  # Allow devops user to update the terraform symlink
-  chown devops:devops /usr/local/bin/terraform && \
+  \
+  # Install latest version of Terraform as devops user (symlink creation will fail, that's ok)
+  su - devops -c "tfswitch --latest" || true && \
+  \
+  # Find the downloaded terraform binary and create symlink as root
+  TERRAFORM_BIN=$(find /home/devops/.terraform.versions -type f -name 'terraform_*' | sort -V | tail -1) && \
+  ln -sf "$TERRAFORM_BIN" /usr/local/bin/terraform && \
+  \
+  # Allow devops user to update the terraform symlink in the future
+  chown -h devops:devops /usr/local/bin/terraform && \
   \
   # Install Terragrunt
   wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH_VALUE} && \
