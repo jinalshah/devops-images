@@ -5,6 +5,8 @@ TARGET_HOME="${1:-$HOME}"
 if [ -f "${TARGET_HOME}/.zshrc" ]; then
 cat << EOF >> "${TARGET_HOME}/.zshrc"
 
+export PATH="\$HOME/bin:\$HOME/.local/bin:\$PATH"
+
 alias l='ls -CF'
 alias la='ls -A'
 alias ll='ls -alF'

@@ -181,9 +181,15 @@ RUN \
   curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash && \
   tfswitch --latest && \
   \
-  # Change ownership of terraform installation to devops user
-  chown -R devops:devops /root/.terraform.versions && \
-  chown -h devops:devops /usr/local/bin/terraform && \
+  # Set up terraform for devops user:
+  # - Move versions from /root/ to devops home (devops can't traverse /root/)
+  # - Create ~/bin and symlink terraform there (devops can't write to /usr/local/bin/)
+  # - Configure tfswitch to use ~/bin via .tfswitch.toml
+  mv /root/.terraform.versions /home/devops/.terraform.versions && \
+  mkdir -p /home/devops/bin && \
+  ln -sf /home/devops/.terraform.versions/terraform_$(terraform version -json | jq -r '.terraform_version') /home/devops/bin/terraform && \
+  rm -f /usr/local/bin/terraform && \
+  echo 'bin = "/home/devops/bin/terraform"' > /home/devops/.tfswitch.toml && \
   \
   # Install Terragrunt
   wget -qO /tmp/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${ARCH_VALUE} && \
@@ -216,7 +222,7 @@ RUN \
   rm -rf /tmp/ghorg && \
   mkdir -p /home/devops/.config/ghorg && \
   curl https://raw.githubusercontent.com/gabrie30/ghorg/master/sample-conf.yaml > /home/devops/.config/ghorg/conf.yaml && \
-  chown -R devops:devops /home/devops/.config && \
+  chown -R devops:devops /home/devops && \
   \
   # Install k9s
   wget -qO /tmp/k9s.rpm https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_${ARCH_VALUE}.rpm && \
@@ -238,7 +244,7 @@ RUN \
   kubectl version --client && \
   python3 --version && \
   ${PYTHON_VERSION_TO_USE} --version && \
-  terraform version && \
+  /home/devops/bin/terraform version && \
   terragrunt -version && \
   tflint --version && \
   trivy --version && \
