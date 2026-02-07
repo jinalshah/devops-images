@@ -259,13 +259,10 @@ RUN \
   packer version
 
 RUN \
-  # Install Claude Code (native install - recommended)
-  curl -fsSL https://claude.ai/install.sh | bash && \
-  test -f /root/.local/bin/claude && \
-  mv /root/.local/bin/claude /usr/local/bin/claude && \
-  rm -rf /root/.local/share/claude && \
+  # Install Claude Code as devops user (writes to /home/devops)
+  sudo -u devops -H bash -lc 'curl -fsSL https://claude.ai/install.sh | bash' && \
   \
-  # Install AI CLI Tools (npm)
+  # Install remaining AI CLI tools via npm
   npm install -g \
     @openai/codex \
     @github/copilot \
@@ -277,7 +274,7 @@ RUN \
   rm -rf /tmp/* /root/.npm/_cacache && \
   \
   # Confirm AI CLI Tool Versions
-  /usr/local/bin/claude --version && \
+  /home/devops/.local/bin/claude --version && \
   codex --version && \
   copilot --version && \
   gemini --version
