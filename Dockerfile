@@ -258,6 +258,27 @@ RUN \
   trivy --version && \
   packer version
 
+RUN \
+  # Install Claude Code as devops user (writes to /home/devops)
+  su - devops -c 'curl -fsSL https://claude.ai/install.sh | bash' && \
+  \
+  # Install remaining AI CLI tools via npm
+  npm install -g \
+    @openai/codex \
+    @github/copilot \
+    @google/gemini-cli \
+    && \
+  \
+  # Cleanup
+  npm cache clean --force && \
+  rm -rf /tmp/* /root/.npm/_cacache && \
+  \
+  # Confirm AI CLI Tool Versions
+  /home/devops/.local/bin/claude --version && \
+  codex --version && \
+  copilot --version && \
+  gemini --version
+
 USER devops
 WORKDIR /home/devops
 ENV PATH="/home/devops/bin:/home/devops/.local/bin:${PATH}"
