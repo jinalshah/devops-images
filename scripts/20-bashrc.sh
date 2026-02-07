@@ -5,6 +5,8 @@ TARGET_HOME="${1:-$HOME}"
 if [ -f "${TARGET_HOME}/.bashrc" ]; then
 cat << EOF >> "${TARGET_HOME}/.bashrc"
 
+export PATH="\$HOME/bin:\$HOME/.local/bin:\$PATH"
+
 export PS1='\u@\h:\W \$ '
 alias l='ls -CF'
 alias la='ls -A'
