@@ -260,7 +260,7 @@ RUN \
 
 RUN \
   # Install Claude Code as devops user (writes to /home/devops)
-  sudo -u devops -H bash -lc 'curl -fsSL https://claude.ai/install.sh | bash' && \
+  su - devops -c 'curl -fsSL https://claude.ai/install.sh | bash' && \
   \
   # Install remaining AI CLI tools via npm
   npm install -g \
