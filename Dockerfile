@@ -71,6 +71,10 @@ RUN \
   yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
   yum install --allowerasing -y gh && \
   \
+  # Install Node.js (latest LTS)
+  curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash - && \
+  yum install --allowerasing -y nodejs && \
+  \
   # Install binaries to compile Python 3
   yum install --allowerasing -y \
     gcc \
@@ -244,6 +248,8 @@ RUN \
   ansible --version && \
   echo $SHELL && \
   kubectl version --client && \
+  node --version && \
+  npm --version && \
   python3 --version && \
   ${PYTHON_VERSION_TO_USE} --version && \
   terraform version && \
