@@ -152,6 +152,10 @@ RUN \
   # Fix ownership of devops home directory
   chown -R devops:devops /home/devops && \
   \
+  # Preserve architecture detection script for later stages
+  mkdir -p /usr/local/lib && \
+  cp /tmp/00-detect-arch.sh /usr/local/lib/detect-arch.sh && \
+  \
   # Cleanup \
   yum clean packages && \
   yum clean metadata && \
@@ -164,7 +168,7 @@ RUN \
 
 RUN \
   # Load architecture detection utilities
-  . /tmp/00-detect-arch.sh && \
+  . /usr/local/lib/detect-arch.sh && \
   # Kubectl Configuration
   wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/${ARCH_VALUE}/kubectl && \
   chmod +x /tmp/kubectl && \
@@ -291,7 +295,7 @@ USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Load architecture detection utilities
-  . /tmp/00-detect-arch.sh && \
+  . /usr/local/lib/detect-arch.sh && \
   # AWS Python Requirements
   python3 -m pip install --upgrade --no-cache-dir -U \
     crcmod  \
@@ -360,7 +364,7 @@ USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Load architecture detection utilities
-  . /tmp/00-detect-arch.sh && \
+  . /usr/local/lib/detect-arch.sh && \
   # AWS Python Requirements
   python3 -m pip install --upgrade --no-cache-dir -U \
     crcmod \
@@ -415,7 +419,7 @@ USER root
 SHELL ["/bin/bash", "-c"]
 RUN \
   # Load architecture detection utilities
-  . /tmp/00-detect-arch.sh && \
+  . /usr/local/lib/detect-arch.sh && \
   # GCP / gcloud Configuration
   wget -q -O /tmp/google-cloud-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz" && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \

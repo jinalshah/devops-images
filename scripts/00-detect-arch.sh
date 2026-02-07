@@ -12,8 +12,10 @@ get_arch_value() {
     esac
 }
 
-# Export common architecture values
-export ARCH_VALUE=$(get_arch_value "arm64" "amd64")
-export GHORG_ARCH_VALUE=$(get_arch_value "arm64" "x86_64")
-export GCLOUD_ARCH_VALUE=$(get_arch_value "arm" "x86_64")
-export SESSION_MANAGER_ARCH_VALUE=$(get_arch_value "arm64" "64bit")
+# Export common architecture values (declare and assign separately to avoid masking return values)
+ARCH_VALUE=$(get_arch_value "arm64" "amd64")
+GHORG_ARCH_VALUE=$(get_arch_value "arm64" "x86_64")
+GCLOUD_ARCH_VALUE=$(get_arch_value "arm" "x86_64")
+SESSION_MANAGER_ARCH_VALUE=$(get_arch_value "arm64" "64bit")
+
+export ARCH_VALUE GHORG_ARCH_VALUE GCLOUD_ARCH_VALUE SESSION_MANAGER_ARCH_VALUE
