@@ -261,6 +261,7 @@ RUN \
 RUN \
   # Install Claude Code (native install - recommended)
   curl -fsSL https://claude.ai/install.sh | bash && \
+  test -f /root/.local/bin/claude && \
   mv /root/.local/bin/claude /usr/local/bin/claude && \
   rm -rf /root/.local/share/claude && \
   \
@@ -276,7 +277,7 @@ RUN \
   rm -rf /tmp/* /root/.npm/_cacache && \
   \
   # Confirm AI CLI Tool Versions
-  claude --version && \
+  /usr/local/bin/claude --version && \
   codex --version && \
   copilot --version && \
   gemini --version
