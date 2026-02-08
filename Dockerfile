@@ -111,7 +111,6 @@ RUN \
   rm -rf /usr/local/lib/python3.12/turtle*.py && \
   rm -rf /usr/local/lib/python3.12/turtledemo && \
   rm -rf /usr/local/lib/python3.12/lib2to3 && \
-  rm -rf /usr/local/lib/python3.12/ensurepip && \
   find /usr/local/lib/python3.12 -name '*.pyc' -delete && \
   find /usr/local/lib/python3.12 -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null; \
   \
