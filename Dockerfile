@@ -53,7 +53,6 @@ RUN \
     openssh-clients \
     python3-pip \
     python3-dnf \
-    sqlite-devel \
     sudo \
     telnet \
     tree \
@@ -82,6 +81,7 @@ RUN \
     bzip2-devel \
     libffi-devel \
     zlib-devel \
+    sqlite-devel \
     && \
   \
   # Install Python 3
@@ -94,14 +94,35 @@ RUN \
   cd /tmp && \
   rm -rf Python* && \
   \
+  # Remove Python build-only dependencies (runtime libs are separate packages and remain)
+  yum remove -y \
+    gcc cpp \
+    openssl-devel \
+    bzip2-devel \
+    libffi-devel \
+    zlib-devel \
+    sqlite-devel \
+    && \
+  \
+  # Remove unnecessary Python standard library components
+  rm -rf /usr/local/lib/python3.12/test && \
+  rm -rf /usr/local/lib/python3.12/idlelib && \
+  rm -rf /usr/local/lib/python3.12/tkinter && \
+  rm -rf /usr/local/lib/python3.12/turtle*.py && \
+  rm -rf /usr/local/lib/python3.12/turtledemo && \
+  rm -rf /usr/local/lib/python3.12/lib2to3 && \
+  rm -rf /usr/local/lib/python3.12/ensurepip && \
+  find /usr/local/lib/python3.12 -name '*.pyc' -delete && \
+  find /usr/local/lib/python3.12 -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null; \
+  \
   # Set Python "PYTHON_VERSION_TO_USE" as default
   alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
   alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
   echo 1 | alternatives --config python3 && \
   \
-  python3 -m pip install --upgrade -U pip  && \
+  python3 -m pip install --no-cache-dir --upgrade -U pip  && \
   \
-  python3 -m pip install --upgrade \
+  python3 -m pip install --no-cache-dir --upgrade \
     ansible \
     ansible-lint[yamllint] \
     jmespath \
@@ -156,10 +177,15 @@ RUN \
   mkdir -p /usr/local/lib && \
   cp /tmp/00-detect-arch.sh /usr/local/lib/detect-arch.sh && \
   \
-  # Cleanup \
-  yum clean packages && \
-  yum clean metadata && \
+  # Cleanup
+  # Remove unused locale data
+  localedef --list-archive | grep -v -i ^en | xargs localedef --delete-from-archive && \
+  mv /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.tmpl && \
+  build-locale-archive && \
+  \
   yum clean all && \
+  rm -rf /var/cache/yum && \
+  rm -rf /var/cache/dnf && \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
   rm -rf $(find / -regex ".*/__pycache__") && \
@@ -231,13 +257,25 @@ RUN \
   # Install Taskfile (go-task)
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -b /usr/local/bin/ -d && \
   \
-  # Cleanup
+  # Install Claude Code as devops user (writes to /home/devops)
+  su - devops -c 'curl -fsSL https://claude.ai/install.sh | bash' && \
+  \
+  # Install remaining AI CLI tools via npm
+  npm install -g \
+    @openai/codex \
+    @github/copilot \
+    @google/gemini-cli \
+    && \
+  \
+  # Unified Cleanup
+  npm cache clean --force && \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
   rm -rf /root/.cache/pip/* && \
+  rm -rf /root/.npm/_cacache && \
   rm -rf ~/.wget-hsts && \
   \
-  # Confirm Version
+  # Confirm Versions
   ansible --version && \
   echo $SHELL && \
   kubectl version --client && \
@@ -249,24 +287,7 @@ RUN \
   terragrunt -version && \
   tflint --version && \
   trivy --version && \
-  packer version
-
-RUN \
-  # Install Claude Code as devops user (writes to /home/devops)
-  su - devops -c 'curl -fsSL https://claude.ai/install.sh | bash' && \
-  \
-  # Install remaining AI CLI tools via npm
-  npm install -g \
-    @openai/codex \
-    @github/copilot \
-    @google/gemini-cli \
-    && \
-  \
-  # Cleanup
-  npm cache clean --force && \
-  rm -rf /tmp/* /root/.npm/_cacache && \
-  \
-  # Confirm AI CLI Tool Versions
+  packer version && \
   /home/devops/.local/bin/claude --version && \
   codex --version && \
   copilot --version && \
@@ -326,6 +347,11 @@ RUN \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
+  rm -rf /usr/lib/google-cloud-sdk/platform/bundledpythonunix && \
+  find /usr/lib/google-cloud-sdk -name '*.pyc' -delete && \
+  find /usr/lib/google-cloud-sdk -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null && \
+  find /usr/lib/google-cloud-sdk -name 'test' -type d -exec rm -rf {} + 2>/dev/null && \
+  find /usr/lib/google-cloud-sdk -name 'tests' -type d -exec rm -rf {} + 2>/dev/null && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
   # Fix ownership of devops home directory
@@ -428,6 +454,11 @@ RUN \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
+  rm -rf /usr/lib/google-cloud-sdk/platform/bundledpythonunix && \
+  find /usr/lib/google-cloud-sdk -name '*.pyc' -delete && \
+  find /usr/lib/google-cloud-sdk -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null && \
+  find /usr/lib/google-cloud-sdk -name 'test' -type d -exec rm -rf {} + 2>/dev/null && \
+  find /usr/lib/google-cloud-sdk -name 'tests' -type d -exec rm -rf {} + 2>/dev/null && \
   rm -rf /tmp/google-cloud-sdk.tar.gz && \
   \
   # Fix ownership of devops home directory
