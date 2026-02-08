@@ -177,11 +177,6 @@ RUN \
   cp /tmp/00-detect-arch.sh /usr/local/lib/detect-arch.sh && \
   \
   # Cleanup
-  # Remove unused locale data
-  localedef --list-archive | grep -v -i ^en | xargs localedef --delete-from-archive && \
-  mv /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.tmpl && \
-  build-locale-archive && \
-  \
   yum clean all && \
   rm -rf /var/cache/yum && \
   rm -rf /var/cache/dnf && \
