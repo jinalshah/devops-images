@@ -169,6 +169,11 @@ RUN \
 RUN \
   # Load architecture detection utilities
   . /usr/local/lib/detect-arch.sh && \
+  # Install gosu for entrypoint privilege de-escalation
+  wget -qO /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.17/gosu-${ARCH_VALUE}" && \
+  chmod +x /usr/local/bin/gosu && \
+  gosu nobody true && \
+  \
   # Kubectl Configuration
   wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/${ARCH_VALUE}/kubectl && \
   chmod +x /tmp/kubectl && \
@@ -272,9 +277,13 @@ RUN \
   copilot --version && \
   gemini --version
 
-USER devops
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER root
 WORKDIR /home/devops
 ENV PATH="/home/devops/bin:/home/devops/.local/bin:${PATH}"
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -341,7 +350,7 @@ RUN \
   aws --version && \
   gcloud --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
@@ -395,7 +404,7 @@ RUN \
   # Confirm Version
   aws --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
@@ -442,6 +451,6 @@ RUN \
   # Confirm Version
   gcloud --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]
