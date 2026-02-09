@@ -4,6 +4,12 @@ set -euo pipefail
 TARGET_USER="devops"
 TARGET_HOME="/home/${TARGET_USER}"
 
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "This image must start as root so it can switch to '${TARGET_USER}'." >&2
+  echo "Remove '--user ...' and pass LOCAL_UID/LOCAL_GID instead." >&2
+  exit 1
+fi
+
 current_uid="$(id -u "${TARGET_USER}")"
 current_gid="$(id -g "${TARGET_USER}")"
 desired_uid="${LOCAL_UID:-${current_uid}}"
@@ -28,7 +34,16 @@ if [[ "${desired_uid}" != "${current_uid}" ]]; then
 fi
 
 mkdir -p "${TARGET_HOME}/.ssh" "${TARGET_HOME}/.aws" "${TARGET_HOME}/.config" "${TARGET_HOME}/sbin"
-chown -R "${TARGET_USER}:$(id -gn "${TARGET_USER}")" "${TARGET_HOME}"
+target_group="$(id -gn "${TARGET_USER}")"
+# Do not chown bind-mounted credential/work directories from the host.
+find "${TARGET_HOME}" \
+  \( \
+    -path "${TARGET_HOME}/.ssh" -o \
+    -path "${TARGET_HOME}/.aws" -o \
+    -path "${TARGET_HOME}/sbin" -o \
+    -path "${TARGET_HOME}/.config/gcloud" \
+  \) -prune -o \
+  -exec chown "${TARGET_USER}:${target_group}" {} +
 
 export HOME="${TARGET_HOME}"
 cd "${TARGET_HOME}"
