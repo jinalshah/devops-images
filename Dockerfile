@@ -149,6 +149,9 @@ RUN \
   . /tmp/10-zshrc.sh /home/devops && \
   . /tmp/20-bashrc.sh /home/devops && \
   \
+  # Install runtime entrypoint
+  install -m 0755 /tmp/entrypoint.sh /usr/local/bin/entrypoint.sh && \
+  \
   # Fix ownership of devops home directory
   chown -R devops:devops /home/devops && \
   \
@@ -272,9 +275,10 @@ RUN \
   copilot --version && \
   gemini --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 ENV PATH="/home/devops/bin:/home/devops/.local/bin:${PATH}"
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -341,7 +345,7 @@ RUN \
   aws --version && \
   gcloud --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
@@ -395,7 +399,7 @@ RUN \
   # Confirm Version
   aws --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]
 
@@ -442,6 +446,6 @@ RUN \
   # Confirm Version
   gcloud --version
 
-USER devops
+USER root
 WORKDIR /home/devops
 CMD ["/bin/zsh"]

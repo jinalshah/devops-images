@@ -129,29 +129,33 @@ To use your existing AWS, GCP, or SSH credentials inside the container, mount th
 - **AWS CLI:**
 
   ```bash
-  docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
+  docker run --rm -v ~/.aws:/home/devops/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
   ```
 
 - **Google Cloud SDK:**
 
   ```bash
-  docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
+  docker run --rm -v ~/.config/gcloud:/home/devops/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
   ```
 
 - **SSH Keys:**
 
   ```bash
-  docker run --rm -v ~/.ssh:/root/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
+  docker run --rm -v ~/.ssh:/home/devops/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
   ```
 
 > **Tip:** You can combine multiple `-v` flags to mount several directories at once.
 
 ## Troubleshooting Common Docker Issues
 
-- **File Permissions:** Files created by the container may be owned by root. Use the `--user $(id -u):$(id -g)` flag to run as your user:
+- **File Permissions:** If your host UID/GID differs from the container user, pass `LOCAL_UID` and `LOCAL_GID`. The entrypoint remaps the `devops` user and then runs your command as `devops`:
 
   ```bash
-  docker run --rm --user $(id -u):$(id -g) -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest touch /workspace/test.txt
+  docker run --rm \
+    -e LOCAL_UID=$(id -u) \
+    -e LOCAL_GID=$(id -g) \
+    -v $(pwd):/workspace \
+    ghcr.io/jinalshah/devops/images/all-devops:latest touch /workspace/test.txt
   ```
 
 - **Networking:** If you have trouble accessing the internet or internal resources, check your Docker network settings.
