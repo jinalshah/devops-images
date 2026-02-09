@@ -25,6 +25,15 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # -------------------------------------------------------------------
+# Guard against remapping devops to UID 0 (root)
+# -------------------------------------------------------------------
+if [ "$TARGET_UID" = "0" ]; then
+    echo "ERROR: Cannot remap devops user to UID 0 (root)." >&2
+    echo "If you need to run as root, use: docker run --user 0:0 ..." >&2
+    exit 1
+fi
+
+# -------------------------------------------------------------------
 # GID remapping (must happen before UID remapping)
 # -------------------------------------------------------------------
 if [ "$TARGET_GID" != "$CURRENT_GID" ]; then
