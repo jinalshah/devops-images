@@ -60,10 +60,26 @@ if [ "$TARGET_UID" != "$CURRENT_UID" ]; then
 fi
 
 # -------------------------------------------------------------------
-# Fix ownership of home directory (only if remapping occurred)
+# Fix ownership of build-time files only (skip mounted volumes)
+#
+# After UID remapping, mounted volumes already have the correct UID
+# (they match the host user). We only need to chown files created
+# during docker build that still carry the old UID/GID.
 # -------------------------------------------------------------------
 if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
-    chown -R "$TARGET_UID:$TARGET_GID" /home/devops
+    # Detect volume mounts under /home/devops and build prune rules
+    PRUNE_ARGS=()
+    while read -r mountpoint; do
+        case "$mountpoint" in
+            /home/devops/?*)
+                PRUNE_ARGS+=(-path "$mountpoint" -prune -o)
+                ;;
+        esac
+    done < <(awk '{print $5}' /proc/self/mountinfo)
+
+    # Chown only non-mounted (build-time) files
+    find /home/devops "${PRUNE_ARGS[@]}" -print0 \
+        | xargs -0 chown "$DEVOPS_USER:$DEVOPS_GROUP" 2>/dev/null || true
 fi
 
 # -------------------------------------------------------------------
