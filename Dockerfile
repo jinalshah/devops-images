@@ -4,6 +4,7 @@ ARG TERRAGRUNT_VERSION=0.68.14           # https://github.com/gruntwork-io/terra
 ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
 ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
 ARG K9S_VERSION=0.32.7                  # https://github.com/derailed/k9s
+ARG GOSU_VERSION=1.17                   # https://github.com/tianon/gosu
 ARG PYTHON_VERSION=3.12.4
 ARG PYTHON_VERSION_TO_USE=python3.12
 ARG MONGODB_VERSION=6.0
@@ -19,6 +20,7 @@ ARG TERRAGRUNT_VERSION
 ARG TFLINT_VERSION
 ARG GHORG_VERSION
 ARG K9S_VERSION
+ARG GOSU_VERSION
 ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG MONGODB_VERSION
@@ -169,6 +171,11 @@ RUN \
 RUN \
   # Load architecture detection utilities
   . /usr/local/lib/detect-arch.sh && \
+  # Install gosu for privilege dropping in entrypoint
+  wget -qO /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${ARCH_VALUE}" && \
+  chmod +x /usr/local/bin/gosu && \
+  gosu nobody true && \
+  \
   # Kubectl Configuration
   wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/${ARCH_VALUE}/kubectl && \
   chmod +x /tmp/kubectl && \
@@ -272,9 +279,16 @@ RUN \
   copilot --version && \
   gemini --version
 
-USER devops
-WORKDIR /home/devops
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    mkdir -p /workspace && \
+    chown devops:devops /workspace
+
 ENV PATH="/home/devops/bin:/home/devops/.local/bin:${PATH}"
+USER root
+WORKDIR /workspace
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/zsh"]
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -341,9 +355,8 @@ RUN \
   aws --version && \
   gcloud --version
 
-USER devops
-WORKDIR /home/devops
-CMD ["/bin/zsh"]
+USER root
+WORKDIR /workspace
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -395,9 +408,8 @@ RUN \
   # Confirm Version
   aws --version
 
-USER devops
-WORKDIR /home/devops
-CMD ["/bin/zsh"]
+USER root
+WORKDIR /workspace
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
@@ -442,6 +454,5 @@ RUN \
   # Confirm Version
   gcloud --version
 
-USER devops
-WORKDIR /home/devops
-CMD ["/bin/zsh"]
+USER root
+WORKDIR /workspace
