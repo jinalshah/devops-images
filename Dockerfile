@@ -233,8 +233,8 @@ RUN \
   packer version
 
 RUN \
-  # Install Node.js (latest version) using NodeSource repository
-  curl -fsSL https://rpm.nodesource.com/setup_current.x | bash - && \
+  # Install Node.js (latest LTS version) using NodeSource repository
+  curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash - && \
   yum install --allowerasing -y nodejs && \
   \
   # Install Claude CLI (native installation - no Node.js required)
