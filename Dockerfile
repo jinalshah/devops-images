@@ -25,7 +25,7 @@ ARG MONGODB_VERSION
 ARG MONGODB_REPO_PATH
 
 ENV CLOUDSDK_PYTHON=python3
-ENV PATH=/usr/lib/google-cloud-sdk/bin:$PATH
+ENV PATH=/usr/lib/google-cloud-sdk/bin:/root/.local/bin:$PATH
 
 COPY scripts/*.sh /tmp/
 
@@ -231,6 +231,37 @@ RUN \
   tflint --version && \
   trivy --version && \
   packer version
+
+RUN \
+  # Install Node.js (latest LTS version) using NodeSource repository
+  curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash - && \
+  yum install --allowerasing -y nodejs && \
+  \
+  # Install Claude CLI (native installation - no Node.js required)
+  # Using bash -c to ensure proper shell environment for the install script
+  bash -c "$(curl -fsSL https://claude.ai/install.sh)" && \
+  \
+  # Install AI CLI tools via npm
+  npm install -g @openai/codex && \
+  npm install -g @github/copilot && \
+  npm install -g @google/gemini-cli && \
+  \
+  # Cleanup
+  rm -rf /tmp/* && \
+  rm -rf /var/tmp/* && \
+  rm -rf /root/.npm && \
+  rm -rf /root/.cache/pip/* && \
+  \
+  # Confirm versions - required tools must succeed
+  node --version && \
+  npm --version && \
+  npx --version && \
+  \
+  # Optional AI CLI tools - allow graceful failure
+  (claude --version || echo "Claude CLI installed (auth required for full functionality)") && \
+  (codex --version || echo "OpenAI Codex CLI installed (auth required for full functionality)") && \
+  (copilot --version || echo "GitHub Copilot CLI installed (auth required for full functionality)") && \
+  (gemini --version || echo "Gemini CLI installed (auth required for full functionality)")
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
