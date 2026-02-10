@@ -252,14 +252,16 @@ RUN \
   rm -rf /root/.npm && \
   rm -rf /root/.cache/pip/* && \
   \
-  # Confirm versions
+  # Confirm versions - required tools must succeed
   node --version && \
   npm --version && \
   npx --version && \
-  claude --version || echo "Claude CLI installed (auth required for full functionality)" && \
-  codex --version || echo "OpenAI Codex CLI installed (auth required for full functionality)" && \
-  copilot --version || echo "GitHub Copilot CLI installed (auth required for full functionality)" && \
-  gemini --version || echo "Gemini CLI installed (auth required for full functionality)"
+  \
+  # Optional AI CLI tools - allow graceful failure
+  (claude --version || echo "Claude CLI installed (auth required for full functionality)") && \
+  (codex --version || echo "OpenAI Codex CLI installed (auth required for full functionality)") && \
+  (copilot --version || echo "GitHub Copilot CLI installed (auth required for full functionality)") && \
+  (gemini --version || echo "Gemini CLI installed (auth required for full functionality)")
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
