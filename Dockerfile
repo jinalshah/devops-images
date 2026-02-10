@@ -133,7 +133,7 @@ RUN \
   yum install --allowerasing -y trivy && \
   \
   # Install Node.js LTS (for AI CLI tools: Codex, Gemini)
-  curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
+  curl -fsSL https://rpm.nodesource.com/setup_lts.x | bash - && \
   yum install --allowerasing -y nodejs && \
   \
   # Download, Install and Configure OhMyZsh
