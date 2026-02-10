@@ -20,15 +20,32 @@ fi
 
 DEVOPS_USER="devops"
 DEVOPS_HOME="/home/devops"
-WORKSPACE_DIR="${WORKSPACE_DIR:-${PWD}}"
 
-# Current UID/GID of the devops user
+# Current UID/GID of the devops user (build-time defaults)
 CURRENT_UID=$(id -u "${DEVOPS_USER}")
 CURRENT_GID=$(id -g "${DEVOPS_USER}")
 
-# Detect the UID/GID of the workspace mount (or default if not mounted)
-HOST_UID=$(stat -c '%u' "${WORKSPACE_DIR}" 2>/dev/null || echo "${CURRENT_UID}")
-HOST_GID=$(stat -c '%g' "${WORKSPACE_DIR}" 2>/dev/null || echo "${CURRENT_GID}")
+# Probe common mount paths for UID detection (priority order)
+# A directory is considered a mount if its UID differs from build-time default
+HOST_UID=""
+HOST_GID=""
+for probe_dir in "${WORKSPACE_DIR}" /workspace /srv "${PWD}"; do
+    if [ -n "${probe_dir}" ] && [ -d "${probe_dir}" ]; then
+        PROBE_UID=$(stat -c '%u' "${probe_dir}" 2>/dev/null || echo "")
+        PROBE_GID=$(stat -c '%g' "${probe_dir}" 2>/dev/null || echo "")
+
+        # Found a mount: UID differs from current devops UID, or is 0 (root/Podman)
+        if [ -n "${PROBE_UID}" ] && { [ "${PROBE_UID}" != "${CURRENT_UID}" ] || [ "${PROBE_UID}" = "0" ]; }; then
+            HOST_UID="${PROBE_UID}"
+            HOST_GID="${PROBE_GID}"
+            break
+        fi
+    fi
+done
+
+# Fallback: no mount detected, keep build-time defaults
+HOST_UID="${HOST_UID:-${CURRENT_UID}}"
+HOST_GID="${HOST_GID:-${CURRENT_GID}}"
 
 # Detect rootless Podman (Podman creates /run/.containerenv; rootless adds rootless=1)
 is_rootless_podman() {
