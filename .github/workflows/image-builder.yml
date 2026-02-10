@@ -14,132 +14,61 @@ env:
   GITLAB_CONTAINER_REGISTRY: registry.gitlab.com/jinal-shah/devops/images
   GCR_GITHUB_CONTAINER_REGISTRY: ghcr.io/jinalshah/devops/images
   DOCKERHUB_CONTAINER_REGISTRY: js01
-  PLATFORMS: "linux/arm64,linux/amd64"
+
+permissions:
+  contents: write
 
 jobs:
 
-  all-devops:
+  lint:
 
     runs-on: ubuntu-latest
 
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ShellCheck
         run: |
           sudo apt-get install -y shellcheck
           shellcheck scripts/*.sh
 
-      - name: Image Builder
-        uses: ./actions/image-builder
-        with:
-          GIT_TAG_VERSION_MAJOR_MINOR: ${{ env.GIT_TAG_VERSION_MAJOR_MINOR }}
-          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-          GCR_GITHUB_USERNAME: ${{ secrets.GCR_GITHUB_USERNAME }}
-          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: ${{ env.PLATFORMS }}
-          DOCKERFILE_TARGET: 'all-devops'
-          # App Versions
-          GCLOUD_VERSION: ${{ vars.GCLOUD_VERSION }}
-          PACKER_VERSION: ${{ vars.PACKER_VERSION }}
-          TERRAGRUNT_VERSION: ${{ vars.TERRAGRUNT_VERSION }}
-          TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
-          TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
-          GHORG_VERSION: ${{ vars.GHORG_VERSION }}
-          K9S_VERSION: ${{ vars.K9S_VERSION }}
-          PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
-          PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
-          MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
-          MONGODB_REPO_PATH: ${{ vars.MONGODB_REPO_PATH }}
+  all-devops:
+
+    needs: lint
+    uses: ./.github/workflows/build-image.yml
+    with:
+      target: 'all-devops'
+      version_prefix: '1.0'
+      gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
+      ghcr_registry: 'ghcr.io/jinalshah/devops/images'
+      dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
+    secrets: inherit
 
   aws-devops:
 
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: ShellCheck
-        run: |
-          sudo apt-get install -y shellcheck
-          shellcheck scripts/*.sh
-
-      - name: Image Builder
-        uses: ./actions/image-builder
-        with:
-          GIT_TAG_VERSION_MAJOR_MINOR: ${{ env.GIT_TAG_VERSION_MAJOR_MINOR }}
-          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
-          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: ${{ env.PLATFORMS }}
-          DOCKERFILE_TARGET: 'aws-devops'
-          # App Versions
-          GCLOUD_VERSION: ${{ vars.GCLOUD_VERSION }}
-          PACKER_VERSION: ${{ vars.PACKER_VERSION }}
-          TERRAGRUNT_VERSION: ${{ vars.TERRAGRUNT_VERSION }}
-          TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
-          TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
-          GHORG_VERSION: ${{ vars.GHORG_VERSION }}
-          K9S_VERSION: ${{ vars.K9S_VERSION }}
-          PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
-          PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
-          MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
-          MONGODB_REPO_PATH: ${{ vars.MONGODB_REPO_PATH }}
+    needs: lint
+    uses: ./.github/workflows/build-image.yml
+    with:
+      target: 'aws-devops'
+      version_prefix: '1.0'
+      gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
+      ghcr_registry: 'ghcr.io/jinalshah/devops/images'
+      dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
+    secrets: inherit
 
   gcp-devops:
 
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: ShellCheck
-        run: |
-          sudo apt-get install -y shellcheck
-          shellcheck scripts/*.sh
-
-      - name: Image Builder
-        uses: ./actions/image-builder
-        with:
-          GIT_TAG_VERSION_MAJOR_MINOR: ${{ env.GIT_TAG_VERSION_MAJOR_MINOR }}
-          GITLAB_CONTAINER_REGISTRY: ${{ env.GITLAB_CONTAINER_REGISTRY }}
-          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
-          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GCR_GITHUB_CONTAINER_REGISTRY: ${{ env.GCR_GITHUB_CONTAINER_REGISTRY }}
-          GCR_GITHUB_USERNAME: ${{ github.repository_owner }}
-          GCR_GITHUB_TOKEN: ${{ secrets.GCR_GITHUB_TOKEN }}
-          DOCKERHUB_CONTAINER_REGISTRY: ${{ env.DOCKERHUB_CONTAINER_REGISTRY }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          PLATFORMS: ${{ env.PLATFORMS }}
-          DOCKERFILE_TARGET: 'gcp-devops'
-          # App Versions
-          GCLOUD_VERSION: ${{ vars.GCLOUD_VERSION }}
-          PACKER_VERSION: ${{ vars.PACKER_VERSION }}
-          TERRAGRUNT_VERSION: ${{ vars.TERRAGRUNT_VERSION }}
-          TFLINT_VERSION: ${{ vars.TFLINT_VERSION }}
-          TFSEC_VERSION: ${{ vars.TFSEC_VERSION }}
-          GHORG_VERSION: ${{ vars.GHORG_VERSION }}
-          K9S_VERSION: ${{ vars.K9S_VERSION }}
-          PYTHON_VERSION: ${{ vars.PYTHON_VERSION }}
-          PYTHON_VERSION_TO_USE: ${{ vars.PYTHON_VERSION_TO_USE }}
-          MONGODB_VERSION: ${{ vars.MONGODB_VERSION }}
-          MONGODB_REPO_PATH: ${{ vars.MONGODB_REPO_PATH }}
+    needs: lint
+    uses: ./.github/workflows/build-image.yml
+    with:
+      target: 'gcp-devops'
+      version_prefix: '1.0'
+      gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
+      ghcr_registry: 'ghcr.io/jinalshah/devops/images'
+      dockerhub_registry: 'js01'
+      push_latest: ${{ github.ref == 'refs/heads/main' }}
+    secrets: inherit
