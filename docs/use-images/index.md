@@ -9,6 +9,11 @@ There are three types of DevOps Images available for use:
 All images come equipped with certain universal tools such as:
 
 - Ansible
+- Claude Code CLI
+- Gemini CLI
+- GitHub Copilot CLI
+- Node.js
+- OpenAI Codex CLI
 - Python 3.X
 - SSH
 - DNS tools (dig, nslookup)
@@ -82,6 +87,11 @@ docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest dig google.com
 docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest nslookup google.com
 docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat --version
 docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat google.com 80
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest node --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest claude --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest copilot --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest codex --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest gemini --version
 ```
 
 #### Run a Tool on Local Files (Mount a Volume)

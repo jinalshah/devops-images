@@ -53,6 +53,7 @@ RUN \
     openssh-clients \
     python3-pip \
     python3-dnf \
+    ripgrep \
     sqlite-devel \
     telnet \
     tree \
@@ -131,6 +132,10 @@ RUN \
   echo "gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key" >> /etc/yum.repos.d/trivy.repo && \
   yum install --allowerasing -y trivy && \
   \
+  # Install Node.js LTS (for AI CLI tools: Codex, Gemini)
+  curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
+  yum install --allowerasing -y nodejs && \
+  \
   # Download, Install and Configure OhMyZsh
   sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
   sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"candy\"/g' ~/.zshrc && \
@@ -149,6 +154,7 @@ RUN \
   rm -rf /var/tmp/* && \
   rm -rf $(find / -regex ".*/__pycache__") && \
   rm -rf /root/.cache/pip/* && \
+  rm -rf /root/.npm && \
   rm -rf ~/.wget-hsts
 
 RUN \
@@ -214,7 +220,21 @@ RUN \
   # Install Taskfile (go-task)
   sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -b /usr/local/bin/ -d && \
   \
+  # Install Claude Code CLI (standalone binary - auto-detects architecture)
+  curl -fsSL https://claude.ai/install.sh | sh && \
+  \
+  # Install GitHub Copilot CLI (standalone install - auto-detects architecture)
+  curl -fsSL https://gh.io/copilot-install | bash && \
+  \
+  # Install OpenAI Codex CLI (via npm)
+  npm install -g @openai/codex && \
+  \
+  # Install Gemini CLI (via npm)
+  npm install -g @google/gemini-cli && \
+  \
   # Cleanup
+  npm cache clean --force && \
+  rm -rf /root/.npm && \
   rm -rf /tmp/* && \
   rm -rf /var/tmp/* && \
   rm -rf /root/.cache/pip/* && \
@@ -230,7 +250,13 @@ RUN \
   terragrunt -version && \
   tflint --version && \
   trivy --version && \
-  packer version
+  packer version && \
+  node --version && \
+  npm --version && \
+  claude --version && \
+  copilot --version && \
+  codex --version && \
+  gemini --version
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;
