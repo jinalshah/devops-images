@@ -129,30 +129,65 @@ To use your existing AWS, GCP, or SSH credentials inside the container, mount th
 - **AWS CLI:**
 
   ```bash
-  docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
+  docker run --rm -v ~/.aws:/home/devops/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
   ```
 
 - **Google Cloud SDK:**
 
   ```bash
-  docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
+  docker run --rm -v ~/.config/gcloud:/home/devops/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
   ```
 
 - **SSH Keys:**
 
   ```bash
-  docker run --rm -v ~/.ssh:/root/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
+  docker run --rm -v ~/.ssh:/home/devops/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
   ```
 
 > **Tip:** You can combine multiple `-v` flags to mount several directories at once.
 
+## Using with Podman (rootless)
+
+These images automatically detect and support rootless Podman. When running under rootless Podman:
+
+- The container stays as root (which is actually your unprivileged host user)
+- All volume mounts work seamlessly with full read/write access
+- You can use any mount path: `/workspace`, `/srv`, or your own custom path
+
+### Examples
+
+**Basic usage** (stays as root, HOME=/home/devops):
+
+```bash
+docker run -it --rm -w /srv -v $PWD:/srv ghcr.io/jinalshah/devops/images/aws-devops:latest
+```
+
+**With authentication directories**:
+
+```bash
+docker run -it --rm \
+  -w /srv \
+  -v $PWD:/srv \
+  -v ~/.ssh:/home/devops/.ssh \
+  -v ~/.aws:/home/devops/.aws \
+  ghcr.io/jinalshah/devops/images/aws-devops:latest
+```
+
+**For a cleaner experience** (lands as devops user instead of root):
+
+```bash
+podman run --userns=keep-id:uid=1000,gid=1000 -it --rm \
+  -v $PWD:/workspace \
+  -v ~/.ssh:/home/devops/.ssh \
+  -v ~/.aws:/home/devops/.aws \
+  ghcr.io/jinalshah/devops/images/aws-devops:latest
+```
+
+> **Note:** The `--userns=keep-id:uid=1000,gid=1000` flag maps your host user to the devops user (UID 1000) inside the container, giving you the standard `devops@container` prompt.
+
 ## Troubleshooting Common Docker Issues
 
-- **File Permissions:** Files created by the container may be owned by root. Use the `--user $(id -u):$(id -g)` flag to run as your user:
-
-  ```bash
-  docker run --rm --user $(id -u):$(id -g) -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest touch /workspace/test.txt
-  ```
+- **File Permissions:** The entrypoint script automatically handles UID/GID matching for volume mounts. Files created inside the container will have the correct ownership on your host.
 
 - **Networking:** If you have trouble accessing the internet or internal resources, check your Docker network settings.
 - **Volume Mounts on macOS/Windows:** Ensure the path syntax is correct and that Docker Desktop has access to your files.
