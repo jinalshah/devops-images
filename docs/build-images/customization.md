@@ -219,7 +219,7 @@ ARG TERRAFORM_VERSION=1.6.6
 ARG PACKER_VERSION=1.10.0
 ARG PYTHON_VERSION=3.12
 
-FROM ghcr.io/jinalshah/devops/images/base:latest
+FROM ghcr.io/jinalshah/devops/images/all-devops:latest
 
 # Install specific versions
 RUN curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o terraform.zip && \

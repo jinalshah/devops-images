@@ -837,7 +837,7 @@ gh pr merge 123 --squash
 
 # GitHub Actions
 gh workflow list
-gh workflow run build.yml
+gh workflow run image-builder.yml
 gh run list
 gh run view
 

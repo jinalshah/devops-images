@@ -269,7 +269,9 @@ pie title Base Image Components
 
 **Typical usage**:
 ```bash
-docker pull ghcr.io/jinalshah/devops/images/base:latest
+# Base is a local Dockerfile target (not a published registry image)
+docker build --target base -t devops-base:local .
+docker run -it --rm devops-base:local
 ```
 
 ---

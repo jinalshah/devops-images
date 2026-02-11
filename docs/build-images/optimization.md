@@ -197,7 +197,7 @@ __pycache__/
 ```bash
 # Good - consistent builds
 docker build \
-  --build-arg TERRAFORM_VERSION=1.7.0 \
+  --build-arg PACKER_VERSION=1.11.2 \
   --build-arg PYTHON_VERSION=3.12 \
   -t custom-devops:1.0.0 .
 
