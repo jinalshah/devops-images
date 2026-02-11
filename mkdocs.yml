@@ -1,8 +1,7 @@
 site_name: DevOps Images
-site_description: Repository containing a Dockerfile to build all the DevOps tooling.
+site_description: Multi-architecture DevOps images for AWS, GCP, and platform workflows.
 site_url: https://jinalshah.github.io/devops-images/
 
-# Repository
 repo_name: jinalshah/devops-images
 repo_url: https://github.com/jinalshah/devops-images
 
@@ -24,7 +23,7 @@ theme:
         icon: material/weather-night
         name: Switch to light mode
   features:
-    - navigation.instant    
+    - navigation.instant
     - navigation.tracking
     - navigation.tabs
     - navigation.sections
@@ -42,12 +41,14 @@ nav:
     - use-images/all-devops.md
     - use-images/aws-devops.md
     - use-images/gcp-devops.md
-  - Build Images: 
+  - Build Images:
     - build-images/index.md
     - build-images/all-devops.md
     - build-images/aws-devops.md
     - build-images/gcp-devops.md
     - build-images/multi-platform-images.md
+  - Tool Basics:
+    - tool-basics/index.md
   - Troubleshooting:
     - troubleshooting/index.md
 

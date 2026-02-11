@@ -1,45 +1,79 @@
-# Building the DevOps Images
+# Building Images
 
-The following guides describe how to build the images locally on your own machine/host. This is especially useful should you need to modify the Dockerfile for your own needs.
+This section explains local builds for one image, all images, and advanced build scenarios.
 
-For example, if you want to install a specific tool that's currently missing from the existing image, simply clone this repository, modify the Dockerfile as necessary, and build the image locally.
+## Prerequisites
 
-## Step-by-Step Build Instructions
+- Docker with BuildKit support
+- Enough disk space for toolchain-heavy builds
+- Internet access during build to fetch package and binary dependencies
 
-1. Clone this repository:
-
-   ```bash
-   git clone https://github.com/jinalshah/devops-images.git
-   cd devops-images
-   ```
-
-2. Modify the `Dockerfile` as needed.
-
-3. Build the image (replace `<image-name>` as appropriate):
-
-   ```bash
-   docker build -t <image-name>:latest .
-   ```
-
-4. Run the image:
-
-   ```bash
-   docker run -it <image-name>:latest zsh
-   ```
-
-## Advanced: Multi-Platform Builds
-
-To build for multiple platforms (e.g., ARM and x86), use Docker Buildx:
+## Build a Specific Image
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t <image-name>:latest .
+# all-devops
+docker build --target all-devops -t all-devops:local .
+
+# aws-devops
+docker build --target aws-devops -t aws-devops:local .
+
+# gcp-devops
+docker build --target gcp-devops -t gcp-devops:local .
 ```
 
-## Caching and Build Args
+## Build All Images Locally
 
-- The build process uses caching to speed up builds. You can clear the cache with `docker builder prune` if needed.
-- You can pass build arguments using `--build-arg` if the Dockerfile supports them.
+```bash
+for target in all-devops aws-devops gcp-devops; do
+  docker build --target "$target" -t "$target:local" .
+done
+```
 
-## Troubleshooting
+## Validate Local Images
 
-See the [Troubleshooting](../troubleshooting/index.md) section for common build issues.
+```bash
+docker run --rm all-devops:local terraform version
+docker run --rm aws-devops:local aws --version
+docker run --rm gcp-devops:local gcloud --version
+```
+
+Optional helper tests in this repository:
+
+```bash
+./test_network_tools.sh all-devops:local
+./test_dns_tools.sh all-devops:local
+./test_ncat_tool.sh all-devops:local
+```
+
+## Build Args
+
+You can override selected versions at build time:
+
+```bash
+docker build \
+  --target all-devops \
+  --build-arg GCLOUD_VERSION=501.0.0 \
+  --build-arg TERRAGRUNT_VERSION=0.68.14 \
+  -t all-devops:custom .
+```
+
+Common build args include:
+
+- `GCLOUD_VERSION`
+- `PACKER_VERSION`
+- `TERRAGRUNT_VERSION`
+- `TFLINT_VERSION`
+- `GHORG_VERSION`
+- `K9S_VERSION`
+- `PYTHON_VERSION`
+- `PYTHON_VERSION_TO_USE`
+- `MONGODB_VERSION`
+- `MONGODB_REPO_PATH`
+
+## Advanced Build Topics
+
+- Multi-platform builds and push flow: [Multi-platform Images](multi-platform-images.md)
+- Cloud-specific local build pages:
+  - [All DevOps](all-devops.md)
+  - [AWS DevOps](aws-devops.md)
+  - [GCP DevOps](gcp-devops.md)

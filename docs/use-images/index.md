@@ -1,181 +1,108 @@
-# Using the DevOps Images
+# Using the Images
 
-There are three types of DevOps Images available for use:
+This section covers pull, run, and automation patterns from beginner to advanced usage.
 
-- All-DevOps: Contains tools for both AWS and GCP environments.
-- AWS-DevOps: Contains tools for AWS environments.
-- GCP-DevOps: Contains tools for GCP environments.
+## Image and Registry Reference
 
-All images come equipped with certain universal tools such as:
+| Image | GHCR | GitLab | Docker Hub |
+|---|---|---|---|
+| All DevOps | `ghcr.io/jinalshah/devops/images/all-devops` | `registry.gitlab.com/jinal-shah/devops/images/all-devops` | `js01/all-devops` |
+| AWS DevOps | `ghcr.io/jinalshah/devops/images/aws-devops` | `registry.gitlab.com/jinal-shah/devops/images/aws-devops` | `js01/aws-devops` |
+| GCP DevOps | `ghcr.io/jinalshah/devops/images/gcp-devops` | `registry.gitlab.com/jinal-shah/devops/images/gcp-devops` | `js01/gcp-devops` |
 
-- Ansible
-- Python 3.X
-- SSH
-- DNS tools (dig, nslookup)
-- Network tools (ncat, telnet)
-- vim
-
-Additional details on what the images contain can be found within the [Dockerfile](../../Dockerfile).
-
-The images are available on the GitLab Container Registry and the GitHub Container Registry. The links to both registries have been listed below:
-
-| Image Type | GitLab Container Registry                                                                                     | GitHub Container Registry  |
-|------------|---------------------------------------------------------------------------------------------------------------|----------------------------|
-| All DevOps | [jinal-shah/devops/images/all-devops](https://gitlab.com/jinal-shah/devops/images/container_registry/2301277) | [devops/images/all-devops](https://github.com/users/jinalshah/packages/container/package/devops%2Fimages%2Fall-devops) |
-| AWS DevOps | [jinal-shah/devops/images/aws-devops](https://gitlab.com/jinal-shah/devops/images/container_registry/2301280) | [devops/images/aws-devops](https://github.com/users/jinalshah/packages/container/package/devops%2Fimages%2Faws-devops) |
-| GCP DevOps | [jinal-shah/devops/images/gcp-devops](https://gitlab.com/jinal-shah/devops/images/container_registry/2301282) | [devops/images/gcp-devops](https://github.com/users/jinalshah/packages/container/package/devops%2Fimages%2Fgcp-devops) |
-
----
-
-## Updating Images
-
-To pull the latest version of any image:
+## Pull an Image
 
 ```bash
+# GHCR
 docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+
+# GitLab
+docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+
+# Docker Hub
+docker pull js01/all-devops:latest
 ```
 
-Replace `all-devops` with `aws-devops` or `gcp-devops` as needed.
-
-## Using with Docker Compose
-
-You can use these images as a base in your own `docker-compose.yml` files. Example:
-
-```yaml
-services:
-  devops:
-    image: ghcr.io/jinalshah/devops/images/all-devops:latest
-    command: zsh
-    volumes:
-      - ./:/workspace
-```
-
-## Customising Containers
-
-To add your own tools or configuration, extend the image in your own Dockerfile:
-
-```dockerfile
-FROM ghcr.io/jinalshah/devops/images/all-devops:latest
-RUN pip install <your-tool>
-```
-
-## Registry Notes
-
-- The GitHub Container Registry is recommended for most users.
-- The GitLab Container Registry is provided for compatibility and redundancy.
-
----
-
-## Using Tools Without Accessing the Container Shell
-
-You do not need to open an interactive shell to use the tools provided in these images. You can run any tool directly using `docker run` with the desired command. This is useful for scripting, automation, or CI/CD pipelines.
-
-### Examples
-
-#### Run a Tool Directly
+## Run Interactively
 
 ```bash
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ansible --version
+docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
+```
+
+The default shell is `zsh`.
+
+## Recommended Workstation Run Command
+
+```bash
+docker run -it --name devops-images \
+  -v $PWD:/srv \
+  -v ~/.ssh:/root/.ssh \
+  -v ~/.aws:/root/.aws \
+  -v ~/.claude:/root/.claude \
+  -v ~/.codex:/root/.codex \
+  -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
+  ghcr.io/jinalshah/devops/images/all-devops:latest
+```
+
+If you use GCP, also mount `~/.config/gcloud:/root/.config/gcloud`.
+
+## Run Tools Without an Interactive Shell
+
+```bash
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
 docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest aws --version
 docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud --version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest dig google.com
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest nslookup google.com
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat --version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest ncat google.com 80
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest trivy --version
 ```
 
-#### Run a Tool on Local Files (Mount a Volume)
-
-If you want to operate on files from your host, mount a directory:
+## Work With Local Files
 
 ```bash
-docker run --rm -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest ansible-playbook /workspace/playbook.yml
+docker run --rm -v "$PWD":/srv ghcr.io/jinalshah/devops/images/all-devops:latest \
+  ansible-playbook /srv/playbook.yml
 ```
 
-#### Use in Scripts or CI/CD
-
-You can use these images in your automation scripts or CI/CD pipelines to run tools in a consistent environment, without needing to install them locally.
-
----
-
-## Running Tools on Local Files Mounted to /srv
-
-You can also mount your current working directory to `/srv` in the container. This is useful if you want to follow a convention or if some tools/scripts expect files in `/srv`.
-
-### Example
+To avoid root-owned files on your host:
 
 ```bash
-docker run --rm -v "$(pwd)":/srv ghcr.io/jinalshah/devops/images/all-devops:latest ansible-playbook /srv/playbook.yml
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/srv \
+  ghcr.io/jinalshah/devops/images/all-devops:latest terraform fmt -recursive /srv
 ```
 
-Replace `playbook.yml` with your file or script as needed. This approach works for any tool in the image.
-
----
-
-## Passing Environment Variables
-
-You can pass environment variables from your host to the container using the `-e` flag. This is useful for credentials and configuration:
+## Credentials and Authentication
 
 ```bash
-docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
+# AWS
+docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws sts get-caller-identity
+
+# GCP
+docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
+
+# SSH
+docker run --rm -v ~/.ssh:/root/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh -V
 ```
 
-You can also use `--env-file` to pass multiple variables from a file.
+## Pinning Tags for CI/CD
 
-## Mounting Authentication Directories
+Use immutable version tags for predictable pipelines:
 
-To use your existing AWS, GCP, or SSH credentials inside the container, mount the relevant directories from your host:
+```bash
+docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.<sha7>
+```
 
-- **AWS CLI:**
+Prefer `latest` for local interactive use, and version tags for CI.
 
-  ```bash
-  docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest aws s3 ls
-  ```
-
-- **Google Cloud SDK:**
-
-  ```bash
-  docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
-  ```
-
-- **SSH Keys:**
-
-  ```bash
-  docker run --rm -v ~/.ssh:/root/.ssh ghcr.io/jinalshah/devops/images/all-devops:latest ssh user@host
-  ```
-
-> **Tip:** You can combine multiple `-v` flags to mount several directories at once.
-
-## Troubleshooting Common Docker Issues
-
-- **File Permissions:** Files created by the container may be owned by root. Use the `--user $(id -u):$(id -g)` flag to run as your user:
-
-  ```bash
-  docker run --rm --user $(id -u):$(id -g) -v $(pwd):/workspace ghcr.io/jinalshah/devops/images/all-devops:latest touch /workspace/test.txt
-  ```
-
-- **Networking:** If you have trouble accessing the internet or internal resources, check your Docker network settings.
-- **Volume Mounts on macOS/Windows:** Ensure the path syntax is correct and that Docker Desktop has access to your files.
-
-## Example: Using in GitHub Actions or CI/CD
-
-You can use these images in your CI/CD pipelines. Example for GitHub Actions:
+## Using in GitHub Actions
 
 ```yaml
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - run: terraform version
       - run: ansible --version
 ```
-
-## Support & Feature Requests
-
-For issues, feature requests, or to request new tools in the images, please open an issue on the repository.
-
----
-
-For more details, see the [Getting Started](../index.md) and [Building Images](../build-images/index.md) sections.

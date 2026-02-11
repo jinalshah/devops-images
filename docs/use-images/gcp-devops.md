@@ -1,33 +1,37 @@
-# GCP DevOps
+# GCP DevOps Image
 
-## DevOps Image
+`gcp-devops` is optimized for GCP-centric workflows with the shared platform tooling.
 
-### GCP DevOps Image
-
-#### GCP DevOps: GitLab Container Registry
-
-Pull the Image from the GitLab Container Registry:
+## Pull
 
 ```bash
 docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
+docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
+docker pull js01/gcp-devops:latest
 ```
 
-Run the Image from the GitLab Container Registry:
+## Includes
+
+- Base toolchain:
+  - Terraform, Terragrunt, TFLint, Packer
+  - kubectl, Helm, k9s
+  - Trivy, Ansible, ansible-lint
+  - Python, Git, gh, jq, Task
+  - Node.js and AI CLIs (`claude`, `codex`, `copilot`, `gemini`)
+- GCP additions:
+  - Google Cloud CLI (`gcloud`)
+  - `docker-credential-gcr`
+
+## Typical Commands
 
 ```bash
-docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest zsh
+docker run --rm -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud auth list
+docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud components list --quiet
+docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest kubectl version --client
 ```
 
-#### GCP DevOps: GitHub Container Registry
+## Best For
 
-Pull the Image from the GitHub Container Registry:
-
-```bash
-docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
-```
-
-Run the Image from the GitHub Container Registry:
-
-```bash
-docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest zsh
-```
+- GCP-first DevOps and platform teams
+- CI jobs that need `gcloud` and Kubernetes tooling
+- Leaner cloud-specific image than `all-devops` when AWS is not needed

@@ -1,79 +1,35 @@
-# Reading The Docs
+# Reading the Documentation
 
-## Reading the Documentation
+## Published Documentation
 
-There are several ways to access the documentation. The options have been listed below.
+The docs site is available at:
 
-### On the Web
+- [https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
 
-The documentation can be directly viewed on your browser:
+## Preview Locally
 
-[https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
-
-### Locally on your machine (To Preview as you Write)
-
-#### Reading the Documentation via your Host Machine
-
-Ensure you are at the root of this repository.
-
-Ensure `mkdocs` is installed on your machine. If not, you can install it using: `python3 -m pip install --upgrade mkdocs-material`
+From the repository root:
 
 ```bash
+python3 -m pip install --upgrade mkdocs-material
 mkdocs serve
 ```
 
-Then access the documentation on your browser by visiting:
+Then open [http://localhost:8000](http://localhost:8000).
 
-[http://localhost:8000](http://localhost:8000)
-
-#### Reading the Documentation via Docker
-
-##### Option 1
-
-Ensure you are at the root of this repository.
-
-Start a container:
+## Preview Using Docker
 
 ```bash
-docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 ghcr.io/jinalshah/devops/images/all-devops
+docker run --rm -it -p 8000:8000 -v "$PWD":/srv ghcr.io/jinalshah/devops/images/all-devops:latest \
+  sh -lc "cd /srv && mkdocs serve -a 0.0.0.0:8000"
 ```
 
-Navigate to the /srv directory on the container (where the root of this repository is mapped):
+## Docs Deployment
 
-```bash
-cd /srv
-```
+Docs are deployed by `.github/workflows/docs.yml` when changes are pushed under `docs/**`.
 
-Serve the Documents so that they are accessible from your Host Machine:
+## Common Issues
 
-```bash
-mkdocs serve -a 0.0.0.0:8000
-```
-
-Then access the documentation on your browser by visiting:
-
-[http://localhost:8000](http://localhost:8000)
-
-##### Option 2
-
-Ensure you are at the root of this repository.
-
-```bash
-docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
-```
-
-Then access the documentation on your browser by visiting:
-
-[http://localhost:8000](http://localhost:8000)
-
----
-
-## Troubleshooting
-
-- If you encounter a port conflict on 8000, either stop the conflicting service or use `mkdocs serve -a 0.0.0.0:8080` and visit [http://localhost:8080](http://localhost:8080).
-- Ensure Docker is running if using the Docker method.
-- For any issues, please open an issue on the repository.
-
-## Contributing to Documentation
-
-If you spot outdated or missing information, please edit the relevant Markdown files in the `docs/` directory and submit a pull request.
+- Port in use: run `mkdocs serve -a 0.0.0.0:8080` and open port `8080`
+- Missing Python package: reinstall with `python3 -m pip install --upgrade mkdocs-material`
+- Stale assets: stop and restart `mkdocs serve`

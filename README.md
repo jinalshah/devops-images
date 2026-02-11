@@ -2,84 +2,58 @@
 
 [![Build and Push](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml/badge.svg)](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml)
 
-This repository contains all the common DevOps tooling required for a typical project on AWS or GCP.
+Container images with a curated DevOps toolchain for AWS, GCP, and general platform engineering workflows.
 
-- [DevOps Images](#devops-images)
-  - [How do I use the DevOps Images?](#how-do-i-use-the-devops-images)
-  - [Reading the Documentation](#reading-the-documentation)
-    - [On the Web](#on-the-web)
-    - [Locally on your machine (To Preview as you Write)](#locally-on-your-machine-to-preview-as-you-write)
-      - [Reading the Documentation via your Host Machine](#reading-the-documentation-via-your-host-machine)
-      - [Reading the Documentation via Docker](#reading-the-documentation-via-docker)
-        - [Option 1](#option-1)
-        - [Option 2](#option-2)
+## Images
 
-## How do I use the DevOps Images?
+- `all-devops`: Base tools + AWS + GCP CLIs
+- `aws-devops`: Base tools + AWS tooling
+- `gcp-devops`: Base tools + GCP tooling
 
-The full documentation on the DevOps Images can be accessed here: [https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
+## Registries
 
-## Reading the Documentation
+- GitHub Container Registry (GHCR): `ghcr.io/jinalshah/devops/images/<image>:<tag>`
+- GitLab Container Registry: `registry.gitlab.com/jinal-shah/devops/images/<image>:<tag>`
+- Docker Hub: `js01/<image>:<tag>`
 
-There are several ways to access the documentation. The options have been listed below.
+`<image>` is one of `all-devops`, `aws-devops`, or `gcp-devops`.
 
-### On the Web
-
-The documentation can be directly viewed on your browser:
-
-[https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
-
-### Locally on your machine (To Preview as you Write)
-
-#### Reading the Documentation via your Host Machine
-
-Ensure you are the root of this repository.
-
-Ensure `mkdocs` is installed on your machine. If not, you can install it using: `python3 -m pip install --upgrade mkdocs-material`
+## Quick Start
 
 ```bash
+docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+
+docker run -it --name devops-images \
+  -v $PWD:/srv \
+  -v ~/.ssh:/root/.ssh \
+  -v ~/.aws:/root/.aws \
+  -v ~/.claude:/root/.claude \
+  -v ~/.codex:/root/.codex \
+  -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
+  ghcr.io/jinalshah/devops/images/all-devops:latest
+```
+
+## Build Locally
+
+```bash
+# Specific image
+docker build --target aws-devops -t aws-devops:local .
+
+# All images
+for target in all-devops aws-devops gcp-devops; do
+  docker build --target "$target" -t "$target:local" .
+done
+```
+
+## Documentation
+
+- Published docs: [https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)
+- Local docs preview:
+
+```bash
+python3 -m pip install --upgrade mkdocs-material
 mkdocs serve
 ```
 
-Then access the documentation on your browser by visiting:
-
-[http://localhost:8000](http://localhost:8000)
-
-#### Reading the Documentation via Docker
-
-##### Option 1
-
-Ensure you are at the root of this repository.
-
-Start a container:
-
-```bash
-docker run -it --name devops-images-docs -v $PWD:/srv -p 8000:8000 ghcr.io/jinalshah/devops/images/all-devops
-```
-
-Navigate to the /srv directory on the container (where the root of this repository is mapped):
-
-```bash
-cd /srv
-```
-
-Serve the documents so that they are accessible from your host machine:
-
-```bash
-mkdocs serve -a 0.0.0.0:8000
-```
-
-Then access the documentation on your browser by visiting:
-
-[http://localhost:8000](http://localhost:8000)
-
-##### Option 2
-
-Ensure you are at the root of this repository.
-
-```bash
-docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
-```
-
-Then access the documentation on your browser by visiting:
-
-[http://localhost:8000](http://localhost:8000)
+Open [http://localhost:8000](http://localhost:8000).
