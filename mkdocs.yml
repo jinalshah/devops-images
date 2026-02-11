@@ -76,6 +76,9 @@ nav:
     - tool-basics/ai-cli-setup.md
   - Architecture & Design:
     - architecture/index.md
+    - architecture/base-layer.md
+    - architecture/cloud-layers.md
+    - architecture/comparison.md
   - Troubleshooting:
     - troubleshooting/index.md
 
