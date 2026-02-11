@@ -203,13 +203,13 @@ Override tool versions using build arguments:
 
 ```bash
 docker build --target all-devops \
-  --build-arg TERRAFORM_VERSION=1.7.0 \
+  --build-arg PACKER_VERSION=1.11.2 \
   --build-arg PYTHON_VERSION=3.12.4 \
   --build-arg K9S_VERSION=0.32.7 \
   -t all-devops:custom .
 ```
 
-Available build args: `GCLOUD_VERSION`, `PACKER_VERSION`, `TERRAGRUNT_VERSION`, `TFLINT_VERSION`, `GHORG_VERSION`, `K9S_VERSION`, `PYTHON_VERSION`, `MONGODB_VERSION`
+Available build args: `GCLOUD_VERSION`, `PACKER_VERSION`, `TERRAGRUNT_VERSION`, `TFLINT_VERSION`, `GHORG_VERSION`, `K9S_VERSION`, `PYTHON_VERSION`, `PYTHON_VERSION_TO_USE`, `MONGODB_VERSION`, `MONGODB_REPO_PATH`
 
 ## Examples
 

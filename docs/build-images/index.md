@@ -232,15 +232,15 @@ docker build \
 
 | Arg | Default | Purpose | Example |
 |-----|---------|---------|---------|
-| `GCLOUD_VERSION` | Latest | Google Cloud SDK version | `501.0.0` |
-| `PACKER_VERSION` | Latest | Packer version | `1.10.0` |
-| `TERRAGRUNT_VERSION` | Latest | Terragrunt version | `0.68.14` |
-| `TFLINT_VERSION` | Latest | TFLint version | `0.50.0` |
-| `K9S_VERSION` | Latest | k9s version | `0.32.0` |
-| `PYTHON_VERSION` | `3.12` | Python version | `3.11`, `3.12` |
-| `NODE_VERSION` | `20` | Node.js major version | `18`, `20`, `22` |
-| `GHORG_VERSION` | Latest | ghorg version | `1.9.0` |
-| `MONGODB_VERSION` | `8.0` | MongoDB tools version | `7.0`, `8.0` |
+| `GCLOUD_VERSION` | `501.0.0` | Google Cloud SDK version | `501.0.0` |
+| `PACKER_VERSION` | `1.11.2` | Packer version | `1.11.2` |
+| `TERRAGRUNT_VERSION` | `0.68.14` | Terragrunt version | `0.68.14` |
+| `TFLINT_VERSION` | `0.50.3` | TFLint version | `0.50.3` |
+| `K9S_VERSION` | `0.32.7` | k9s version | `0.32.7` |
+| `PYTHON_VERSION` | `3.12.4` | Python source version to compile | `3.11.10`, `3.12.4` |
+| `PYTHON_VERSION_TO_USE` | `python3.12` | Python binary selected via alternatives | `python3.11`, `python3.12` |
+| `GHORG_VERSION` | `1.9.10` | ghorg version | `1.9.10` |
+| `MONGODB_VERSION` | `6.0` | MongoDB shell repository major version | `6.0`, `7.0` |
 
 ### Using Build Args
 
@@ -248,7 +248,7 @@ docker build \
 docker build \
   --target all-devops \
   --build-arg GCLOUD_VERSION=500.0.0 \
-  --build-arg PACKER_VERSION=1.9.4 \
+  --build-arg PACKER_VERSION=1.11.2 \
   --build-arg PYTHON_VERSION=3.11 \
   -t all-devops:custom .
 ```
@@ -258,10 +258,10 @@ docker build \
 ```bash
 # versions.env
 GCLOUD_VERSION=501.0.0
-PACKER_VERSION=1.10.0
+PACKER_VERSION=1.11.2
 TERRAGRUNT_VERSION=0.68.14
-TFLINT_VERSION=0.50.0
-K9S_VERSION=0.32.0
+TFLINT_VERSION=0.50.3
+K9S_VERSION=0.32.7
 
 # Build with pinned versions
 docker build \
@@ -585,7 +585,7 @@ See [Customization Guide](customization.md) for detailed examples.
 
 Set up CI/CD to build automatically:
 
-- [GitHub Actions](.github/workflows/build.yml) - Example in repository
+- [GitHub Actions build workflow](https://github.com/jinalshah/devops-images/blob/main/.github/workflows/image-builder.yml) - Example in repository
 - [GitLab CI](../workflows/ci-cd-gitlab.md) - Build pipeline
 - [Jenkins](../workflows/ci-cd-jenkins.md) - Declarative pipeline
 
