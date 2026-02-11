@@ -37,6 +37,6 @@ jobs:
           restore-keys: |
             mkdocs-material-
 
-      - run: pip install mkdocs-material
-      
+      - run: pip install mkdocs-material mkdocs-glightbox mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
+
       - run: mkdocs gh-deploy --force
