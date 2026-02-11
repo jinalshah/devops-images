@@ -1,46 +1,80 @@
-# Known Issues and Troubleshooting
+# Troubleshooting
 
-## Known Issues
+## Pull and Authentication Problems
 
-### Issue with `source ~/.zshrc` on builds
+### `pull access denied`
 
-If you run the command `source ~/.zshrc` within the Dockerfile it fails.
-
-This is due to the build/shell throwing an error when one "source" command calls another "source" (i.e. a nested source) within a file.
-
-#### Workaround examples
-
-##### Temporarily Disable and Re-enable `$ZSH/oh-my-zsh.sh` from `~/.zshrc`
-
-Comment Source Lines in `~/.zshrc`:
+- Verify the image path and tag.
+- Confirm you are logged in for the target registry:
 
 ```bash
-sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+docker login ghcr.io
+docker login registry.gitlab.com
+docker login
 ```
 
-Uncomment Source Lines in `~/.zshrc` on all stage builds:
+### Registry rate limits or transient failures
+
+- Retry with exponential backoff in CI.
+- Prefer pinned tags so retries fetch the same artifact.
+
+## Container Runtime Issues
+
+### Files created as root on host
+
+Run with host UID/GID:
 
 ```bash
-sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.zshrc && \
-  sed -i 's/# source <(kubectl completion zsh)/source <(kubectl completion zsh)/g' ~/.bashrc && \
-  sed -i 's/# source $ZSH\/oh-my-zsh.sh/source $ZSH\/oh-my-zsh.sh/g' ~/.zshrc
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/srv ghcr.io/jinalshah/devops/images/all-devops:latest touch /srv/test.txt
 ```
 
----
+### Credential files not found
 
-### Common Docker Build Issues
+Mount the right directory:
 
-- **Permission denied errors:**
-  - Ensure you have the correct permissions on files and directories being copied into the image.
-  - Use `chmod` or `chown` as needed in your Dockerfile.
-- **Network issues during build:**
-  - Retry the build; sometimes network hiccups cause package install failures.
-  - Check your internet connection or proxy settings.
-- **Build cache not updating:**
-  - Use `--no-cache` with `docker build` to force a fresh build.
+- AWS: `-v ~/.aws:/root/.aws`
+- GCP: `-v ~/.config/gcloud:/root/.config/gcloud`
+- SSH: `-v ~/.ssh:/root/.ssh`
 
----
+## Build Failures
 
-## Need More Help?
+### Architecture mismatch
 
-If you encounter an issue not listed here, please open an issue on the repository with details and steps to reproduce.
+The Dockerfile uses architecture-specific downloads. If you override platforms, use Buildx and verify target platform:
+
+```bash
+docker buildx build --platform linux/arm64 --target all-devops -t all-devops:arm64-test --load .
+```
+
+### Slow or unstable dependency downloads
+
+- Re-run with a stable network.
+- Use build cache where possible.
+- For clean rebuild debugging, run with `--no-cache`.
+
+### Tool version conflicts
+
+If a custom `--build-arg` fails, revert to defaults and reintroduce changes one variable at a time.
+
+## Docs Preview Issues
+
+### `mkdocs` command not found
+
+```bash
+python3 -m pip install --upgrade mkdocs-material
+```
+
+### Port `8000` already in use
+
+```bash
+mkdocs serve -a 0.0.0.0:8080
+```
+
+## Need Help
+
+Open an issue with:
+
+- exact command
+- full error output
+- target image and tag
+- host OS and architecture (`uname -m`)

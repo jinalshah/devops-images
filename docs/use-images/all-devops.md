@@ -1,33 +1,44 @@
-# All DevOps
+# All DevOps Image
 
-## DevOps Image
+`all-devops` is the full toolkit image for teams that touch both AWS and GCP.
 
-### All DevOps Image
-
-#### All DevOps: GitLab Container Registry
-
-Pull the Image from the GitLab Container Registry:
+## Pull
 
 ```bash
 docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+docker pull js01/all-devops:latest
 ```
 
-Run the Image from the GitLab Container Registry:
+## Includes
+
+- Everything from the base stage:
+  - Terraform, Terragrunt, TFLint, Packer
+  - kubectl, Helm, k9s
+  - Trivy
+  - Ansible and ansible-lint
+  - gh CLI and ghorg
+  - Node.js LTS, npm, and AI CLIs (`claude`, `codex`, `copilot`, `gemini`)
+  - Python, Git, jq, network tools, DB clients (`mongosh`, `psql`, `mysql`)
+- AWS tools:
+  - AWS CLI v2
+  - Session Manager plugin
+  - AWS-focused Python packages (`boto3`, `cfn-lint`, `s3cmd`, and others)
+- GCP tools:
+  - Google Cloud CLI (`gcloud`)
+  - `docker-credential-gcr` component
+
+## Typical Commands
 
 ```bash
-docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest zsh
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest aws --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest gcloud --version
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest trivy --version
 ```
 
-#### All DevOps: GitHub Container Registry
+## Best For
 
-Pull the Image from the GitHub Container Registry:
-
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-Run the Image from the GitHub Container Registry:
-
-```bash
-docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest zsh
-```
+- Platform teams managing multi-cloud infrastructure
+- CI images that need one consistent, broad toolchain
+- Local environments where you do not want to install tools directly on the host

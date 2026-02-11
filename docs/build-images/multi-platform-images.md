@@ -1,69 +1,55 @@
 # Multi-platform Images
 
-The following guides describe how to Build the Images for Multiple Platforms. This is especially useful should you need to use the Image ond AMD64 and/or ARM64 architectures.
+The CI workflow publishes multi-arch images for `linux/amd64` and `linux/arm64`. This page shows how to reproduce that locally.
 
-> The examples here use a full registry details in the path as an example because the `build` tool currently has a limitation where it can't build multi-platform Images locally. The registry paths can be modified to suit your needs. They show how to build images for both GitLab and GitHub Container Registries.
-
-## Multi-platform Builds
-
-### Export the Relevant Variables
+## Create and Use a Buildx Builder
 
 ```bash
-export PLATFORMS="linux/arm64,linux/amd64"
-export ALL_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/all-devops"
-export GHCR_ALL_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/all-devops"
-export AWS_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/aws-devops"
-export GHCR_AWS_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/aws-devops"
-export GCP_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/gcp-devops"
-export GHCR_GCP_DEVOPS_IMAGE_NAME="ghcr.io/jinalshah/devops/images/gcp-devops"
-export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-export DEVOPS_IMAGE_VERSION="1.0.$TIMESTAMP"
-
+docker buildx create --name devops-multiarch --use --driver docker-container
+docker buildx inspect --bootstrap
 ```
 
-### Use the buildx tool to build the images
+## Build and Load a Single Platform Locally
 
-Activate the use of buildx
+Use this when you want a fast local test on your current architecture.
 
 ```bash
-docker buildx create --use
+docker buildx build \
+  --platform linux/amd64 \
+  --target all-devops \
+  -t all-devops:amd64-local \
+  --load .
 ```
 
-#### Build the All DevOps Image
+## Build and Push Multi-arch to a Registry
 
 ```bash
-docker buildx build --platform $PLATFORMS --target all-devops --pull \
--t $ALL_DEVOPS_IMAGE_NAME\:latest \
--t $ALL_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $ALL_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
--t $GHCR_ALL_DEVOPS_IMAGE_NAME\:latest \
--t $GHCR_ALL_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $GHCR_ALL_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
---push .
+export IMAGE="ghcr.io/jinalshah/devops/images/all-devops"
+export VERSION="1.0.$(git rev-parse --short HEAD)"
+
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --target all-devops \
+  -t "$IMAGE:$VERSION" \
+  -t "$IMAGE:latest" \
+  --push .
 ```
 
-#### Build the AWS DevOps Image
+Repeat the same pattern for:
+
+- `ghcr.io/jinalshah/devops/images/aws-devops`
+- `ghcr.io/jinalshah/devops/images/gcp-devops`
+- `registry.gitlab.com/jinal-shah/devops/images/<image>`
+- `js01/<image>`
+
+## Verify Manifest and Platforms
 
 ```bash
-docker buildx build --platform $PLATFORMS --target aws-devops --pull \
--t $AWS_DEVOPS_IMAGE_NAME\:latest \
--t $AWS_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $AWS_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
--t $GHCR_AWS_DEVOPS_IMAGE_NAME\:latest \
--t $GHCR_AWS_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $GHCR_AWS_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
---push .
+docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-#### Build the GCP DevOps Image
+## Notes
 
-```bash
-docker buildx build --platform $PLATFORMS --target gcp-devops --pull \
--t $GCP_DEVOPS_IMAGE_NAME\:latest \
--t $GCP_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $GCP_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
--t $GHCR_GCP_DEVOPS_IMAGE_NAME\:latest \
--t $GHCR_GCP_DEVOPS_IMAGE_NAME\:$DEVOPS_IMAGE_VERSION \
--t $GHCR_GCP_DEVOPS_IMAGE_NAME\:$TIMESTAMP \
---push .
-```
+- `--load` supports single-platform output into local Docker engine.
+- Multi-platform output generally requires `--push` (registry output).
+- Prefer immutable version tags in automation.

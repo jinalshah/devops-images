@@ -1,29 +1,27 @@
-# GCP DevOps
+# Build: GCP DevOps
 
-## Building and Running the Image
-
-### Building the Image Locally
-
-#### Clone the Repository
+## Local Build
 
 ```bash
-git clone git@gitlab.com:jinal-shah/devops/images.git
+docker build --target gcp-devops -t gcp-devops:local .
 ```
 
-#### cd into the directory
+## Run
 
 ```bash
-cd images
+docker run -it --rm gcp-devops:local
 ```
 
-#### Build the Image
+## Quick Verification
 
 ```bash
-docker build --target gcp-devops -t gcp-devops:latest .
+docker run --rm gcp-devops:local gcloud --version
+docker run --rm gcp-devops:local kubectl version --client
+docker run --rm gcp-devops:local helm version
 ```
 
-### Running the Locally Built Image
+## Example With Local GCP Credentials
 
 ```bash
-docker run -it gcp-devops:latest
+docker run -it --rm -v ~/.config/gcloud:/root/.config/gcloud gcp-devops:local gcloud auth list
 ```

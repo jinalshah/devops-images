@@ -1,29 +1,32 @@
-# All DevOps
+# Build: All DevOps
 
-## Building and Running the Image
-
-### Building the Image Locally
-
-#### Clone the Repository
+## Local Build
 
 ```bash
-git clone git@gitlab.com:jinal-shah/devops/images.git
+docker build --target all-devops -t all-devops:local .
 ```
 
-#### cd into the directory
+## Run
 
 ```bash
-cd images
+docker run -it --rm all-devops:local
 ```
 
-#### Build the Image
+## Quick Verification
 
 ```bash
-docker build --target all-devops -t all-devops:latest .
+docker run --rm all-devops:local terraform version
+docker run --rm all-devops:local aws --version
+docker run --rm all-devops:local gcloud --version
+docker run --rm all-devops:local trivy --version
 ```
 
-### Running the Locally Built Image
+## Custom Build Example
 
 ```bash
-docker run -it all-devops:latest
+docker build \
+  --target all-devops \
+  --build-arg PYTHON_VERSION=3.12.4 \
+  --build-arg K9S_VERSION=0.32.7 \
+  -t all-devops:custom .
 ```

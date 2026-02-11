@@ -1,29 +1,27 @@
-# AWS DevOps
+# Build: AWS DevOps
 
-## Building and Running the Image
-
-### Building the Image Locally
-
-#### Clone the Repository
+## Local Build
 
 ```bash
-git clone git@gitlab.com:jinal-shah/devops/images.git
+docker build --target aws-devops -t aws-devops:local .
 ```
 
-#### cd into the directory
+## Run
 
 ```bash
-cd images
+docker run -it --rm aws-devops:local
 ```
 
-#### Build the Image
+## Quick Verification
 
 ```bash
-docker build --target aws-devops -t aws-devops:latest .
+docker run --rm aws-devops:local aws --version
+docker run --rm aws-devops:local terragrunt --version
+docker run --rm aws-devops:local cfn-lint --version
 ```
 
-### Running the Locally Built Image
+## Example With Local AWS Credentials
 
 ```bash
-docker run -it aws-devops:latest
+docker run -it --rm -v ~/.aws:/root/.aws aws-devops:local aws sts get-caller-identity
 ```
