@@ -44,20 +44,38 @@ theme:
 nav:
   - Getting Started:
     - index.md
+    - quick-start.md
+    - choosing-an-image.md
     - reading-the-docs.md
   - Use Images:
     - use-images/index.md
+    - use-images/quick-reference.md
     - use-images/all-devops.md
     - use-images/aws-devops.md
     - use-images/gcp-devops.md
+    - use-images/authentication.md
+    - use-images/docker-compose.md
+  - Workflows & Patterns:
+    - workflows/index.md
+    - workflows/ci-cd-github.md
+    - workflows/ci-cd-gitlab.md
+    - workflows/ci-cd-jenkins.md
+    - workflows/ci-cd-circleci.md
+    - workflows/terraform-workflows.md
+    - workflows/multi-tool-patterns.md
+    - workflows/ai-assisted-devops.md
   - Build Images:
     - build-images/index.md
+    - build-images/optimization.md
     - build-images/all-devops.md
     - build-images/aws-devops.md
     - build-images/gcp-devops.md
     - build-images/multi-platform-images.md
   - Tool Basics:
     - tool-basics/index.md
+    - tool-basics/ai-cli-setup.md
+  - Architecture & Design:
+    - architecture/index.md
   - Troubleshooting:
     - troubleshooting/index.md
 
