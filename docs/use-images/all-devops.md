@@ -10,7 +10,7 @@ The **all-devops** image is the complete multi-cloud toolkit with both AWS and G
 ✅ **Perfect for**:
 
 - Platform teams managing multi-cloud infrastructure (AWS + GCP)
-- Organizations with a hybrid cloud strategy
+- Organisations with a hybrid cloud strategy
 - CI/CD pipelines deploying to multiple cloud providers
 - Development teams who need maximum flexibility
 - Exploring both AWS and GCP tools without switching images
@@ -19,7 +19,7 @@ The **all-devops** image is the complete multi-cloud toolkit with both AWS and G
 
 - You only use AWS → Use [aws-devops](aws-devops.md) to save ~400 MB
 - You only use GCP → Use [gcp-devops](gcp-devops.md) to save ~300 MB
-- Image size is critical → See [optimization guide](../build-images/optimization.md)
+- Image size is critical → See [optimisation guide](../build-images/optimisation.md)
 
 ## Pull the Image
 
@@ -141,7 +141,7 @@ See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and 
 - **ncat, telnet** - Network connectivity
 - **curl, wget** - HTTP clients
 - **vim, less** - Editors/pagers
-- **tree** - Directory visualization
+- **tree** - Directory visualisation
 
 ## Quick Start
 
@@ -365,7 +365,7 @@ deploy:multi-cloud:
 
 ## Performance Tips
 
-!!! tip "Optimize for CI/CD"
+!!! tip "Optimise for CI/CD"
 
     1. **Pin versions**: Use immutable tags like `1.0.abc1234` instead of `latest`
     2. **Pre-pull images**: Pull during CI setup phase, not during actual work

@@ -278,7 +278,7 @@ container:
 1. **Use all-devops**: Maximum flexibility
 2. **Workflows**: Check [multi-cloud patterns](workflows/multi-tool-patterns.md)
 3. **Authentication**: Set up both [AWS and GCP](use-images/authentication.md)
-4. **Organize**: Use subdirectories for cloud-specific configs
+4. **Organise**: Use subdirectories for cloud-specific configs
 
 ### For Security-Focused Teams
 
@@ -439,7 +439,7 @@ alias devops-run='docker run --rm \
 
 - [Architecture Overview](architecture/index.md) - What's inside
 - [Choosing an Image](choosing-an-image.md) - Detailed comparison
-- [Build & Optimize](build-images/index.md) - Custom builds
+- [Build & Optimise](build-images/index.md) - Custom builds
 
 **Get Help**:
 

@@ -513,7 +513,7 @@ volumes:
 
 !!! warning "Common Pitfalls"
 
-    - ❌ **Using `latest` tag**: Can lead to unexpected behavior
+    - ❌ **Using `latest` tag**: Can lead to unexpected behaviour
     - ❌ **No health checks**: Dependent services may start before ready
     - ❌ **Committing `.env` files**: Exposes secrets
     - ❌ **No resource limits**: Can cause host exhaustion

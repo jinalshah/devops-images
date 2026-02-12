@@ -1,23 +1,23 @@
-# Customizing Images
+# Customising Images
 
 Comprehensive guide to extending DevOps Images with custom tools, packages, and configurations tailored to your team's specific needs.
 
 ---
 
-## Why Customize?
+## Why Customise?
 
-!!! example "Common Customization Reasons"
+!!! example "Common Customisation Reasons"
 
     - 🔧 **Proprietary tools**: Add internal or licensed software
     - 🔧 **Specific versions**: Lock tool versions for compliance
     - 🔧 **Additional languages**: Add Ruby, Go, Rust, etc.
     - 🔧 **Custom scripts**: Include team-specific automation
-    - 🔧 **Organization standards**: Enforce coding standards, linters
-    - 🔧 **Size optimization**: Remove unused tools
+    - 🔧 **Organisation standards**: Enforce coding standards, linters
+    - 🔧 **Size optimisation**: Remove unused tools
 
 ---
 
-## Customization Approaches
+## Customisation Approaches
 
 ### Approach 1: Extend Existing Image (Recommended)
 
@@ -54,7 +54,7 @@ docker build --target all-devops -t my-devops:latest .
 **Pros**:
 - ✅ Full control over all layers
 - ✅ Can remove unwanted tools
-- ✅ Maximum optimization
+- ✅ Maximum optimisation
 
 **Cons**:
 - ❌ Longer build time (~20+ minutes)
@@ -86,7 +86,7 @@ COPY --from=base /usr/local/bin/kubectl /usr/local/bin/
 
 ---
 
-## Quick Customization Examples
+## Quick Customisation Examples
 
 ### Add Python Packages
 
@@ -138,7 +138,7 @@ RUN curl -fsSL https://example.com/tool -o /usr/local/bin/tool && \
 
 ---
 
-## Complete Customization Examples
+## Complete Customisation Examples
 
 ### Example 1: Development Team Image
 
@@ -280,9 +280,9 @@ RUN go version && \
     java -version
 ```
 
-### Example 5: Minimal Image (Size-Optimized)
+### Example 5: Minimal Image (Size-Optimised)
 
-Remove unnecessary tools to minimize size:
+Remove unnecessary tools to minimise size:
 
 ```dockerfile
 # Start from scratch with only what you need
@@ -403,9 +403,9 @@ docker build \
 
 ## Best Practices
 
-### Layer Optimization
+### Layer Optimisation
 
-!!! tip "Minimize Layers"
+!!! tip "Minimise Layers"
 
     Combine RUN commands to reduce layers:
 
@@ -737,6 +737,6 @@ custom-devops-image/
 ## Next Steps
 
 - [Build Images Guide](index.md) - Building from source
-- [Optimization Guide](optimization.md) - Reduce image size
+- [Optimisation Guide](optimisation.md) - Reduce image size
 - [Multi-Platform Images](multi-platform-images.md) - Build for multiple architectures
 - [Architecture Overview](../architecture/index.md) - Understand image layers

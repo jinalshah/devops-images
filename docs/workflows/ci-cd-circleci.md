@@ -578,7 +578,7 @@ workflows:
 
 ## Best Practices
 
-!!! tip "Performance Optimization"
+!!! tip "Performance Optimisation"
 
     1. **Use executors**: Define reusable executors to avoid repetition
     2. **Enable DLC**: Docker Layer Caching speeds up image pulls (paid feature)
@@ -605,7 +605,7 @@ workflows:
 
 ## Resource Classes
 
-### Optimize Build Performance
+### Optimise Build Performance
 
 ```yaml
 version: 2.1

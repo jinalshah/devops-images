@@ -9,8 +9,8 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 | Image | Description | Cloud Tools | Best For |
 |-------|-------------|-------------|----------|
 | **all-devops** | Full toolkit with AWS + GCP | AWS CLI, gcloud, Session Manager | Multi-cloud teams, platform engineering |
-| **aws-devops** | AWS-optimized image | AWS CLI, Session Manager | AWS-focused operations |
-| **gcp-devops** | GCP-optimized image | gcloud, GKE tools | GCP-focused operations |
+| **aws-devops** | AWS-optimised image | AWS CLI, Session Manager | AWS-focused operations |
+| **gcp-devops** | GCP-optimised image | gcloud, GKE tools | GCP-focused operations |
 
 ### Base Tools (All Images)
 
@@ -156,7 +156,7 @@ docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest \
 
 ### For Teams
 
-- **Standardized Toolchain**: Everyone uses the same tool versions
+- **Standardised Toolchain**: Everyone uses the same tool versions
 - **Onboarding**: New team members start productive immediately
 - **Multi-cloud Operations**: Single image for AWS and GCP workflows
 
@@ -197,7 +197,7 @@ docker buildx build \
   --load .
 ```
 
-### Customize Build
+### Customise Build
 
 Override tool versions using build arguments:
 
@@ -363,7 +363,7 @@ Documentation includes:
 
 - **[Getting Started Guide](https://jinalshah.github.io/devops-images/)** - Quick start and overview
 - **[Using Images](https://jinalshah.github.io/devops-images/use-images/)** - Pull, run, and automation patterns
-- **[Building Images](https://jinalshah.github.io/devops-images/build-images/)** - Local builds and customization
+- **[Building Images](https://jinalshah.github.io/devops-images/build-images/)** - Local builds and customisation
 - **[Tool Basics](https://jinalshah.github.io/devops-images/tool-basics/)** - Comprehensive tool reference with examples
 - **[Troubleshooting](https://jinalshah.github.io/devops-images/troubleshooting/)** - Common issues and solutions
 
@@ -399,7 +399,7 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is open source. See repository for license details.
+This project is open source. See repository for licence details.
 
 ## Related Projects
 

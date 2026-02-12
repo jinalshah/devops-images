@@ -1,6 +1,6 @@
 # Building Images
 
-Complete guide to building DevOps Images locally, including benchmarks, optimization strategies, and troubleshooting.
+Complete guide to building DevOps Images locally, including benchmarks, optimisation strategies, and troubleshooting.
 
 ---
 
@@ -27,7 +27,7 @@ docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
 
     - 🔧 **Custom tools**: Add proprietary or internal tools
     - 🔧 **Specific versions**: Pin tool versions for compliance
-    - 🔧 **Size optimization**: Remove unused tools
+    - 🔧 **Size optimisation**: Remove unused tools
     - 🔧 **Custom base**: Different Linux distro or base image
     - 🔧 **Air-gapped**: No internet access for pulls
 
@@ -187,8 +187,8 @@ RUN install-terraform.sh
 RUN install-aws-cli.sh
 ```
 
-!!! tip "Optimize Layer Order"
-    Place frequently changing layers at the end to maximize cache hits.
+!!! tip "Optimise Layer Order"
+    Place frequently changing layers at the end to maximise cache hits.
 
 ### Strategy 2: BuildKit Cache Mount
 
@@ -343,7 +343,7 @@ If building from the repository, additional test scripts are available:
 
 ---
 
-## Optimization Techniques
+## Optimisation Techniques
 
 ### Reduce Build Time
 
@@ -375,7 +375,7 @@ If building from the repository, additional test scripts are available:
 
 ### Reduce Image Size
 
-See [Optimization Guide](optimization.md) for detailed size reduction techniques.
+See [Optimisation Guide](optimisation.md) for detailed size reduction techniques.
 
 ---
 
@@ -579,7 +579,7 @@ RUN curl -o /usr/local/bin/custom-tool https://example.com/tool
 docker build -f Dockerfile.custom -t all-devops:custom .
 ```
 
-See [Customization Guide](customization.md) for detailed examples.
+See [Customisation Guide](customisation.md) for detailed examples.
 
 ### Automated Builds
 
@@ -596,8 +596,8 @@ Set up CI/CD to build automatically:
 Detailed build instructions for each variant:
 
 - [Building all-devops](all-devops.md) - Multi-cloud image
-- [Building aws-devops](aws-devops.md) - AWS-optimized image
-- [Building gcp-devops](gcp-devops.md) - GCP-optimized image
+- [Building aws-devops](aws-devops.md) - AWS-optimised image
+- [Building gcp-devops](gcp-devops.md) - GCP-optimised image
 
 ---
 
@@ -608,7 +608,7 @@ Detailed build instructions for each variant:
     1. **Use cache**: Always enable `--cache-from` in CI/CD
     2. **Pin versions**: Use build args to lock versions for reproducibility
     3. **Test locally first**: Validate builds before CI/CD
-    4. **Monitor build times**: Track and optimize slow stages
+    4. **Monitor build times**: Track and optimise slow stages
     5. **Clean regularly**: Run `docker system prune` weekly
 
 !!! warning "Common Mistakes"
@@ -623,7 +623,7 @@ Detailed build instructions for each variant:
 
 ## Next Steps
 
-- [Optimization Guide](optimization.md) - Reduce size and build time
-- [Customization Guide](customization.md) - Extend with custom tools
+- [Optimisation Guide](optimisation.md) - Reduce size and build time
+- [Customisation Guide](customisation.md) - Extend with custom tools
 - [Multi-Platform Guide](multi-platform-images.md) - Build for amd64 and arm64
 - [Architecture Overview](../architecture/index.md) - Understand image layers

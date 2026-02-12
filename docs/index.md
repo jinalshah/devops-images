@@ -94,7 +94,7 @@ Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** archite
 
 ### For Teams
 
-✓ **Standardized toolchain** - Everyone uses identical tool versions
+✓ **Standardised toolchain** - Everyone uses identical tool versions
 ✓ **Fast onboarding** - New team members productive in minutes
 ✓ **Multi-cloud ready** - Single image for AWS, GCP, and Kubernetes
 ✓ **Version controlled** - Pin to specific image tags for reproducibility
@@ -321,7 +321,7 @@ Choose your path based on what you want to accomplish:
 
 ### I want to build images locally
 
-→ **[Building Images](build-images/index.md)** - Build, customize, and test locally
+→ **[Building Images](build-images/index.md)** - Build, customise, and test locally
 
 - [Building All DevOps](build-images/all-devops.md)
 - [Building AWS DevOps](build-images/aws-devops.md)

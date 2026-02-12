@@ -179,7 +179,7 @@ The DevOps Images support multiple AWS authentication methods.
     }
     ```
 
-=== "SSO (AWS IAM Identity Center)"
+=== "SSO (AWS IAM Identity Centre)"
 
     ### Setup
 

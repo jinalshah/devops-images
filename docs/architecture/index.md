@@ -186,7 +186,7 @@ All images include four AI CLI assistants for code generation, review, and troub
 - **ncat, telnet** - Network connectivity testing
 - **curl, wget** - HTTP clients
 - **jq** - JSON processing
-- **tree** - Directory visualization
+- **tree** - Directory visualisation
 - **vim, less** - Text editors/pagers
 
 ## Build Process
@@ -239,8 +239,8 @@ Approximate compressed image sizes:
 | **aws-devops** | ~2.8GB | AWS only | AWS-first teams |
 | **gcp-devops** | ~2.9GB | GCP only | GCP-first teams |
 
-!!! tip "Size Optimization"
-    If you only need a subset of tools, consider building a custom image. See [Build Images > Customization](../build-images/customization.md) for details.
+!!! tip "Size Optimisation"
+    If you only need a subset of tools, consider building a custom image. See [Build Images > Customisation](../build-images/customisation.md) for details.
 
 ## Next Steps
 

@@ -3,7 +3,7 @@
 Complete guide to using DevOps Images in Jenkins pipelines for automated infrastructure deployment, testing, and validation.
 
 !!! tip "Why Jenkins?"
-    - Self-hosted control and customization
+    - Self-hosted control and customisation
     - Extensive plugin ecosystem
     - Docker pipeline support
     - Works with any container registry
@@ -549,7 +549,7 @@ pipeline {
 
 ## Best Practices
 
-!!! tip "Performance Optimization"
+!!! tip "Performance Optimisation"
 
     1. **Reuse Docker agents**: Use `reuseNode true` to avoid creating new containers
     2. **Cache Docker images**: Configure Docker to cache pulled images

@@ -27,7 +27,7 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
 ### Why Zsh as Default Shell?
 
 - **Better UX**: Enhanced tab completion, syntax highlighting
-- **Oh-My-Zsh ready**: Easy customization for users
+- **Oh-My-Zsh ready**: Easy customisation for users
 - **Backwards compatible**: Bash scripts still work
 - **Interactive features**: Better history search, glob patterns
 
@@ -167,7 +167,7 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
 
 ## Installation Order
 
-The tools are installed in a specific order to optimize Docker layer caching and minimize rebuild times:
+The tools are installed in a specific order to optimise Docker layer caching and minimise rebuild times:
 
 ```mermaid
 graph TD
@@ -225,7 +225,7 @@ pie title Base Layer Size Distribution
     "Utilities & Misc" : 240
 ```
 
-### Optimization Techniques
+### Optimisation Techniques
 
 !!! tip "How We Keep Size Down"
 
@@ -299,7 +299,7 @@ Many tools are downloaded as pre-compiled binaries for efficiency:
 
 **Ansible**:
 - Host key checking disabled (for automation)
-- Colored output enabled
+- Coloured output enabled
 
 ---
 
@@ -339,7 +339,7 @@ docker run --rm <image> sh -c "terraform init && terraform plan"
 | Variable | Value | Purpose |
 |----------|-------|---------|
 | `PATH` | Includes all tool binaries | Ensure tools are executable |
-| `TERM` | `xterm-256color` | Color support in terminal |
+| `TERM` | `xterm-256color` | Colour support in terminal |
 | `LANG` | `en_US.UTF-8` | UTF-8 encoding |
 | `TF_PLUGIN_CACHE_DIR` | `~/.terraform.d/plugin-cache` | Speed up Terraform |
 
@@ -433,4 +433,4 @@ ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
 
 - [Cloud Layers](cloud-layers.md) - AWS and GCP additions
 - [Image Comparison](comparison.md) - Tool matrix across variants
-- [Building Images](../build-images/index.md) - Customize your own
+- [Building Images](../build-images/index.md) - Customise your own

@@ -68,7 +68,7 @@ flowchart TD
 docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Team - Standardized AWS Environment
+### Team - Standardised AWS Environment
 
 **Recommendation**: **aws-devops**
 
@@ -85,7 +85,7 @@ docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
 
 **Recommendation**: **gcp-devops**
 
-- ✅ GCP-optimized with gcloud
+- ✅ GCP-optimised with gcloud
 - ✅ GCR authentication built-in
 - ✅ Smaller than all-devops
 - ✅ GKE-ready
@@ -139,14 +139,14 @@ pie title all-devops Size Breakdown (~3.2GB)
     "Other Tools" : 100
 ```
 
-### Size Optimization Strategies
+### Size Optimisation Strategies
 
 !!! tip "Reduce Image Size"
     If size is a concern:
 
     1. **Use cloud-specific images** - Save ~300-400MB by using aws-devops or gcp-devops instead of all-devops
     2. **Pin versions** - Use immutable tags for Docker layer caching in CI/CD
-    3. **Build custom** - Remove tools you don't need (see [Customization Guide](build-images/customization.md))
+    3. **Build custom** - Remove tools you don't need (see [Customisation Guide](build-images/customisation.md))
     4. **Multi-stage builds** - Copy only what you need into final stage
 
 ## Feature Comparison Matrix
@@ -202,7 +202,7 @@ pie title all-devops Size Breakdown (~3.2GB)
     - **Existing AWS infrastructure?** → Use **aws-devops** for optimal size
     - **Using GKE/Cloud Run?** → Use **gcp-devops** for GCP integration
     - **CI/CD with multi-cloud deployments?** → Use **all-devops** with version pinning
-    - **Want to customize?** → Build your own based on any variant ([guide](build-images/customization.md))
+    - **Want to customise?** → Build your own based on any variant ([guide](build-images/customisation.md))
 
 ## Registry Choice
 
@@ -230,7 +230,7 @@ All images are available in three registries:
     **Why GitLab?**
 
     - ✅ Native GitLab CI integration
-    - ✅ Good for GitLab-first organizations
+    - ✅ Good for GitLab-first organisations
     - ✅ Private runner support
 
 === "Docker Hub"
@@ -253,7 +253,7 @@ Once you've chosen your image:
 2. **Pull the Image**: See [Use Images](use-images/index.md) for pull commands
 3. **Set Up Authentication**: Configure [credentials and volume mounts](use-images/authentication.md)
 4. **Explore Workflows**: Check out [real-world examples](workflows/index.md)
-5. **Customize**: Learn how to [build custom images](build-images/customization.md)
+5. **Customise**: Learn how to [build custom images](build-images/customisation.md)
 
 ---
 

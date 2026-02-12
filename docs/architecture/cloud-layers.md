@@ -1,6 +1,6 @@
 # Cloud Layers Architecture
 
-The cloud-specific layers extend the base image with AWS and/or GCP tools, creating specialized variants optimized for single-cloud or multi-cloud workflows.
+The cloud-specific layers extend the base image with AWS and/or GCP tools, creating specialized variants optimised for single-cloud or multi-cloud workflows.
 
 ---
 
@@ -239,7 +239,7 @@ CLOUDSDK_PYTHON_SITEPACKAGES=1   # Allow system packages
 - Credentials: Application Default Credentials (ADC)
 - Docker config: `~/.docker/config.json`
 
-### Size Optimization Attempts
+### Size Optimisation Attempts
 
 **Why not trim components?**
 
@@ -272,13 +272,13 @@ RUN install-aws-tools.sh
 RUN install-gcp-tools.sh
 ```
 
-### Size Optimization
+### Size Optimisation
 
-**Without optimization**: 2.0 GB + 800 MB + 900 MB = **3.7 GB**
+**Without optimisation**: 2.0 GB + 800 MB + 900 MB = **3.7 GB**
 
-**With optimization**: **3.2 GB** (save 500 MB)
+**With optimisation**: **3.2 GB** (save 500 MB)
 
-**Optimization techniques**:
+**Optimisation techniques**:
 
 1. **Shared dependencies**: Both AWS and GCP use Python
    ```bash
@@ -401,7 +401,7 @@ graph LR
 
 | Architecture | Build Speed | Notes |
 |--------------|-------------|-------|
-| **amd64** | Baseline | Most common, well-optimized |
+| **amd64** | Baseline | Most common, well-optimised |
 | **arm64** | 10-20% slower | Fewer cached layers initially |
 
 **Apple Silicon**: Use arm64 native for best performance
