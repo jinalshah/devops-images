@@ -205,12 +205,12 @@ pie title Base Image Components
 
 **Not simply AWS + GCP** (would be 1.7 GB)
 
-**Optimizations**:
+**Optimisations**:
 - Shared Python runtime: Save ~50 MB
 - Shared dependencies: Save ~100 MB
 - Single-layer cleanup: Save ~150 MB
 
-**Actual addition**: 1.2 GB (save 500 MB through optimization)
+**Actual addition**: 1.2 GB (save 500 MB through optimisation)
 
 ---
 
@@ -416,7 +416,7 @@ Assuming $0.10/GB/month for container registry storage:
 - Monthly bandwidth: ~300 GB
 - Bandwidth cost: ~$30/month (varies by registry)
 
-**Optimization tip**: Use smaller images (aws-devops or gcp-devops) to reduce bandwidth costs.
+**Optimisation tip**: Use smaller images (aws-devops or gcp-devops) to reduce bandwidth costs.
 
 ### CI/CD Pipeline Costs
 
@@ -486,5 +486,5 @@ container:
 
 - [Base Layer Details](base-layer.md) - Tool breakdown
 - [Cloud Layer Details](cloud-layers.md) - AWS and GCP additions
-- [Building Images](../build-images/index.md) - Customize your own
+- [Building Images](../build-images/index.md) - Customise your own
 - [Use Images Guide](../use-images/index.md) - Get started

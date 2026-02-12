@@ -64,7 +64,7 @@ graph LR
 | **GitHub Actions** | [ci-cd-github.md](ci-cd-github.md) | Matrix builds, caching, secrets management |
 | **GitLab CI** | [ci-cd-gitlab.md](ci-cd-gitlab.md) | Multi-stage pipelines, artifacts, environments |
 | **Jenkins** | [ci-cd-jenkins.md](ci-cd-jenkins.md) | Declarative & scripted pipelines, credentials |
-| **CircleCI** | [ci-cd-circleci.md](ci-cd-circleci.md) | Executors, workflows, caching optimization |
+| **CircleCI** | [ci-cd-circleci.md](ci-cd-circleci.md) | Executors, workflows, caching optimisation |
 
 ### Workflow Patterns
 
@@ -378,16 +378,16 @@ ansible all -i inventory.yml -m ping
     terraform apply -auto-approve
     ```
 
-## Performance Optimization
+## Performance Optimisation
 
-### Image Pull Optimization
+### Image Pull Optimisation
 
 1. **Use GHCR** - Fastest global CDN, no rate limits
 2. **Pin versions** - Enable Docker layer caching
 3. **Pre-pull images** - In CI, pull during setup phase
 4. **Use smaller images** - aws-devops/gcp-devops vs all-devops
 
-### Pipeline Optimization
+### Pipeline Optimisation
 
 1. **Parallel jobs** - Run independent tasks concurrently
 2. **Cache dependencies** - Terraform plugins, Helm charts

@@ -1,10 +1,10 @@
-# Image Size Optimization
+# Image Size Optimisation
 
-Learn how to optimize DevOps Image builds for faster pulls, reduced storage, and improved performance.
+Learn how to optimise DevOps Image builds for faster pulls, reduced storage, and improved performance.
 
 ## Size Breakdown
 
-Understanding where the size comes from helps identify optimization opportunities:
+Understanding where the size comes from helps identify optimisation opportunities:
 
 ```mermaid
 pie title all-devops Size Breakdown (~3.2GB)
@@ -18,7 +18,7 @@ pie title all-devops Size Breakdown (~3.2GB)
 
 ### Component Sizes
 
-| Component | Approximate Size | Optimization Potential |
+| Component | Approximate Size | Optimisation Potential |
 |-----------|------------------|----------------------|
 | **Rocky Linux 9 Base** | ~500 MB | ❌ Minimal (required base) |
 | **System Packages** | ~800 MB | ⚠️  Moderate (clean cache) |
@@ -104,13 +104,13 @@ RUN yum install -y package-name && \
 
 ---
 
-## Layer Optimization Strategies
+## Layer Optimisation Strategies
 
 ### Order Dockerfile Instructions by Change Frequency
 
 Layers that change less frequently should come first:
 
-**✅ Good**: Maximize cache hits
+**✅ Good**: Maximise cache hits
 
 ```dockerfile
 # 1. Base OS (changes almost never)
@@ -190,7 +190,7 @@ __pycache__/
 
 ---
 
-## Build Argument Optimization
+## Build Argument Optimisation
 
 ### Pin Versions for Reproducibility
 
@@ -232,7 +232,7 @@ DOCKER_BUILDKIT=1 docker build -t custom-devops:latest .
 
 ---
 
-## Compression and Export Optimization
+## Compression and Export Optimisation
 
 ### Export and Compress for Distribution
 
@@ -275,7 +275,7 @@ docker build --squash -t custom-devops:latest .
 
 ---
 
-## Build Performance Optimization
+## Build Performance Optimisation
 
 ### Parallel Builds
 
@@ -307,7 +307,7 @@ DOCKER_BUILDKIT=1 docker build -t custom-devops:latest .
 
 ---
 
-## Before/After Optimization Examples
+## Before/After Optimisation Examples
 
 ### Example 1: AWS-Only Deployment
 
@@ -350,7 +350,7 @@ CMD ["zsh"]
 
 ---
 
-## CI/CD Optimization
+## CI/CD Optimisation
 
 ### 1. Use Image Caching in Pipelines
 
@@ -457,7 +457,7 @@ docker run --rm -it \
 
 ---
 
-## Optimization Checklist
+## Optimisation Checklist
 
 - [ ] ✅ Use cloud-specific image if possible (`aws-devops` or `gcp-devops`)
 - [ ] ✅ Remove unused Python packages in custom builds
@@ -477,7 +477,7 @@ docker run --rm -it \
 
 ## Next Steps
 
-- [Customization Guide](customization.md) - Build your own custom image
+- [Customisation Guide](customisation.md) - Build your own custom image
 - [Build Images Overview](index.md) - General build instructions
 - [Architecture](../architecture/index.md) - Understand image composition
 - [Choosing an Image](../choosing-an-image.md) - Select the right base image

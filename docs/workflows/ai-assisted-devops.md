@@ -217,7 +217,7 @@ echo "✅ Module generated, reviewed, and validated!"
 echo "📄 See modules/eks/review.md for AI recommendations"
 ```
 
-### Example 2: Ansible Playbook Generation and Optimization
+### Example 2: Ansible Playbook Generation and Optimisation
 
 ```bash
 # Generate playbook
@@ -576,9 +576,9 @@ ai:review:
     - **Security Sensitive**: Never share production secrets with AI
     - **Compliance**: Review AI-generated code for compliance requirements
 
-## Cost Optimization
+## Cost Optimisation
 
-AI API calls have costs. Optimize usage:
+AI API calls have costs. Optimise usage:
 
 1. **Batch operations**: Review multiple files in one prompt
 2. **Cache responses**: Save reviews for similar code patterns

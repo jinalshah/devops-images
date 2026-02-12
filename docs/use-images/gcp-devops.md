@@ -1,6 +1,6 @@
 # GCP DevOps Image
 
-GCP-optimized container with all essential DevOps tools plus Google Cloud-specific CLIs. Perfect for GCP-centric workflows while maintaining full platform tool support.
+GCP-optimised container with all essential DevOps tools plus Google Cloud-specific CLIs. Perfect for GCP-centric workflows while maintaining full platform tool support.
 
 ---
 
@@ -72,7 +72,7 @@ All standard DevOps tools from the base image:
 
 ### GCP-Specific Additions
 
-Tools optimized for Google Cloud workflows:
+Tools optimised for Google Cloud workflows:
 
 - **Google Cloud CLI (`gcloud`)**: Complete GCP command-line suite
   - `gcloud` - Core Cloud SDK
@@ -335,7 +335,7 @@ docker run --rm \
     - ✅ **GKE deployments**: gcloud + kubectl + Helm in one image
     - ✅ **Terraform on GCP**: Full Terraform + gcloud CLI integration
     - ✅ **Cloud Run deployments**: gcloud CLI with container runtime
-    - ✅ **Cloud Build pipelines**: Optimized for GCP-native CI/CD
+    - ✅ **Cloud Build pipelines**: Optimised for GCP-native CI/CD
 
 !!! info "Consider all-devops if you need"
 
@@ -362,7 +362,7 @@ Want to build your own? See [Building GCP DevOps Image](../build-images/gcp-devo
 
 - Complete Dockerfile
 - Build arguments
-- Customization options
+- Customisation options
 - Multi-platform builds
 
 ---

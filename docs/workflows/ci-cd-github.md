@@ -4,7 +4,7 @@ Complete guide to using DevOps Images in GitHub Actions workflows for automated 
 
 !!! tip "Why GitHub Actions?"
     - Native GitHub integration
-    - GHCR registry optimized for Actions
+    - GHCR registry optimised for Actions
     - Generous free tier (2,000 minutes/month for private repos)
     - Extensive marketplace of actions
 
@@ -539,7 +539,7 @@ jobs:
 
 ## Best Practices
 
-!!! tip "Performance Optimization"
+!!! tip "Performance Optimisation"
 
     1. **Pin image versions**: Use immutable tags like `1.0.abc1234`
     2. **Cache layers**: GitHub automatically caches container layers

@@ -535,7 +535,7 @@ docker run --rm \
     4. **Version state files**: Use S3 versioning or equivalent
     5. **Backup state regularly**: Automated backups of state files
 
-!!! tip "Code Organization"
+!!! tip "Code Organisation"
 
     1. **Use modules**: Reusable, testable components
     2. **Separate environments**: Use workspaces or directories

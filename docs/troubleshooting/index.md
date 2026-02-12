@@ -730,8 +730,8 @@ Open an issue on GitHub with:
 - **Title**: Clear, concise description of the problem
 - **Environment**: Docker version, host OS, architecture
 - **Steps to reproduce**: Exact commands you ran
-- **Expected behavior**: What should happen
-- **Actual behavior**: What actually happened
+- **Expected behaviour**: What should happen
+- **Actual behaviour**: What actually happened
 - **Error output**: Full error messages and logs
 - **Image and tag**: Which image and version you're using
 

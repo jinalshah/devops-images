@@ -1,6 +1,6 @@
 # AWS DevOps Image
 
-AWS-optimized container with all essential DevOps tools plus AWS-specific CLIs and libraries. Perfect for AWS-centric workflows while maintaining full platform tool support.
+AWS-optimised container with all essential DevOps tools plus AWS-specific CLIs and libraries. Perfect for AWS-centric workflows while maintaining full platform tool support.
 
 ---
 
@@ -72,7 +72,7 @@ All standard DevOps tools from the base image:
 
 ### AWS-Specific Additions
 
-Tools optimized for AWS workflows:
+Tools optimised for AWS workflows:
 
 - **AWS CLI v2**: Latest AWS command-line interface
 - **AWS Session Manager Plugin**: Direct SSH-like access to EC2 instances
@@ -330,7 +330,7 @@ Want to build your own? See [Building AWS DevOps Image](../build-images/aws-devo
 
 - Complete Dockerfile
 - Build arguments
-- Customization options
+- Customisation options
 - Multi-platform builds
 
 ---

@@ -861,7 +861,7 @@ gh gist list
 **Common use cases:**
 - Backing up organization repositories
 - Cloning multiple repos for offline work
-- Syncing organization codebases
+- Syncing organisation codebases
 - Repository migrations
 
 **Basic usage:**
@@ -1420,7 +1420,7 @@ wget -c https://example.com/large-file.zip  # Resume download
 
 ### Zsh (Default Shell)
 
-**What it does:** Zsh is an extended Unix shell with advanced features and customization.
+**What it does:** Zsh is an extended Unix shell with advanced features and customisation.
 
 **Available in:** All images (default shell)
 

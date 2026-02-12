@@ -4,7 +4,7 @@ Complete guide to using DevOps Images in GitLab CI pipelines for automated infra
 
 !!! tip "Why GitLab CI?"
     - Native GitLab integration
-    - GitLab Container Registry optimized for CI
+    - GitLab Container Registry optimised for CI
     - Generous free tier (400 minutes/month for free tier)
     - Built-in security scanning and compliance features
 
@@ -465,13 +465,13 @@ deploy:infrastructure:
 
 ## Best Practices
 
-!!! tip "Performance Optimization"
+!!! tip "Performance Optimisation"
 
     1. **Use GitLab Container Registry**: Faster pulls in GitLab CI
     2. **Cache Terraform plugins**: Use `cache:` directive
     3. **Pin image versions**: Use immutable tags
     4. **Parallel jobs**: Use `parallel:` keyword for matrix builds
-    5. **Optimize artifacts**: Only save necessary files
+    5. **Optimise artifacts**: Only save necessary files
 
 !!! tip "Security Best Practices"
 
