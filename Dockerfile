@@ -40,6 +40,7 @@ RUN \
     bash \
     bash-completion \
     bind-utils \
+    bubblewrap \
     curl \
     findutils \
     fish \
