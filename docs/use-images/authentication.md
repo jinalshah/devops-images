@@ -17,7 +17,7 @@ graph TB
         CLAUDE_H[~/.claude]
         CODEX_H[~/.codex]
         COPILOT_H[~/.copilot]
-        GEMINI_H[~/.gemini]
+        ANTIGRAVITY_H[~/.gemini]
     end
 
     subgraph "Container Paths"
@@ -27,7 +27,7 @@ graph TB
         CLAUDE_C[/root/.claude]
         CODEX_C[/root/.codex]
         COPILOT_C[/root/.copilot]
-        GEMINI_C[/root/.gemini]
+        ANTIGRAVITY_C[/root/.gemini]
     end
 
     AWS_H -.->|-v ~/.aws:/root/.aws| AWS_C
@@ -36,7 +36,7 @@ graph TB
     CLAUDE_H -.->|-v ~/.claude:/root/.claude| CLAUDE_C
     CODEX_H -.->|-v ~/.codex:/root/.codex| CODEX_C
     COPILOT_H -.->|-v ~/.copilot:/root/.copilot| COPILOT_C
-    GEMINI_H -.->|-v ~/.gemini:/root/.gemini| GEMINI_C
+    ANTIGRAVITY_H -.->|-v ~/.gemini:/root/.gemini| ANTIGRAVITY_C
 
     subgraph "Available Tools"
         AWS_CLI[aws cli]
@@ -45,7 +45,7 @@ graph TB
         CLAUDE_CLI[claude]
         CODEX_CLI[codex]
         COPILOT_CLI[copilot]
-        GEMINI_CLI[gemini]
+        ANTIGRAVITY_CLI[agy]
     end
 
     AWS_C --> AWS_CLI
@@ -54,7 +54,7 @@ graph TB
     CLAUDE_C --> CLAUDE_CLI
     CODEX_C --> CODEX_CLI
     COPILOT_C --> COPILOT_CLI
-    GEMINI_C --> GEMINI_CLI
+    ANTIGRAVITY_C --> ANTIGRAVITY_CLI
 
     style HOST fill:#4A90E2,color:#fff
     style AWS_CLI fill:#FF9F43,color:#fff
@@ -102,7 +102,7 @@ docker run -it --rm \
 5.  Mount Claude AI credentials for `claude` CLI
 6.  Mount Codex credentials for OpenAI `codex` CLI
 7.  Mount Copilot credentials for GitHub `copilot` CLI
-8.  Mount Gemini credentials for Google `gemini` CLI
+8.  Mount Antigravity CLI credentials/session state for Google `agy`
 9.  Set working directory to `/workspace` so you start in your project
 
 ## AWS Authentication
@@ -486,25 +486,24 @@ docker run --rm \
   copilot suggest "how to deploy to kubernetes"
 ```
 
-### Google Gemini CLI
+### Google Antigravity CLI
 
-**Setup**: Use GCP credentials
+**Setup**: Use Google credentials or Antigravity session state
 
 ```bash
-# Requires gcloud authentication
 docker run -it --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
+  -v ~/.gemini:/root/.gemini \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  gemini --version
+  agy --version
 ```
 
 **Usage**:
 
 ```bash
 docker run --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
+  -v ~/.gemini:/root/.gemini \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  gemini "explain this error" --stdin < error.log
+  agy "explain this error" --stdin < error.log
 ```
 
 !!! info "AI CLI Setup Details"

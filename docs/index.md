@@ -62,7 +62,7 @@ Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** archite
 - Claude CLI
 - OpenAI Codex CLI
 - GitHub Copilot CLI
-- Google Gemini CLI
+- Google Antigravity CLI (`agy`)
 
 **Database Clients:**
 

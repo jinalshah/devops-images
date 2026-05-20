@@ -43,7 +43,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Claude CLI
 - OpenAI Codex CLI
 - GitHub Copilot CLI
-- Google Gemini CLI
+- Google Antigravity CLI (`agy`)
 
 **Database Clients:**
 - MongoDB Shell (mongosh) - v6.0

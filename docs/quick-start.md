@@ -140,7 +140,7 @@ docker run -it --rm \
 - Claude CLI (Anthropic)
 - Codex CLI (OpenAI)
 - Copilot CLI (GitHub)
-- Gemini CLI (Google)
+- Antigravity CLI (`agy`, Google)
 
 ✅ **Development**
 

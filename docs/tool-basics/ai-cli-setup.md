@@ -18,7 +18,7 @@ Comprehensive guide to setting up and using the AI CLI tools (Claude, Codex, Cop
 | **claude** | Anthropic | Code review, architecture design, complex reasoning | ✅ Anthropic API Key |
 | **codex** | OpenAI | Code generation, completion | ✅ OpenAI API Key |
 | **copilot** | GitHub | IDE integration, inline suggestions | ✅ GitHub Copilot subscription |
-| **gemini** | Google | Multi-modal tasks, GCP integration | ✅ Google AI API Key |
+| **agy** | Google | Agentic tasks, GCP integration | ✅ Google Antigravity auth/session |
 
 ---
 
@@ -241,38 +241,28 @@ docker run --rm \
 
 ---
 
-## Gemini CLI Setup
+## Antigravity CLI Setup
 
-### Get API Key
+### Authenticate
 
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with Google account
-3. Create API key
-4. Copy the key
+Sign in with Google Antigravity, then mount the local `~/.gemini` directory into the container so `agy` can access its credentials/session state.
 
-### Configure Gemini CLI
+### Configure Antigravity CLI
 
-=== "Environment Variable"
+=== "One-Off Prompt"
 
     ```bash
     docker run -it --rm \
       -v $PWD:/workspace \
-      -e GOOGLE_API_KEY=... \
+      -v ~/.gemini:/root/.gemini \
       -w /workspace \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      gemini "Generate GCP deployment manager template"
+      agy "Generate GCP deployment manager template"
     ```
 
 === "Config File"
 
-    Create `~/.gemini/config.json`:
-    ```json
-    {
-      "api_key": "..."
-    }
-    ```
-
-    Mount it:
+    Mount your Antigravity CLI credentials/session state:
     ```bash
     docker run -it --rm \
       -v $PWD:/workspace \
@@ -291,7 +281,7 @@ docker run --rm \
   -v ~/.gemini:/root/.gemini \
   -w /workspace \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  gemini "Create a Cloud Run service with auto-scaling" \
+  agy "Create a Cloud Run service with auto-scaling" \
     > cloud-run.yaml
 ```
 
@@ -304,7 +294,7 @@ docker run --rm \
   -v ~/.gemini:/root/.gemini \
   -w /workspace \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  gemini "Describe this infrastructure architecture" \
+  agy "Describe this infrastructure architecture" \
     --image architecture.png
 ```
 

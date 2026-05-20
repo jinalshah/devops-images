@@ -36,7 +36,7 @@ graph TB
             CL[Claude CLI]
             CD[Codex CLI]
             CP[Copilot CLI]
-            GM[Gemini CLI]
+            GM[Antigravity CLI]
         end
 
         subgraph "Config & Security"
@@ -161,7 +161,7 @@ All images include four AI CLI assistants for code generation, review, and troub
 | **Claude CLI** | Anthropic | Code review, architecture, long context |
 | **Codex CLI** | OpenAI | Code generation, quick snippets |
 | **Copilot CLI** | GitHub | IDE integration, GitHub workflows |
-| **Gemini CLI** | Google | GCP-specific tasks, multi-modal |
+| **Antigravity CLI** | Google | Agentic workflows, GCP-specific tasks |
 
 ### Development Tools
 

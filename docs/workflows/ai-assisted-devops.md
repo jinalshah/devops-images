@@ -14,7 +14,7 @@ The DevOps Images include four powerful AI CLI tools that can accelerate your in
 | **Claude CLI** | Anthropic | Long context (200K tokens), reasoning, analysis | Code review, architecture decisions, documentation |
 | **Codex CLI** | OpenAI | Fast code generation | Quick scripts, Terraform modules, one-off tasks |
 | **Copilot CLI** | GitHub | GitHub integration | PR reviews, GitHub Actions, repository operations |
-| **Gemini CLI** | Google | Multi-modal, GCP knowledge | GCP-specific tasks, image analysis, diverse inputs |
+| **Antigravity CLI** | Google | Agentic workflows, GCP knowledge | GCP-specific tasks, multi-step changes, diverse inputs |
 
 ## Common AI-Assisted Workflows
 
@@ -285,7 +285,7 @@ docker run --rm \
   -v ~/.gemini:/root/.gemini \
   -w /workspace \
   ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  gemini "Convert this AWS Terraform configuration to GCP equivalent using Google Cloud Platform best practices" \
+  agy "Convert this AWS Terraform configuration to GCP equivalent using Google Cloud Platform best practices" \
   --file terraform/aws/main.tf \
   > terraform/gcp/main.tf
 ```

@@ -122,7 +122,7 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
 
     **Why Node.js 20 LTS?**
     - Long-term support until 2026-04-30
-    - Required for AI CLI tools (claude, codex, copilot)
+    - Required for AI CLI tools (codex, copilot)
     - Modern JavaScript features
 
 === "AI CLI Tools"
@@ -132,7 +132,7 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
     | **claude** | Anthropic | Code review, generation | ~25 MB |
     | **codex** | OpenAI | Code completion | ~20 MB |
     | **copilot** | GitHub | IDE integration | ~30 MB |
-    | **gemini** | Google | Multi-modal AI | ~25 MB |
+    | **agy** | Google | Agentic AI | ~30 MB |
 
     **Total AI tooling**: ~100 MB (Node.js + CLIs)
 

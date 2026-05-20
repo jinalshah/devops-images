@@ -1096,9 +1096,9 @@ copilot --version
 
 ---
 
-### Google Gemini CLI
+### Google Antigravity CLI
 
-**What it does:** CLI interface for Google's Gemini AI model for code assistance and generation.
+**What it does:** Google's agent-first CLI for code assistance, generation, and multi-agent workflows.
 
 **Available in:** All images
 
@@ -1106,12 +1106,12 @@ copilot --version
 
 ```bash
 # Check installation
-gemini --version
+agy --version
 
-# Note: Requires Google Cloud authentication and API access
+# Note: Requires Google authentication or Antigravity session state
 ```
 
-**Note:** Requires Google Cloud credentials. Mount `~/.gemini` when running the container.
+**Note:** Mount `~/.gemini` when running the container so `agy` can access Google Antigravity credentials/session state.
 
 ---
 
@@ -1644,7 +1644,7 @@ tree -d
 
 ## Authentication Note for AI CLIs
 
-All AI CLI tools (`claude`, `codex`, `copilot`, `gemini`) require authentication before use. When running containers with these tools:
+All AI CLI tools (`claude`, `codex`, `copilot`, `agy`) require authentication before use. When running containers with these tools:
 
 ```bash
 docker run -it --rm \

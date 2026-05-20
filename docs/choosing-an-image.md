@@ -184,7 +184,7 @@ pie title all-devops Size Breakdown (~3.2GB)
 | Claude CLI | ✅ | ✅ | ✅ | Code review, architecture |
 | Codex CLI | ✅ | ✅ | ✅ | Code generation |
 | Copilot CLI | ✅ | ✅ | ✅ | GitHub integration |
-| Gemini CLI | ✅ | ✅ | ✅ | Multi-modal, GCP-aware |
+| Antigravity CLI (`agy`) | ✅ | ✅ | ✅ | Agentic, GCP-aware |
 
 ### Configuration Management
 
