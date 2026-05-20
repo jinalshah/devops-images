@@ -123,7 +123,7 @@ Complete comparison of all image variants with detailed tool versions, sizes, an
 | **claude** | ✅ | ✅ | ✅ | ✅ | Anthropic | Code review, generation |
 | **codex** | ✅ | ✅ | ✅ | ✅ | OpenAI | Code completion |
 | **copilot** | ✅ | ✅ | ✅ | ✅ | GitHub | IDE integration |
-| **gemini** | ✅ | ✅ | ✅ | ✅ | Google | Multi-modal AI |
+| **agy** | ✅ | ✅ | ✅ | ✅ | Google | Agentic AI |
 
 **All variants include**: Complete AI CLI toolkit for AI-assisted DevOps workflows.
 

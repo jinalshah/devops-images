@@ -50,6 +50,7 @@ RUN \
     less \
     make \
     mysql \
+    nmap \
     nmap-ncat \
     openssh-clients \
     python3-pip \
@@ -238,7 +239,9 @@ RUN \
   # Install AI CLI tools via npm
   npm install -g @openai/codex && \
   npm install -g @github/copilot && \
-  npm install -g @google/gemini-cli && \
+  \
+  # Install Antigravity CLI (agy)
+  curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir /usr/local/bin && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -255,7 +258,7 @@ RUN \
   (claude --version || echo "Claude CLI installed (auth required for full functionality)") && \
   (codex --version || echo "OpenAI Codex CLI installed (auth required for full functionality)") && \
   (copilot --version || echo "GitHub Copilot CLI installed (auth required for full functionality)") && \
-  (gemini --version || echo "Gemini CLI installed (auth required for full functionality)")
+  (agy --version || echo "Antigravity CLI installed (auth required for full functionality)")
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #;;                                                                            ;;

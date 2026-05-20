@@ -113,7 +113,7 @@ The **all-devops** image is the complete multi-cloud toolkit with both AWS and G
 | **claude** | Anthropic | Code review, architecture |
 | **codex** | OpenAI | Code generation |
 | **copilot** | GitHub | IDE integration |
-| **gemini** | Google | Multi-modal, GCP tasks |
+| **agy** | Google | Agentic, GCP tasks |
 
 See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and usage.
 

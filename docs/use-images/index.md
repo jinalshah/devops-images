@@ -129,7 +129,7 @@ docker run -it --name devops-work \  # (1)!
 6.  Mount Claude AI credentials for `claude` CLI
 7.  Mount Codex credentials for `codex` CLI (OpenAI)
 8.  Mount Copilot credentials for `copilot` CLI (GitHub)
-9.  Mount Gemini credentials for `gemini` CLI (Google)
+9.  Mount Antigravity CLI credentials/session state for `agy` (Google)
 10. Set working directory to `/workspace`
 
 !!! info "Authentication Details"

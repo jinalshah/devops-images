@@ -67,7 +67,7 @@ All standard DevOps tools from the base image:
 - **Security**: Trivy (container scanning), ansible-lint
 - **Configuration Management**: Ansible
 - **Development**: Python 3.12, Node.js 20, Git, jq, yq
-- **AI CLIs**: claude, codex, copilot, gemini
+- **AI CLIs**: claude, codex, copilot, agy
 - **Utilities**: gh (GitHub CLI), Task, zsh, vim, curl, wget
 
 ### AWS-Specific Additions
