@@ -48,6 +48,7 @@ RUN \
     iputils \
     jq \
     less \
+    lftp \
     make \
     mysql \
     nmap \

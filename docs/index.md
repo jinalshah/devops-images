@@ -73,7 +73,7 @@ Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** archite
 **Network & Diagnostics:**
 
 - dig, nslookup, ncat, telnet
-- curl, wget
+- curl, wget, lftp
 - jq JSON processor
 
 **Shells:**

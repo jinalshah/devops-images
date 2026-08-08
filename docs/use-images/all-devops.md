@@ -139,7 +139,7 @@ See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and 
 
 - **dig, nslookup** - DNS troubleshooting
 - **ncat, telnet** - Network connectivity
-- **curl, wget** - HTTP clients
+- **curl, wget, lftp** - Data transfer clients
 - **vim, less** - Editors/pagers
 - **tree** - Directory visualisation
 
