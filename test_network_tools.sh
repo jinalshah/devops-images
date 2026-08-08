@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test script to verify network tools are available in the DevOps container
 # This script should be run after building the DevOps images
-# Combines testing for DNS tools (dig, nslookup) and network tools (nmap, ncat, telnet)
+# Combines testing for DNS tools (dig, nslookup) and network tools (nmap, ncat, telnet, lftp)
 
 set -e
 
@@ -37,6 +37,7 @@ test_command "nslookup" "nslookup"
 test_command "nmap" "nmap"
 test_command "ncat" "ncat"
 test_command "telnet" "telnet"
+test_command "lftp" "lftp"
 
 # Additional functionality tests
 echo "Testing nmap functionality..."
@@ -83,6 +84,7 @@ if [ $FAILED_TESTS -eq 0 ]; then
     echo "  docker run --rm $IMAGE_NAME ncat google.com 80"
     echo "  docker run --rm -it $IMAGE_NAME ncat -l -p 8080  # Listen on port 8080"
     echo "  docker run --rm $IMAGE_NAME telnet google.com 80"
+    echo "  docker run --rm $IMAGE_NAME lftp --version"
     exit 0
 else
     echo "✗ $FAILED_TESTS test(s) failed!"

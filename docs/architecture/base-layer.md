@@ -159,6 +159,7 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
 | **vim** | Latest | Text editor | ~5 MB |
 | **curl** | Latest | HTTP client | ~1 MB |
 | **wget** | Latest | File downloader | ~1 MB |
+| **lftp** | Latest | Multi-protocol file transfer client | ~2 MB |
 | **unzip** | Latest | Archive extraction | ~1 MB |
 | **tar** | Latest | Archive management | Included |
 | **openssh-client** | Latest | SSH operations | ~10 MB |

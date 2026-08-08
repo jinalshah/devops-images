@@ -52,7 +52,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 
 **Network & Diagnostic Tools:**
 - dig, nslookup, ncat, telnet
-- curl, wget
+- curl, wget, lftp
 - jq (JSON processor)
 
 **Shells:**
