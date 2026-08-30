@@ -15,6 +15,15 @@ FROM rockylinux/rockylinux:10 AS base
 
 LABEL name=devops
 
+# OCI image metadata shared by every target. Registries (GHCR in particular) read
+# org.opencontainers.image.source to link the published package back to this repo.
+LABEL org.opencontainers.image.source="https://github.com/jinalshah/devops-images" \
+      org.opencontainers.image.url="https://github.com/jinalshah/devops-images" \
+      org.opencontainers.image.documentation="https://jinalshah.github.io/devops-images/" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="Jinal Shah" \
+      org.opencontainers.image.base.name="docker.io/rockylinux/rockylinux:10"
+
 ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
@@ -290,6 +299,9 @@ RUN \
 
 FROM base AS all-devops
 
+LABEL org.opencontainers.image.title="all-devops" \
+      org.opencontainers.image.description="Full multi-cloud DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus AWS CLI and gcloud."
+
 ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
@@ -353,6 +365,9 @@ CMD ["/bin/zsh"]
 
 FROM base AS aws-devops
 
+LABEL org.opencontainers.image.title="aws-devops" \
+      org.opencontainers.image.description="AWS-optimised DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus AWS CLI and Session Manager."
+
 ARG GCLOUD_VERSION
 ARG PACKER_VERSION
 ARG TERRAGRUNT_VERSION
@@ -404,6 +419,9 @@ CMD ["/bin/zsh"]
 
 
 FROM base AS gcp-devops
+
+LABEL org.opencontainers.image.title="gcp-devops" \
+      org.opencontainers.image.description="GCP-optimised DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus gcloud and GKE tools."
 
 ARG GCLOUD_VERSION
 ARG PACKER_VERSION
