@@ -9,7 +9,6 @@ GCLOUD_VERSION=$(curl -s https://dl.google.com/dl/cloudsdk/channels/rapid/compon
 PACKER_VERSION=$(curl -s https://api.github.com/repos/hashicorp/packer/releases/latest | jq -r .tag_name | sed 's/^v//')
 TERRAGRUNT_VERSION=$(curl -s https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest | jq -r .tag_name | sed 's/^v//')
 TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | jq -r .tag_name | sed 's/^v//')
-TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | jq -r .tag_name | sed 's/^v//')
 GHORG_VERSION=$(curl -s https://api.github.com/repos/gabrie30/ghorg/releases/latest | jq -r .tag_name | sed 's/^v//')
 K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name | sed 's/^v//')
 PYTHON_VERSION=$(curl -s 'https://api.github.com/repos/python/cpython/tags?per_page=20' | jq -r '.[].name' | grep -E '^v3\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V | tail -n1)
@@ -64,7 +63,6 @@ update_var GCLOUD_VERSION "$GCLOUD_VERSION"
 update_var PACKER_VERSION "$PACKER_VERSION"
 update_var TERRAGRUNT_VERSION "$TERRAGRUNT_VERSION"
 update_var TFLINT_VERSION "$TFLINT_VERSION"
-update_var TFSEC_VERSION "$TFSEC_VERSION"
 update_var GHORG_VERSION "$GHORG_VERSION"
 update_var K9S_VERSION "$K9S_VERSION"
 update_var PYTHON_VERSION "$PYTHON_VERSION"
