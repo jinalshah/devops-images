@@ -4,12 +4,14 @@ ARG TERRAGRUNT_VERSION=0.68.14           # https://github.com/gruntwork-io/terra
 ARG TFLINT_VERSION=0.50.3               # https://github.com/terraform-linters/tflint
 ARG GHORG_VERSION=1.9.10                # https://github.com/gabrie30/ghorg
 ARG K9S_VERSION=0.32.7                  # https://github.com/derailed/k9s
-ARG PYTHON_VERSION=3.12.4
-ARG PYTHON_VERSION_TO_USE=python3.12
-ARG MONGODB_VERSION=6.0
+ARG PYTHON_VERSION=3.14.7
+ARG PYTHON_VERSION_TO_USE=python3.14
+ARG MONGODB_VERSION=8.0
 ARG MONGODB_REPO_PATH=/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo
+ARG MYSQL_RELEASE_RPM_URL=https://repo.mysql.com/mysql84-community-release-el10-3.noarch.rpm
+ARG MYSQL_GPG_KEY_URL=https://repo.mysql.com/RPM-GPG-KEY-mysql-2025
 
-FROM rockylinux:9 AS base
+FROM rockylinux/rockylinux:10 AS base
 
 LABEL name=devops
 
@@ -23,6 +25,8 @@ ARG PYTHON_VERSION
 ARG PYTHON_VERSION_TO_USE
 ARG MONGODB_VERSION
 ARG MONGODB_REPO_PATH
+ARG MYSQL_RELEASE_RPM_URL
+ARG MYSQL_GPG_KEY_URL
 
 ENV CLOUDSDK_PYTHON=python3
 ENV PATH=/usr/lib/google-cloud-sdk/bin:/root/.local/bin:$PATH
@@ -50,10 +54,10 @@ RUN \
     less \
     lftp \
     make \
-    mysql \
     nmap \
     nmap-ncat \
     openssh-clients \
+    openssl \
     python3-pip \
     python3-dnf \
     sqlite-devel \
@@ -73,6 +77,14 @@ RUN \
   yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo && \
   yum install --allowerasing -y gh && \
   \
+  # MySQL Client
+  # RHEL/Rocky 10 dropped the mysql packages in favour of MariaDB, so the client
+  # comes from MySQL's own community repository. The signing key shipped inside
+  # the release RPM has expired, so import the current one explicitly.
+  yum install --allowerasing -y ${MYSQL_RELEASE_RPM_URL} && \
+  rpm --import ${MYSQL_GPG_KEY_URL} && \
+  yum install --allowerasing -y mysql && \
+  \
   # Install binaries to compile Python 3
   yum install --allowerasing -y \
     gcc \
@@ -81,6 +93,10 @@ RUN \
     libffi-devel \
     zlib-devel \
     && \
+  \
+  # Record the distribution's own interpreter, which stays registered as the
+  # fallback alternative below
+  DISTRO_PYTHON="$(readlink -f /usr/bin/python3)" && \
   \
   # Install Python 3
   cd /tmp && \
@@ -92,9 +108,14 @@ RUN \
   cd /tmp && \
   rm -rf Python* && \
   \
-  # Set Python "PYTHON_VERSION_TO_USE" as default
-  alternatives --install /usr/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
-  alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 200 && \
+  # Set Python "PYTHON_VERSION_TO_USE" as default.
+  # The link lives in /usr/local/bin, which precedes /usr/bin on PATH, instead
+  # of replacing /usr/bin/python3 itself: RHEL 10 ships dnf with an unversioned
+  # "#!/usr/bin/python3" shebang (RHEL 9 pinned it to "#!/usr/bin/python3.9"),
+  # so hijacking /usr/bin/python3 would leave dnf unable to import its own
+  # modules and break every later yum call.
+  alternatives --install /usr/local/bin/python3 python3 /usr/local/bin/${PYTHON_VERSION_TO_USE} 100 && \
+  alternatives --install /usr/local/bin/python3 python3 "${DISTRO_PYTHON}" 200 && \
   echo 1 | alternatives --config python3 && \
   \
   python3 -m pip install --upgrade -U pip  && \
@@ -119,7 +140,7 @@ RUN \
   \
   # Install PostgreSQL Client
   yum install --allowerasing -y \
-    https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm && \
+    https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm && \
   # yum module -y disable postgresql && \
   yum install --allowerasing -y \
     postgresql17 \

@@ -15,7 +15,7 @@ DevOps Images are pre-built Docker containers that include a comprehensive toolk
 - **Database Clients** (mongosh, psql, mysql)
 - **Development Tools** (Python, Node.js, Git, GitHub CLI)
 
-Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** architectures, these images eliminate the need to install dozens of tools on your local machine or CI/CD runners.
+Built on **Rocky Linux 10** with support for both **AMD64** and **ARM64** architectures, these images eliminate the need to install dozens of tools on your local machine or CI/CD runners.
 
 ## Choose the Right Image
 
@@ -52,7 +52,7 @@ Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** archite
 
 **Development:**
 
-- Python 3.12 with pip
+- Python 3.14 with pip
 - Node.js LTS with npm
 - Git & GitHub CLI
 - ghorg (GitHub org cloner)
@@ -66,7 +66,7 @@ Built on **Rocky Linux 9** with support for both **AMD64** and **ARM64** archite
 
 **Database Clients:**
 
-- MongoDB Shell (mongosh) v6.0
+- MongoDB Shell (mongosh) v8.0
 - PostgreSQL (psql) v17
 - MySQL client
 

@@ -106,13 +106,13 @@ Complete comparison of all image variants with detailed tool versions, sizes, an
 
 | Tool | Base | aws-devops | gcp-devops | all-devops | Version | Purpose |
 |------|------|------------|------------|------------|---------|---------|
-| **Python** | ✅ | ✅ | ✅ | ✅ | 3.12 | Scripting |
+| **Python** | ✅ | ✅ | ✅ | ✅ | 3.14 | Scripting |
 | **pip** | ✅ | ✅ | ✅ | ✅ | Latest | Python packages |
 | **pipx** | ✅ | ✅ | ✅ | ✅ | Latest | Isolated CLIs |
 | **Node.js** | ✅ | ✅ | ✅ | ✅ | 20 LTS | JavaScript runtime |
 | **npm** | ✅ | ✅ | ✅ | ✅ | Latest | Node packages |
 
-**All variants include**: Python 3.12 and Node.js 20 LTS for scripting and automation.
+**All variants include**: Python 3.14 and Node.js 20 LTS for scripting and automation.
 
 ---
 

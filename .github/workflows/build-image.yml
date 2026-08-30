@@ -98,8 +98,6 @@ jobs:
             K9S_VERSION=${{ vars.K9S_VERSION }}
             PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
             PYTHON_VERSION_TO_USE=${{ vars.PYTHON_VERSION_TO_USE }}
-            MONGODB_VERSION=${{ vars.MONGODB_VERSION }}
-            MONGODB_REPO_PATH=${{ vars.MONGODB_REPO_PATH }}
           tags: |
             ${{ inputs.gitlab_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
             ${{ inputs.ghcr_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}

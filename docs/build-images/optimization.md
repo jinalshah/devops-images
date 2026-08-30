@@ -20,7 +20,7 @@ pie title all-devops Size Breakdown (~3.2GB)
 
 | Component | Approximate Size | Optimisation Potential |
 |-----------|------------------|----------------------|
-| **Rocky Linux 9 Base** | ~500 MB | ❌ Minimal (required base) |
+| **Rocky Linux 10 Base** | ~500 MB | ❌ Minimal (required base) |
 | **System Packages** | ~800 MB | ⚠️  Moderate (clean cache) |
 | **Python + Packages** | ~600 MB | ✅ High (reduce packages) |
 | **AWS CLI + gcloud** | ~900 MB | ✅ High (use single-cloud image) |
@@ -65,7 +65,7 @@ FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS builder
 RUN pip3 install --no-cache-dir custom-package
 
 # Final stage - minimal runtime
-FROM rockylinux:9-minimal
+FROM rockylinux/rockylinux:10-minimal
 
 # Copy only what you need from builder
 COPY --from=builder /usr/local/bin/custom-tool /usr/local/bin/
@@ -114,7 +114,7 @@ Layers that change less frequently should come first:
 
 ```dockerfile
 # 1. Base OS (changes almost never)
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 
 # 2. System packages (changes rarely)
 RUN yum install -y git curl wget
@@ -132,7 +132,7 @@ COPY scripts/ /usr/local/bin/
 **❌ Bad**: Frequent cache invalidation
 
 ```dockerfile
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 
 # Application code changes frequently, invalidates all subsequent layers
 COPY scripts/ /usr/local/bin/
@@ -198,7 +198,7 @@ __pycache__/
 # Good - consistent builds
 docker build \
   --build-arg PACKER_VERSION=1.11.2 \
-  --build-arg PYTHON_VERSION=3.12 \
+  --build-arg PYTHON_VERSION=3.14.7 \
   -t custom-devops:1.0.0 .
 
 # Avoid - unpredictable builds
@@ -212,7 +212,7 @@ docker build -t custom-devops:latest .
 ```dockerfile
 # syntax=docker/dockerfile:1
 
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 
 # Cache pip downloads across builds
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -336,7 +336,7 @@ docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
 ```dockerfile
 FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS base
 
-FROM rockylinux:9-minimal
+FROM rockylinux/rockylinux:10-minimal
 COPY --from=base /usr/bin/terraform /usr/bin/
 COPY --from=base /usr/bin/kubectl /usr/bin/
 COPY --from=base /usr/bin/zsh /usr/bin/

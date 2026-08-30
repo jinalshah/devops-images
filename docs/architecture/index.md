@@ -6,12 +6,12 @@ The DevOps Images are built on a layered architecture, starting from a common ba
 
 ## Base Layer Architecture
 
-All images start from a common base layer built on Rocky Linux 9:
+All images start from a common base layer built on Rocky Linux 10:
 
 ```mermaid
 graph TB
     subgraph "Base Layer (All Images)"
-        RL[Rocky Linux 9<br/>Multi-arch: amd64/arm64]
+        RL[Rocky Linux 10<br/>Multi-arch: amd64/arm64]
 
         subgraph "Infrastructure as Code"
             TF[Terraform + tfswitch]
@@ -27,7 +27,7 @@ graph TB
         end
 
         subgraph "Development"
-            PY[Python 3.12]
+            PY[Python 3.14]
             ND[Node.js LTS]
             GT[Git + GitHub CLI]
         end
@@ -47,7 +47,7 @@ graph TB
         end
 
         subgraph "Database Clients"
-            MG[mongosh v6.0]
+            MG[mongosh v8.0]
             PG[PostgreSQL 17]
             MY[MySQL client]
         end
@@ -86,7 +86,7 @@ graph LR
 
 ## Design Philosophy
 
-### Why Rocky Linux 9?
+### Why Rocky Linux 10?
 
 - **Enterprise-grade stability**: RHEL-compatible, production-ready
 - **Long-term support**: Extended lifecycle for security updates
@@ -167,7 +167,7 @@ All images include four AI CLI assistants for code generation, review, and troub
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **Python 3** | 3.12 | Scripting, tooling |
+| **Python 3** | 3.14 | Scripting, tooling |
 | **Node.js** | LTS | JavaScript tooling |
 | **Git** | Latest | Version control |
 | **GitHub CLI (gh)** | Latest | GitHub automation |
@@ -176,7 +176,7 @@ All images include four AI CLI assistants for code generation, review, and troub
 
 | Client | Version | Purpose |
 |--------|---------|---------|
-| **mongosh** | v6.0 | MongoDB shell |
+| **mongosh** | v8.0 | MongoDB shell |
 | **psql** | PostgreSQL 17 | PostgreSQL client |
 | **mysql** | Latest | MySQL client |
 
@@ -195,7 +195,7 @@ All images include four AI CLI assistants for code generation, review, and troub
 
 ```mermaid
 graph TD
-    START[Dockerfile] --> BASE_BUILD[Base Stage: Rocky Linux 9]
+    START[Dockerfile] --> BASE_BUILD[Base Stage: Rocky Linux 10]
     BASE_BUILD --> TOOLS[Install Base Tools]
     TOOLS --> BRANCH{Target?}
 

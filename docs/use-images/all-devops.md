@@ -3,7 +3,7 @@
 The **all-devops** image is the complete multi-cloud toolkit with both AWS and GCP tools, providing maximum flexibility for teams working across cloud providers.
 
 !!! info "Image Details"
-    **Size**: ~3.2 GB | **Architectures**: amd64, arm64 | **Base**: Rocky Linux 9
+    **Size**: ~3.2 GB | **Architectures**: amd64, arm64 | **Base**: Rocky Linux 10
 
 ## When to Use This Image
 
@@ -121,7 +121,7 @@ See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and 
 
 | Tool | Version |
 |------|---------|
-| **Python** | 3.12 |
+| **Python** | 3.14 |
 | **Node.js** | LTS |
 | **Git** | Latest |
 | **GitHub CLI (gh)** | Latest |
@@ -131,7 +131,7 @@ See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and 
 
 | Tool | Version |
 |------|---------|
-| **mongosh** | v6.0 |
+| **mongosh** | v8.0 |
 | **psql** | PostgreSQL 17 |
 | **mysql** | Latest |
 

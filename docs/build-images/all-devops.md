@@ -26,7 +26,7 @@ docker run --rm all-devops:local trivy --version
 ```bash
 docker build \
   --target all-devops \
-  --build-arg PYTHON_VERSION=3.12.4 \
+  --build-arg PYTHON_VERSION=3.14.7 \
   --build-arg K9S_VERSION=0.32.7 \
   -t all-devops:custom .
 ```
