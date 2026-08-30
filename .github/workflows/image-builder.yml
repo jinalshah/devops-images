@@ -41,6 +41,7 @@ jobs:
     with:
       target: 'all-devops'
       version_prefix: '1.0'
+      image_description: 'Full multi-cloud DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus AWS CLI and gcloud.'
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'
@@ -54,6 +55,7 @@ jobs:
     with:
       target: 'aws-devops'
       version_prefix: '1.0'
+      image_description: 'AWS-optimised DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus AWS CLI and Session Manager.'
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'
@@ -67,6 +69,7 @@ jobs:
     with:
       target: 'gcp-devops'
       version_prefix: '1.0'
+      image_description: 'GCP-optimised DevOps toolkit on Rocky Linux 10 - Terraform, Terragrunt, Packer, Ansible, kubectl, Helm, k9s, Trivy, plus gcloud and GKE tools.'
       gitlab_registry: 'registry.gitlab.com/jinal-shah/devops/images'
       ghcr_registry: 'ghcr.io/jinalshah/devops/images'
       dockerhub_registry: 'js01'

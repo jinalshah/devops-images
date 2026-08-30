@@ -11,6 +11,10 @@ on:
         description: 'Image version prefix (e.g., 1.0)'
         type: string
         required: true
+      image_description:
+        description: 'OCI image description published to the registries'
+        type: string
+        required: true
       gitlab_registry:
         description: 'GitLab Container Registry path'
         type: string
@@ -52,7 +56,9 @@ jobs:
     steps:
 
       - name: Set version
-        run: echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
         shell: bash
 
       - name: Checkout
@@ -98,6 +104,21 @@ jobs:
             K9S_VERSION=${{ vars.K9S_VERSION }}
             PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
             PYTHON_VERSION_TO_USE=${{ vars.PYTHON_VERSION_TO_USE }}
+          labels: |
+            org.opencontainers.image.version=${{ env.VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ env.BUILD_DATE }}
+          annotations: |
+            manifest:org.opencontainers.image.title=${{ inputs.target }}
+            manifest:org.opencontainers.image.description=${{ inputs.image_description }}
+            manifest:org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            manifest:org.opencontainers.image.url=https://github.com/${{ github.repository }}
+            manifest:org.opencontainers.image.documentation=https://jinalshah.github.io/devops-images/
+            manifest:org.opencontainers.image.licenses=MIT
+            manifest:org.opencontainers.image.vendor=Jinal Shah
+            manifest:org.opencontainers.image.version=${{ env.VERSION }}
+            manifest:org.opencontainers.image.revision=${{ github.sha }}
+            manifest:org.opencontainers.image.created=${{ env.BUILD_DATE }}
           tags: |
             ${{ inputs.gitlab_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
             ${{ inputs.ghcr_registry }}/${{ inputs.target }}:${{ env.VERSION }}-${{ matrix.arch }}
@@ -112,7 +133,9 @@ jobs:
     steps:
 
       - name: Set version
-        run: echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=${{ inputs.version_prefix }}.$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
         shell: bash
 
       - name: Set up Docker Buildx
@@ -139,6 +162,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create and push multi-arch manifest - ${{ inputs.target }}
+        env:
+          TARGET: ${{ inputs.target }}
+          IMAGE_DESCRIPTION: ${{ inputs.image_description }}
+          PUSH_LATEST: ${{ inputs.push_latest }}
+          REPO_URL: https://github.com/${{ github.repository }}
         run: |
           REGISTRIES=(
             "${{ inputs.gitlab_registry }}"
@@ -146,26 +174,39 @@ jobs:
             "${{ inputs.dockerhub_registry }}"
           )
 
-          PUSH_LATEST="${{ inputs.push_latest }}"
+          # OCI annotations have to be set on the manifest index itself: GHCR reads
+          # the index (not the per-architecture image labels) when describing a
+          # multi-arch package, and imagetools does not copy child metadata upwards.
+          ANNOTATIONS=(
+            --annotation "index:org.opencontainers.image.title=${TARGET}"
+            --annotation "index:org.opencontainers.image.description=${IMAGE_DESCRIPTION}"
+            --annotation "index:org.opencontainers.image.source=${REPO_URL}"
+            --annotation "index:org.opencontainers.image.url=${REPO_URL}"
+            --annotation "index:org.opencontainers.image.documentation=https://jinalshah.github.io/devops-images/"
+            --annotation "index:org.opencontainers.image.licenses=MIT"
+            --annotation "index:org.opencontainers.image.vendor=Jinal Shah"
+            --annotation "index:org.opencontainers.image.version=${VERSION}"
+            --annotation "index:org.opencontainers.image.revision=${GITHUB_SHA}"
+            --annotation "index:org.opencontainers.image.created=${BUILD_DATE}"
+          )
 
           for registry in "${REGISTRIES[@]}"; do
-            echo "Creating multi-arch manifest for ${registry}/${{ inputs.target }}"
+            echo "Creating multi-arch manifest for ${registry}/${TARGET}"
 
-            # Build the imagetools command with version tag
-            cmd="docker buildx imagetools create -t \"${registry}/${{ inputs.target }}:${{ env.VERSION }}\""
+            TAGS=(-t "${registry}/${TARGET}:${VERSION}")
 
             # Add :latest tag only if push_latest is true
             if [ "$PUSH_LATEST" == "true" ]; then
               echo "Including :latest tag (main branch merge)"
-              cmd="$cmd -t \"${registry}/${{ inputs.target }}:latest\""
+              TAGS+=(-t "${registry}/${TARGET}:latest")
             else
               echo "Skipping :latest tag (PR build)"
             fi
 
-            # Add source images
-            cmd="$cmd \"${registry}/${{ inputs.target }}:${{ env.VERSION }}-amd64\" \"${registry}/${{ inputs.target }}:${{ env.VERSION }}-arm64\""
-
-            # Execute the command
-            eval $cmd
+            docker buildx imagetools create \
+              "${ANNOTATIONS[@]}" \
+              "${TAGS[@]}" \
+              "${registry}/${TARGET}:${VERSION}-amd64" \
+              "${registry}/${TARGET}:${VERSION}-arm64"
           done
         shell: bash
