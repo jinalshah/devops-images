@@ -2,7 +2,7 @@
 
 [![Build and Push](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml/badge.svg)](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml)
 
-Multi-architecture container images with a comprehensive DevOps toolchain for AWS, GCP, and platform engineering workflows. Built on Rocky Linux 9 with support for both `linux/amd64` and `linux/arm64` architectures.
+Multi-architecture container images with a comprehensive DevOps toolchain for AWS, GCP, and platform engineering workflows. Built on Rocky Linux 10 with support for both `linux/amd64` and `linux/arm64` architectures.
 
 ## Available Images
 
@@ -33,7 +33,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Trivy (vulnerability scanner)
 
 **Development Tools:**
-- Python 3.12 (with pip)
+- Python 3.14 (with pip)
 - Node.js LTS (with npm)
 - Git & GitHub CLI (gh)
 - Task (go-task)
@@ -46,7 +46,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Google Antigravity CLI (`agy`)
 
 **Database Clients:**
-- MongoDB Shell (mongosh) - v6.0
+- MongoDB Shell (mongosh) - v8.0
 - PostgreSQL client (psql) - v17
 - MySQL client
 
@@ -204,12 +204,12 @@ Override tool versions using build arguments:
 ```bash
 docker build --target all-devops \
   --build-arg PACKER_VERSION=1.11.2 \
-  --build-arg PYTHON_VERSION=3.12.4 \
+  --build-arg PYTHON_VERSION=3.14.7 \
   --build-arg K9S_VERSION=0.32.7 \
   -t all-devops:custom .
 ```
 
-Available build args: `GCLOUD_VERSION`, `PACKER_VERSION`, `TERRAGRUNT_VERSION`, `TFLINT_VERSION`, `GHORG_VERSION`, `K9S_VERSION`, `PYTHON_VERSION`, `PYTHON_VERSION_TO_USE`, `MONGODB_VERSION`, `MONGODB_REPO_PATH`
+Available build args: `GCLOUD_VERSION`, `PACKER_VERSION`, `TERRAGRUNT_VERSION`, `TFLINT_VERSION`, `GHORG_VERSION`, `K9S_VERSION`, `PYTHON_VERSION`, `PYTHON_VERSION_TO_USE`, `MONGODB_VERSION`, `MONGODB_REPO_PATH`, `MYSQL_RELEASE_RPM_URL`, `MYSQL_GPG_KEY_URL`
 
 ## Examples
 

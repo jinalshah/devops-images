@@ -1,17 +1,17 @@
 # Base Layer Architecture
 
-The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, serving as the foundation for all image variants (all-devops, aws-devops, gcp-devops).
+The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 10, serving as the foundation for all image variants (all-devops, aws-devops, gcp-devops).
 
 ---
 
 ## Design Philosophy
 
-### Why Rocky Linux 9?
+### Why Rocky Linux 10?
 
 !!! success "Key Benefits"
 
     - **Enterprise-grade stability**: RHEL-compatible, production-ready
-    - **Long-term support**: 10-year lifecycle (until 2032)
+    - **Long-term support**: 10-year lifecycle (until 2035)
     - **Multi-architecture**: Native amd64 and arm64 support
     - **Package availability**: Rich ecosystem via dnf/yum
     - **Security**: SELinux support, regular security updates
@@ -103,9 +103,16 @@ The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 9, s
 
     | Tool | Version | Purpose | Size Impact |
     |------|---------|---------|-------------|
-    | **Python** | 3.12 | Scripting, automation | ~100 MB |
+    | **Python** | 3.14 | Scripting, automation | ~100 MB |
     | **pip** | Latest | Package manager | Included |
     | **pipx** | Latest | Isolated CLI tools | ~10 MB |
+
+    Python is compiled from source (`PYTHON_VERSION`) and registered with
+    `alternatives` as `/usr/local/bin/python3`, which precedes `/usr/bin` on
+    `PATH`. The distribution's own `/usr/bin/python3` is deliberately left
+    alone - on RHEL/Rocky 10 `dnf` runs from an unversioned
+    `#!/usr/bin/python3` shebang and only works with the system interpreter.
+    Switch back with `alternatives --config python3`.
 
     **Pre-installed Python packages**:
     - `requests` - HTTP library
@@ -172,8 +179,8 @@ The tools are installed in a specific order to optimise Docker layer caching and
 
 ```mermaid
 graph TD
-    A[Rocky Linux 9 Base] --> B[System Packages]
-    B --> C[Python 3.12]
+    A[Rocky Linux 10 Base] --> B[System Packages]
+    B --> C[Python 3.14]
     B --> D[Node.js 20 LTS]
     C --> E[Python Packages]
     D --> F[AI CLI Tools]
@@ -257,6 +264,25 @@ dnf install -y <packages> && \
 dnf clean all && \
 rm -rf /var/cache/dnf/*
 ```
+
+**Third-party repositories**:
+
+| Repository | Provides | Notes |
+|------------|----------|-------|
+| EPEL 10 | `fish` and other extras | Enabled via `epel-release` |
+| GitHub CLI | `gh` | `cli.github.com` |
+| MongoDB 8.0 | `mongodb-mongosh` | MongoDB dropped 6.0/7.0 builds for EL10 |
+| PGDG (EL-10) | `postgresql17` | PostgreSQL Global Development Group |
+| Trivy | `trivy` | Aqua Security |
+| MySQL Community | `mysql` | RHEL/Rocky 10 no longer ships the MySQL client - see below |
+
+!!! note "MySQL client on Rocky Linux 10"
+
+    RHEL 10 removed the `mysql` packages in favour of MariaDB, so the client is
+    installed from MySQL's own community repository. The signing key bundled in
+    the release RPM has expired, so the build imports the current key
+    (`RPM-GPG-KEY-mysql-2025`) explicitly before installing. Both URLs are
+    exposed as the `MYSQL_RELEASE_RPM_URL` and `MYSQL_GPG_KEY_URL` build args.
 
 ### Binary Downloads
 
@@ -398,7 +424,7 @@ The base layer is built for both architectures:
 
 ### Pinned Versions
 
-**Rocky Linux**: Pinned to `9.x` (major version)
+**Rocky Linux**: Pinned to `10.x` (major version)
 - Receives security updates
 - No breaking changes within major version
 

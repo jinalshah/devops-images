@@ -175,7 +175,7 @@ Docker automatically caches unchanged layers:
 
 ```dockerfile
 # Layer 1: Base (rarely changes) - CACHED
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 
 # Layer 2: System packages (monthly) - CACHED
 RUN dnf install -y python3 nodejs
@@ -237,10 +237,12 @@ docker build \
 | `TERRAGRUNT_VERSION` | `0.68.14` | Terragrunt version | `0.68.14` |
 | `TFLINT_VERSION` | `0.50.3` | TFLint version | `0.50.3` |
 | `K9S_VERSION` | `0.32.7` | k9s version | `0.32.7` |
-| `PYTHON_VERSION` | `3.12.4` | Python source version to compile | `3.11.10`, `3.12.4` |
-| `PYTHON_VERSION_TO_USE` | `python3.12` | Python binary selected via alternatives | `python3.11`, `python3.12` |
+| `PYTHON_VERSION` | `3.14.7` | Python source version to compile | `3.13.12`, `3.14.7` |
+| `PYTHON_VERSION_TO_USE` | `python3.14` | Python binary registered as `/usr/local/bin/python3` via alternatives | `python3.13`, `python3.14` |
 | `GHORG_VERSION` | `1.9.10` | ghorg version | `1.9.10` |
-| `MONGODB_VERSION` | `6.0` | MongoDB shell repository major version | `6.0`, `7.0` |
+| `MONGODB_VERSION` | `8.0` | MongoDB shell repository major version | `8.0`, `8.2` |
+| `MYSQL_RELEASE_RPM_URL` | MySQL community release RPM (EL10) | Repository definition for the MySQL client | any `repo.mysql.com` release RPM |
+| `MYSQL_GPG_KEY_URL` | `https://repo.mysql.com/RPM-GPG-KEY-mysql-2025` | Signing key for the MySQL repository | current MySQL key URL |
 
 ### Using Build Args
 
@@ -440,7 +442,7 @@ See [Optimisation Guide](optimisation.md) for detailed size reduction techniques
 
     3. Check Rocky Linux mirrors:
        ```bash
-       docker run --rm rockylinux:9 dnf repolist
+       docker run --rm rockylinux/rockylinux:10 dnf repolist
        ```
 
 ??? question "Build fails on M1/M2 Mac"

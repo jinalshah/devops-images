@@ -68,7 +68,7 @@ Use base image as builder, copy what you need:
 ```dockerfile
 FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS base
 
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 # Copy only specific tools from base
 COPY --from=base /usr/local/bin/terraform /usr/local/bin/
 COPY --from=base /usr/local/bin/kubectl /usr/local/bin/
@@ -217,7 +217,7 @@ Pin all tool versions for regulatory compliance:
 # Build args for version pinning
 ARG TERRAFORM_VERSION=1.6.6
 ARG PACKER_VERSION=1.10.0
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.14.7
 
 FROM ghcr.io/jinalshah/devops/images/all-devops:latest
 
@@ -286,12 +286,12 @@ Remove unnecessary tools to minimise size:
 
 ```dockerfile
 # Start from scratch with only what you need
-FROM rockylinux:9 AS builder
+FROM rockylinux/rockylinux:10 AS builder
 
 # Copy only specific tools from official image
 FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS source
 
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10
 
 # Copy only Terraform and kubectl
 COPY --from=source /usr/local/bin/terraform /usr/local/bin/

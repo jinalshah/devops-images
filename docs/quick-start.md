@@ -144,7 +144,7 @@ docker run -it --rm \
 
 ✅ **Development**
 
-- Python 3.12
+- Python 3.14
 - Node.js LTS
 - Git + GitHub CLI
 - Database clients (mongosh, psql, mysql)

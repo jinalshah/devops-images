@@ -940,7 +940,7 @@ tasks:
 
 ### Python 3
 
-**What it does:** Python is a high-level programming language. The images include Python 3.12 with pip for package management.
+**What it does:** Python is a high-level programming language. The images include Python 3.14 with pip for package management.
 
 **Available in:** All images
 
@@ -1121,7 +1121,7 @@ agy --version
 
 **What it does:** mongosh is the modern MongoDB shell for connecting to and interacting with MongoDB databases.
 
-**Available in:** All images (MongoDB 6.0 compatible)
+**Available in:** All images (MongoDB 8.0 compatible)
 
 **Common use cases:**
 - Connecting to MongoDB instances
