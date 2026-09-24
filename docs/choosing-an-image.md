@@ -146,7 +146,7 @@ pie title all-devops Size Breakdown (~3.2GB)
 
     1. **Use cloud-specific images** - Save ~300-400MB by using aws-devops or gcp-devops instead of all-devops
     2. **Pin versions** - Use immutable tags for Docker layer caching in CI/CD
-    3. **Build custom** - Remove tools you don't need (see [Customisation Guide](build-images/customisation.md))
+    3. **Build custom** - Remove tools you don't need (see [Customisation Guide](build-images/customization.md))
     4. **Multi-stage builds** - Copy only what you need into final stage
 
 ## Feature Comparison Matrix
@@ -202,7 +202,7 @@ pie title all-devops Size Breakdown (~3.2GB)
     - **Existing AWS infrastructure?** → Use **aws-devops** for optimal size
     - **Using GKE/Cloud Run?** → Use **gcp-devops** for GCP integration
     - **CI/CD with multi-cloud deployments?** → Use **all-devops** with version pinning
-    - **Want to customise?** → Build your own based on any variant ([guide](build-images/customisation.md))
+    - **Want to customise?** → Build your own based on any variant ([guide](build-images/customization.md))
 
 ## Registry Choice
 
@@ -253,7 +253,7 @@ Once you've chosen your image:
 2. **Pull the Image**: See [Use Images](use-images/index.md) for pull commands
 3. **Set Up Authentication**: Configure [credentials and volume mounts](use-images/authentication.md)
 4. **Explore Workflows**: Check out [real-world examples](workflows/index.md)
-5. **Customise**: Learn how to [build custom images](build-images/customisation.md)
+5. **Customise**: Learn how to [build custom images](build-images/customization.md)
 
 ---
 

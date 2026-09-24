@@ -584,13 +584,13 @@ ERROR! the playbook: playbook.yml could not be found
 
 ## Documentation Issues
 
-### `mkdocs` command not found
+### `zensical` command not found
 
 **Solution:**
 
 ```bash
-python3 -m pip install --upgrade mkdocs-material
-mkdocs serve
+python3 -m pip install --upgrade zensical
+zensical serve
 ```
 
 ### Port 8000 already in use
@@ -599,7 +599,7 @@ mkdocs serve
 
 ```bash
 # Use different port
-mkdocs serve -a 0.0.0.0:8080
+zensical serve -a 0.0.0.0:8080
 
 # Or kill process using port 8000
 lsof -ti:8000 | xargs kill -9
@@ -609,11 +609,11 @@ lsof -ti:8000 | xargs kill -9
 
 **Solutions:**
 
-1. **Stop and restart mkdocs:**
+1. **Stop and restart Zensical:**
 
    ```bash
    # Stop with Ctrl+C, then restart
-   mkdocs serve
+   zensical serve
    ```
 
 2. **Clear browser cache or use incognito mode**
@@ -621,8 +621,8 @@ lsof -ti:8000 | xargs kill -9
 3. **Force rebuild:**
 
    ```bash
-   mkdocs build --clean
-   mkdocs serve
+   zensical build --clean
+   zensical serve
    ```
 
 ---

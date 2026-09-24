@@ -8,8 +8,18 @@ name: docs
 
 on:
   push:
+    branches:
+      - main
     paths:
       - docs/**
+      - zensical.toml
+      - .github/workflows/docs.yml
+  pull_request:
+    paths:
+      - docs/**
+      - zensical.toml
+      - .github/workflows/docs.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,21 +32,19 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.x
 
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+      - run: pip install zensical ghp-import
 
-      - uses: actions/cache@v3
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            mkdocs-material-
+      - run: zensical build --clean
 
-      - run: pip install mkdocs-material mkdocs-glightbox mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
-
-      - run: mkdocs gh-deploy --force
+      # Publish the built site to the gh-pages branch (only from main)
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ghp-import --no-jekyll --push --force --message "Deploy docs from ${GITHUB_SHA}" site

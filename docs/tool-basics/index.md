@@ -956,6 +956,7 @@ tasks:
 - `pytest` - Testing framework (`aws-devops`, `all-devops`)
 - `requests` - HTTP library (`aws-devops`, `all-devops`)
 - `s3cmd` - S3 tool (`aws-devops`, `all-devops`)
+- `zensical` - Static site generator for documentation
 
 **Basic usage:**
 

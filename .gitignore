@@ -32,6 +32,7 @@ override.tf.json
 # Python cache
 *.pyc
 **/__pycache__/*
-# Don't Publish locally built mkdocs site directory
+# Don't publish the locally built Zensical site directory or its build cache
 site/
+.cache/
 .claude

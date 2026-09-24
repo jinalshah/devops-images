@@ -1,0 +1,120 @@
+[project]
+site_name = "DevOps Images"
+site_description = "Multi-architecture DevOps images for AWS, GCP, and platform workflows."
+site_url = "https://jinalshah.github.io/devops-images/"
+
+repo_name = "jinalshah/devops-images"
+repo_url = "https://github.com/jinalshah/devops-images"
+
+nav = [
+  { "Getting Started" = [
+    "index.md",
+    "quick-start.md",
+    "choosing-an-image.md",
+    "reading-the-docs.md",
+  ] },
+  { "Use Images" = [
+    "use-images/index.md",
+    "use-images/quick-reference.md",
+    "use-images/all-devops.md",
+    "use-images/aws-devops.md",
+    "use-images/gcp-devops.md",
+    "use-images/authentication.md",
+    "use-images/docker-compose.md",
+  ] },
+  { "Workflows & Patterns" = [
+    "workflows/index.md",
+    "workflows/ci-cd-github.md",
+    "workflows/ci-cd-gitlab.md",
+    "workflows/ci-cd-jenkins.md",
+    "workflows/ci-cd-circleci.md",
+    "workflows/terraform-workflows.md",
+    "workflows/multi-tool-patterns.md",
+    "workflows/ai-assisted-devops.md",
+  ] },
+  { "Build Images" = [
+    "build-images/index.md",
+    "build-images/optimization.md",
+    "build-images/all-devops.md",
+    "build-images/aws-devops.md",
+    "build-images/gcp-devops.md",
+    "build-images/multi-platform-images.md",
+  ] },
+  { "Tool Basics" = [
+    "tool-basics/index.md",
+    "tool-basics/ai-cli-setup.md",
+  ] },
+  { "Architecture & Design" = [
+    "architecture/index.md",
+    "architecture/base-layer.md",
+    "architecture/cloud-layers.md",
+    "architecture/comparison.md",
+  ] },
+  { "Troubleshooting" = [
+    "troubleshooting/index.md",
+  ] },
+]
+
+[project.theme]
+variant = "classic"
+logo = "assets/images/devops.png"
+favicon = "assets/images/devops.png"
+language = "en"
+features = [
+  "navigation.instant",
+  "navigation.tracking",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "navigation.sections",
+  "navigation.expand",
+  "navigation.path",
+  "navigation.top",
+  "navigation.footer",
+  "toc.follow",
+  "toc.integrate",
+  "search.highlight",
+  "content.code.copy",
+  "content.code.annotate",
+  "content.tabs.link",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "blue-grey"
+accent = "amber"
+toggle.icon = "material/weather-sunny"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "blue-grey"
+accent = "amber"
+toggle.icon = "material/weather-night"
+toggle.name = "Switch to light mode"
+
+[project.extra]
+generator = false
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+toc.toc_depth = 3
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.snippets = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true

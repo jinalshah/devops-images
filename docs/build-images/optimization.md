@@ -477,7 +477,7 @@ docker run --rm -it \
 
 ## Next Steps
 
-- [Customisation Guide](customisation.md) - Build your own custom image
+- [Customisation Guide](customization.md) - Build your own custom image
 - [Build Images Overview](index.md) - General build instructions
 - [Architecture](../architecture/index.md) - Understand image composition
 - [Choosing an Image](../choosing-an-image.md) - Select the right base image

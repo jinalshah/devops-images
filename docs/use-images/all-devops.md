@@ -19,7 +19,7 @@ The **all-devops** image is the complete multi-cloud toolkit with both AWS and G
 
 - You only use AWS → Use [aws-devops](aws-devops.md) to save ~400 MB
 - You only use GCP → Use [gcp-devops](gcp-devops.md) to save ~300 MB
-- Image size is critical → See [optimisation guide](../build-images/optimisation.md)
+- Image size is critical → See [optimisation guide](../build-images/optimization.md)
 
 ## Pull the Image
 

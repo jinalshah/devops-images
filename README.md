@@ -370,11 +370,11 @@ Documentation includes:
 ### Preview Documentation Locally
 
 ```bash
-# Install mkdocs-material
-python3 -m pip install --upgrade mkdocs-material
+# Install Zensical
+python3 -m pip install --upgrade zensical
 
 # Serve documentation
-mkdocs serve
+zensical serve
 
 # Open http://localhost:8000
 ```
@@ -385,7 +385,7 @@ Or preview using the container itself:
 docker run --rm -it -p 8000:8000 \
   -v $PWD:/workspace \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "cd /workspace && mkdocs serve -a 0.0.0.0:8000"
+  sh -c "cd /workspace && zensical serve -a 0.0.0.0:8000"
 ```
 
 ## Contributing

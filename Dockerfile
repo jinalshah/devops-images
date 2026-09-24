@@ -135,7 +135,8 @@ RUN \
     jmespath \
     mkdocs-material \
     paramiko \
-    pre-commit && \
+    pre-commit \
+    zensical && \
   \
   # MongoDB-MongoSH Installation
   touch ${MONGODB_REPO_PATH} && \
