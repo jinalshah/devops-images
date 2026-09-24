@@ -193,7 +193,9 @@ RUN \
   # Load architecture detection utilities
   . /usr/local/lib/detect-arch.sh && \
   # Kubectl Configuration
-  wget -q -O /tmp/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/${ARCH_VALUE}/kubectl && \
+  # dl.k8s.io is the official source; the old storage.googleapis.com/kubernetes-release
+  # bucket stopped updating stable.txt at v1.31.0.
+  wget -q -O /tmp/kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH_VALUE}/kubectl" && \
   chmod +x /tmp/kubectl && \
   mv /tmp/kubectl /usr/local/bin && \
   \

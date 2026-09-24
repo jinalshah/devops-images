@@ -149,27 +149,18 @@ flowchart TD
 
 ??? question "Files created in the container are owned by root on the host"
 
-    The container runs as root, so files it writes to a bind mount belong to root on Linux hosts. Options:
+    The container runs as root, so files it writes to a bind mount belong to root on Linux hosts.
 
-    === "Fix ownership afterwards"
+    Fix ownership in the same run:
 
-        ```bash
-        docker run --rm -v "$PWD":/srv -w /srv \
-          ghcr.io/jinalshah/devops/images/all-devops:latest \
-          sh -c 'terraform fmt -recursive && chown -R '"$(id -u):$(id -g)"' /srv'
-        ```
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      sh -c 'terraform fmt -recursive && chown -R '"$(id -u):$(id -g)"' /srv'
+    ```
 
-    === "Run as your user"
-
-        ```bash
-        docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
-          -v "$PWD":/srv -w /srv \
-          ghcr.io/jinalshah/devops/images/all-devops:latest \
-          terraform fmt -recursive
-        ```
-
-    !!! warning
-        With `--user`, `HOME` doesn't point at a directory that user can write to (the image has no account for your UID), hence `-e HOME=/tmp`. The shell configuration and aliases in `/root` won't load either. Binaries in `/usr/local/bin` and `/usr/bin` work normally.
+    !!! warning "Why not run with `--user`?"
+        Running as a non-root user isn't a drop-in fix for this image. `/root` is only readable by root, and `terraform` (a tfswitch symlink into `/root/.terraform.versions`) and `claude` (in `/root/.local/bin`) live under it, so they fail for other users. Run as root and fix ownership afterwards, as above.
 
     Docker Desktop on macOS and Windows maps ownership for you, so this mostly affects Linux hosts.
 

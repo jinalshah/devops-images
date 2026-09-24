@@ -138,7 +138,7 @@ docker run -it --rm \
 
     ```bash
     aws configure sso                              # once, on the host
-    aws sso login --profile my-sso-profile         # when the session expires
+    aws sso login --profile my-sso-profile         # when the session expires (add --use-device-code inside a container)
 
     docker run --rm \
       -v ~/.aws:/root/.aws \
@@ -159,7 +159,7 @@ docker run -it --rm \
       aws sts get-caller-identity
     ```
 
-    If this hangs on EC2, the container probably can't reach the instance metadata service: IMDSv2's default hop limit of 1 blocks bridged containers. Raise the hop limit to 2 or run with `--network host`.
+    If this hangs on EC2, the container probably isn't getting IMDSv2 responses: with a hop limit of 1, the extra network hop into a bridged container means the reply never arrives. AWS recommends raising the hop limit to 2; running with `--network host` also avoids the extra hop.
 
 === ":lucide-key: Environment variables"
 
@@ -296,7 +296,7 @@ Use `--project` on any command, or `gcloud config set project ...`, to switch pr
 
 === ":simple-apple: Agent forwarding (Docker Desktop)"
 
-    Docker Desktop on macOS provides a fixed socket for the host agent:
+    Docker Desktop (macOS, and Docker Desktop for Linux) provides a fixed socket for the host agent:
 
     ```bash
     docker run -it --rm \
@@ -387,9 +387,9 @@ Each assistant has its own login. Sign in interactively once with the config dir
         container:
           image: ghcr.io/jinalshah/devops/images/aws-devops:latest
         steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v7
 
-          - uses: aws-actions/configure-aws-credentials@v4
+          - uses: aws-actions/configure-aws-credentials@v6
             with:
               role-to-assume: arn:aws:iam::123456789012:role/github-deploy
               aws-region: eu-west-2
@@ -450,10 +450,10 @@ Each assistant has its own login. Sign in interactively once with the config dir
     It's the reverse problem: `GOOGLE_APPLICATION_CREDENTIALS` doesn't log `gcloud` in. Run `gcloud auth activate-service-account --key-file=...` (or `gcloud auth login`).
 
 ??? question "SSH: `Bad owner or permissions on /root/.ssh/config` or `UNPROTECTED PRIVATE KEY FILE`"
-    Inside the container you are `root`, but on a Linux host the mounted files belong to your own user. SSH refuses config files owned by another user, and private keys that other users can read. Fix the modes on the host (`chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_* ~/.ssh/config`). If the owner check still fails, use [agent forwarding](#ssh-and-git) instead of mounting `~/.ssh`.
+    SSH refuses a `~/.ssh/config` that is writable by group or others, or owned by anyone other than root or the current user, and ignores a private key that the current user owns but others can read. Fix the modes on the host (`chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_* ~/.ssh/config`). On a Linux host the mounted files belong to your own user while you are `root` in the container, so `Bad owner` on the config can't be fixed with `chmod`; use [agent forwarding](#ssh-and-git) instead of mounting `~/.ssh`.
 
 ??? question "AI assistant asks me to sign in every time"
-    Its config directory isn't mounted. See the [table above](#ai-assistants).
+    Its config directory isn't mounted. See the [table above](#ai-assistants). If you signed in on a macOS or Windows host, the token may be in the OS keychain rather than the mounted directory (Claude Code uses the macOS Keychain; Copilot CLI and Antigravity CLI use the system credential store when there is one), so sign in once inside the container instead.
 
 ---
 

@@ -98,7 +98,7 @@ Each `RUN` ends by cleaning `/tmp`, `/var/tmp` and the pip cache (plus the yum c
 
 | Tool | Source | Version |
 |------|--------|---------|
-| kubectl | `stable.txt` from the legacy `storage.googleapis.com/kubernetes-release` bucket | Whatever that file names; the bucket stopped updating at v1.31.0 (current releases are on `dl.k8s.io`) |
+| kubectl | `stable.txt` from the official `dl.k8s.io` release site | Latest stable at build time |
 | Terraform | `tfswitch --latest` (tfswitch stays in the image) | Latest at build time |
 | Terragrunt | GitHub releases | Pinned per build, bumped automatically |
 | TFLint | GitHub releases | Pinned per build, bumped automatically |

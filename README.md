@@ -231,7 +231,7 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Terraform Init
         run: terraform init

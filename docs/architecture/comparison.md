@@ -14,7 +14,7 @@ All three images share the same base toolkit. The only difference is which cloud
 | **Best for** | Multi-cloud and platform teams | AWS-only work | GCP-only work |
 
 !!! info "Size isn't a big factor"
-    The base is most of each image, so picking a single-cloud image saves only about 0.1 GB of download. Choose by the tools you need.
+    The base is most of each image, so picking a single-cloud image saves only about 0.05 to 0.1 GB of download. Choose by the tools you need.
 
 ## Tool matrix
 

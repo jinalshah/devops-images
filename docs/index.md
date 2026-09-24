@@ -176,7 +176,7 @@ flowchart TB
         container:
           image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
         steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v7
           - run: terraform init
           - run: terraform plan
     ```

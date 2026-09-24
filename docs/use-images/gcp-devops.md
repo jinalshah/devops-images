@@ -122,7 +122,7 @@ More detail, including Workload Identity Federation for GitHub Actions, is in th
 
 ## Working with GKE
 
-The image includes `gke-gcloud-auth-plugin`, which kubectl uses to fetch tokens for GKE clusters. Keep **both** `~/.config/gcloud` and `~/.kube` mounted, because kubectl calls the plugin, and the plugin reads your gcloud credentials, on every request.
+The image includes `gke-gcloud-auth-plugin`, which kubectl uses to fetch tokens for GKE clusters. Keep **both** `~/.config/gcloud` and `~/.kube` mounted, because kubectl runs the plugin whenever it needs a token, and the plugin uses your gcloud credentials to get one (caching it under `~/.kube`).
 
 ```mermaid
 sequenceDiagram
@@ -149,7 +149,7 @@ docker run -it --rm \
            kubectl get pods -A'
 ```
 
-A kubeconfig written on your host with `get-credentials` works too, as long as `~/.config/gcloud` is also mounted.
+A kubeconfig written on your host with `get-credentials` usually works too, as long as `~/.config/gcloud` is also mounted. The exception is when gcloud wrote a full host path to the plugin (it does so when the plugin isn't on the host's `PATH`) or `gke-gcloud-auth-plugin.exe` on Windows; in that case re-run `get-credentials` inside the container.
 
 ## Common tasks
 
@@ -204,7 +204,7 @@ A kubeconfig written on your host with `get-credentials` works too, as long as `
 
 === ":simple-ansible: Ansible on Compute Engine"
 
-    The `google.cloud.gcp_compute` inventory plugin needs `requests` and `google-auth`, which aren't in gcp-devops, so install them first:
+    The `google.cloud.gcp_compute` inventory plugin needs `requests` and `google-auth`. `requests` is already in the image, but `google-auth` isn't, so install it first:
 
     ```bash
     docker run --rm \
@@ -212,11 +212,11 @@ A kubeconfig written on your host with `get-credentials` works too, as long as `
       -v ~/.config/gcloud:/root/.config/gcloud \
       -v ~/.ssh:/root/.ssh:ro \
       ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-      bash -c 'python3 -m pip install --quiet requests google-auth &&
+      bash -c 'python3 -m pip install --quiet google-auth &&
                ansible-playbook -i gcp_compute.yml deploy.yml'
     ```
 
-    To avoid installing them on every run, bake them into a [custom image](../build-images/customization.md).
+    To avoid installing it on every run, bake them into a [custom image](../build-images/customization.md).
 
 ## Tips
 
@@ -265,7 +265,7 @@ A kubeconfig written on your host with `get-credentials` works too, as long as `
     - Check the context: `kubectl config current-context`.
 
 ??? question "Files created in my project are owned by root"
-    Add `--user "$(id -u):$(id -g)"` for commands that don't need to write to `HOME`, or `sudo chown -R "$(id -u):$(id -g)" .` afterwards.
+    Run `sudo chown -R "$(id -u):$(id -g)" .` afterwards, or chown inside the container as the last step. `--user` isn't a good fix because Terraform, `claude` and `HOME` live under `/root`, which only root can read. See [Root-owned files](index.md#recommended-workstation-setup).
 
 ## Next steps
 

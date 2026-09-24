@@ -196,12 +196,12 @@ gcloud auth list
         container:
           image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
         steps:
-          - uses: actions/checkout@v4
-          - uses: aws-actions/configure-aws-credentials@v4
+          - uses: actions/checkout@v7
+          - uses: aws-actions/configure-aws-credentials@v6
             with:
               role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
               aws-region: eu-west-2
-          - uses: google-github-actions/auth@v2
+          - uses: google-github-actions/auth@v3
             with:
               workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
               service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -240,7 +240,7 @@ gcloud auth list
       bash -c 'ls -la /root/.aws && aws sts get-caller-identity'
     ```
 
-    With IAM Identity Center (SSO) profiles, run `aws sso login --profile <name>` first; the token cache lives in `~/.aws/sso/cache`, so it is shared through the mount.
+    With IAM Identity Center (SSO) profiles, run `aws sso login --profile <name>` first (on the host, or in the container with `--use-device-code`); the token cache lives in `~/.aws/sso/cache`, so it is shared through the mount.
 
 ??? question "gcloud or GKE authentication errors"
     Sign in on the host (or inside the container with the mount in place), then verify:
@@ -255,7 +255,7 @@ gcloud auth list
     ```
 
 ??? question "Pull is slow"
-    The image is about 1.6 GB compressed. Use GHCR, keep one pinned tag across pipeline jobs so runners reuse cached layers, and remove old images with `docker image prune`.
+    The image is about 1.6 GB compressed. Use GHCR, keep one pinned tag across pipeline jobs so persistent (self-hosted) runners can reuse cached layers, and remove old images with `docker image prune`. GitHub-hosted runners start clean, so they pull the image on every job.
 
 ## Next steps
 

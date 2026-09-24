@@ -128,7 +128,7 @@ flowchart TD
 
     | Tool | all | aws | gcp | Notes |
     |------|:---:|:---:|:---:|-------|
-    | kubectl | :material-check: | :material-check: | :material-check: | Client v1.31 (see [Base layer](architecture/base-layer.md#run-2-downloaded-binaries)) |
+    | kubectl | :material-check: | :material-check: | :material-check: | Latest stable from dl.k8s.io at build time |
     | Helm 3 | :material-check: | :material-check: | :material-check: | Package manager |
     | k9s | :material-check: | :material-check: | :material-check: | Terminal UI |
     | gke-gcloud-auth-plugin | :material-check: | — | :material-check: | Needed for GKE clusters |

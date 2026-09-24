@@ -139,7 +139,7 @@ The same images are at `registry.gitlab.com/jinal-shah/devops/images/<image>` an
       agy -p "List the Kubernetes resources defined in k8s/"
     ```
 
-    Sign in interactively once (`claude` then `/login`, `codex login`, `copilot` then `/login`, `agy`) and the mounted directories keep you signed in. See the [AI CLI setup guide](../tool-basics/ai-cli-setup.md).
+    Sign in interactively once inside the container (`claude` then `/login`, `codex login --device-auth`, `copilot` then `/login`, `agy`) and the mounted directories keep you signed in. A login made on a macOS or Windows host may not carry over, because some of these CLIs keep their tokens in the OS keychain rather than in the mounted directory. See the [AI CLI setup guide](../tool-basics/ai-cli-setup.md).
 
 ## Credentials in CI
 
@@ -226,7 +226,7 @@ docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest bash -c '
     Try another registry: `registry.gitlab.com/jinal-shah/devops/images/all-devops:latest` or `js01/all-devops:latest`. Docker Hub rate-limits anonymous pulls.
 
 ??? question "Files in my project are owned by root"
-    Add `--user "$(id -u):$(id -g)"` for commands that don't write to `HOME`, or run `sudo chown -R "$(id -u):$(id -g)" .` afterwards.
+    The container runs as root. Run `sudo chown -R "$(id -u):$(id -g)" .` afterwards, or chown inside the container as the last step. `--user` isn't a good fix because Terraform, `claude` and `HOME` live under `/root`, which only root can read. See [Root-owned files](index.md#recommended-workstation-setup).
 
 ??? question "Credentials aren't picked up"
     Check that the mount landed: `docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/all-devops:latest ls -la /root/.aws`. Then test with `aws sts get-caller-identity` or `gcloud auth list`.

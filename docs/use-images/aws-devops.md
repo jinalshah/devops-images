@@ -84,7 +84,7 @@ flowchart LR
       aws sts get-caller-identity
     ```
 
-    For IAM Identity Center profiles, run `aws sso login --profile dev` (on the host or in the container) first.
+    For IAM Identity Center profiles, run `aws sso login --profile dev` first. On the host that works as normal; inside the container add `--use-device-code`, because the default browser flow (AWS CLI 2.22 and later) has to finish on the same machine as the CLI.
 
 === ":lucide-key-round: Environment variables"
 
@@ -110,7 +110,7 @@ flowchart LR
       aws sts get-caller-identity
     ```
 
-    On EC2 with IMDSv2 and a hop limit of 1, containers on a bridge network can't reach the metadata service. Raise the hop limit to 2 or use `--network host`.
+    On EC2 with IMDSv2 and a hop limit of 1, IMDSv2 responses may not reach containers on a bridge network, because the container counts as an extra network hop. AWS recommends raising the hop limit to 2; `--network host` also avoids the extra hop.
 
 More options, including SSO and assuming roles, are in the [Authentication guide](authentication.md).
 
@@ -222,7 +222,7 @@ More options, including SSO and assuming roles, are in the [Authentication guide
     The image doesn't set a default region. Add `region = eu-west-2` to the profile in `~/.aws/config`, or pass `-e AWS_DEFAULT_REGION=eu-west-2`.
 
 ??? question "Files created in my project are owned by root"
-    Add `--user "$(id -u):$(id -g)"` for commands that don't need to write to `HOME`, or run `sudo chown -R "$(id -u):$(id -g)" .` afterwards. See [Root-owned files](index.md#recommended-workstation-setup).
+    Run `sudo chown -R "$(id -u):$(id -g)" .` afterwards, or chown inside the container as the last step. `--user` isn't a good fix because Terraform, `claude` and `HOME` live under `/root`, which only root can read. See [Root-owned files](index.md#recommended-workstation-setup).
 
 ## Next steps
 

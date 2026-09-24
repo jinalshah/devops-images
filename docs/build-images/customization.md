@@ -73,7 +73,7 @@ flowchart TD
     ```dockerfile
     FROM ghcr.io/jinalshah/devops/images/all-devops:latest
 
-    RUN npm install -g prettier@3 cdktf-cli && \
+    RUN npm install -g prettier@3 markdownlint-cli2 && \
         rm -rf /root/.npm
     ```
 
@@ -280,7 +280,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4

@@ -147,16 +147,16 @@ Because the container is named (no `--rm`), you can come back to it with `docker
 The [`docker run` builder](../quick-start.md#build-your-command) generates this command for you, and the [Authentication guide](authentication.md) covers every credential option in depth.
 
 !!! tip "Root-owned files on Linux"
-    The container runs as `root`, so files it creates in your project are owned by root on a Linux host. For simple commands you can run as yourself:
+    The container runs as `root`, so files it creates in your project are owned by root on a Linux host. Running with `--user "$(id -u):$(id -g)"` doesn't work well: `/root` is readable only by root (mode 550), and Terraform (a symlink into `/root/.terraform.versions/`), `claude` (in `/root/.local/bin`) and `HOME` all live there. Run as root and hand the files back to yourself at the end instead:
 
     ```bash
-    docker run --rm --user "$(id -u):$(id -g)" \
-      -v "$PWD":/srv -w /srv \
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      terraform fmt -recursive
+      sh -c 'terraform fmt -recursive && chown -R "$HOST_UID:$HOST_GID" .'
     ```
 
-    `HOME` is still `/root`, which your user can't write to, so tools that store state in `HOME` may fail. In that case run as root and fix ownership afterwards with `sudo chown -R "$(id -u):$(id -g)" .`
+    Or fix ownership afterwards on the host with `sudo chown -R "$(id -u):$(id -g)" .`
 
 ## Tags and version pinning
 
@@ -191,8 +191,8 @@ Browse the available tags on [GHCR](https://github.com/jinalshah/devops-images/p
         container:
           image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
         steps:
-          - uses: actions/checkout@v4
-          - uses: aws-actions/configure-aws-credentials@v4
+          - uses: actions/checkout@v7
+          - uses: aws-actions/configure-aws-credentials@v6
             with:
               role-to-assume: arn:aws:iam::123456789012:role/ci-deploy
               aws-region: eu-west-2
