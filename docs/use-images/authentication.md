@@ -114,7 +114,7 @@ docker run -it --rm \
     A Terraform plan against AWS needs `~/.aws` and nothing else. Keeping mounts small limits what a mistake, or an over-eager AI agent, can reach. Mount SSH keys and `.gitconfig` read-only (`:ro`).
 
 !!! warning "Missing host paths become directories"
-    If a mounted path doesn't exist on the host, Docker creates it as an empty root-owned directory. Create files such as `~/.claude.json` and `~/.gitconfig` first (for example with `touch`), or leave those mounts out.
+    If a mounted path doesn't exist on the host, Docker creates it as an empty root-owned directory. Create files such as `~/.gitconfig` first (for example with `touch`), or leave those mounts out. `~/.claude.json` must contain valid JSON, because Claude Code treats an empty file as corrupted, so create it with `[ -s ~/.claude.json ] || echo '{}' > ~/.claude.json`.
 
 ---
 
@@ -187,12 +187,12 @@ docker run -it --rm \
   aws ssm start-session --target i-1234567890abcdef0
 ```
 
-Port forwarding (publish the local port with `-p`):
+Port forwarding. The plugin listens on the container's own `localhost`, so a published `-p` port may not reach it; on Linux, `--network host` makes the forwarded port available on the host directly (otherwise use it from inside the container):
 
 ```bash
 docker run -it --rm \
   -v ~/.aws:/root/.aws \
-  -p 8080:8080 \
+  --network host \
   ghcr.io/jinalshah/devops/images/aws-devops:latest \
   aws ssm start-session --target i-1234567890abcdef0 \
     --document-name AWS-StartPortForwardingSession \

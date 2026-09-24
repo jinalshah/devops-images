@@ -449,7 +449,7 @@ aws ssm start-session --target i-1234567890abcdef0 \
 ```
 
 !!! tip
-    When port forwarding from a container, publish the local port too (for example `docker run -p 8080:8080 ...`) and add `"host":["..."]` with `AWS-StartPortForwardingSessionToRemoteHost` to reach RDS or other private endpoints.
+    The plugin listens on the container's own `localhost`, so publishing the port with `docker run -p` may not reach it from your host. Use the forwarded port from inside the container, or try `--network host` on Linux. To reach RDS or other private endpoints, use `AWS-StartPortForwardingSessionToRemoteHost` and add `"host":["..."]` to the parameters.
 
 ### Google Cloud CLI
 
@@ -550,7 +550,7 @@ Agentless configuration management and orchestration with YAML playbooks.
 
 ### ansible-lint
 
-Checks playbooks and roles against best practices. Installed with the `yamllint` extra, so `yamllint` is available too.
+Checks playbooks and roles against best practices. `yamllint` is installed with it as a dependency, so you can run it directly too.
 
 **Available in:** <span class="di-pill di-pill--base">all three images</span>
 
@@ -976,7 +976,7 @@ docker run -it --rm \
 
 **Available in:** <span class="di-pill di-pill--base">all three images</span>
 
-- **Zsh** is the default shell (`CMD ["/bin/zsh"]`), with Oh My Zsh and the `candy` theme. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` followed by `-> %`.
+- **Zsh** is the default shell (`CMD ["/bin/zsh"]`), with Oh My Zsh and the `candy` theme. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` followed by `-> #` (Zsh shows `#` because you're root).
 - **Bash** has a coloured prompt and bash-completion. Start it with `bash`, or run one-off commands with `docker run ... bash -c "..."`.
 - **Fish** is installed but not configured; start it with `fish`.
 
@@ -995,7 +995,7 @@ These are defined in both `~/.zshrc` and `~/.bashrc` (from `scripts/10-zshrc.sh`
 | `tfv` | `terraform validate` | | `aws-ssm` | `aws ssm start-session --target` |
 | `tfo` | `terraform output` | | `ll` / `la` / `l` | `ls -alF` / `ls -A` / `ls -CF` |
 
-Both shells also enable tab-completion for `kubectl` and `aws`.
+Both shells also enable tab-completion for `kubectl`, and for `aws` in the images that include the AWS CLI.
 
 !!! note
     Aliases only exist in interactive shells. In `docker run ... <command>` or CI steps, use the full command names.

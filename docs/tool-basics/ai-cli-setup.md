@@ -55,7 +55,7 @@ Every DevOps image ships four agentic AI coding assistants. Each one can read yo
 | **Config to mount** | `~/.claude` (+ `~/.claude.json`) | `~/.codex` | `~/.copilot` | `~/.gemini` |
 | **You need** | Claude plan or Anthropic API key | ChatGPT plan or OpenAI API key | GitHub Copilot subscription | Google account or Gemini API key |
 
-Plans and prices change often, so check each vendor directly: [Claude](https://www.anthropic.com/pricing), [OpenAI API](https://openai.com/api/pricing/), [GitHub Copilot](https://github.com/features/copilot/plans) and [Antigravity](https://antigravity.google/docs).
+Plans and prices change often, so check each vendor directly: [Claude](https://claude.com/pricing), [OpenAI API](https://openai.com/api/pricing/), [GitHub Copilot](https://github.com/features/copilot/plans) and [Antigravity](https://antigravity.google/docs).
 
 ## How sign-in works in a container
 
@@ -80,7 +80,7 @@ sequenceDiagram
 Start a container with all four logins mounted (you only need the ones you use):
 
 ```bash
-touch ~/.claude.json
+[ -s ~/.claude.json ] || echo '{}' > ~/.claude.json
 mkdir -p ~/.claude ~/.codex ~/.copilot ~/.gemini
 
 docker run -it --rm \
@@ -94,7 +94,7 @@ docker run -it --rm \
 ```
 
 !!! tip "Create the paths first"
-    If a mounted path doesn't exist on the host, Docker creates it as a root-owned **directory**. That breaks `~/.claude.json`, which must be a file, so the `touch` and `mkdir` lines above come first.
+    If a mounted path doesn't exist on the host, Docker creates it as a root-owned **directory**. That breaks `~/.claude.json`, which must be a file, so the first two lines above come first. Seed the file with `{}` rather than leaving it empty: Claude Code reports an empty `~/.claude.json` as corrupted.
 
 !!! note "Host logins don't always carry over"
     Some CLIs keep tokens in the operating system's keychain on macOS and Windows, so mounting the directory doesn't bring the host login with it. Just sign in once inside the container: with the directory mounted, that login is saved and reused. Containers have no browser, so each CLI prints a URL (or a device code) for you to open on your host.
@@ -114,11 +114,11 @@ docker run -it --rm \
       claude
     ```
 
-    Type `/login` and pick your Claude subscription or Anthropic Console account. `claude auth status` shows who you're signed in as, and `claude doctor` checks the install.
+    Type `/login` and pick your Claude subscription or Claude Console account. `claude auth status` shows who you're signed in as, and `claude doctor` checks the install.
 
 === ":lucide-workflow: CI / headless"
 
-    Use an API key from the [Anthropic Console](https://console.anthropic.com/), or create a long-lived subscription token with `claude setup-token` (needs a Claude subscription):
+    Use an API key from the [Claude Console](https://platform.claude.com/), or create a long-lived subscription token with `claude setup-token` (needs a Claude subscription):
 
     ```bash
     docker run --rm \
@@ -172,7 +172,7 @@ Other handy flags: `--model`, `-c/--continue` (carry on from the last conversati
 
 === ":lucide-workflow: CI / headless"
 
-    Set `CODEX_API_KEY` for a single `codex exec` run. Nothing is written to disk:
+    Set `CODEX_API_KEY` for a single `codex exec` run, with no `codex login` step:
 
     ```bash
     docker run --rm \
