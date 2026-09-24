@@ -31,6 +31,9 @@ flowchart LR
   class GATE aws
   class APPLY all
   class MR neutral
+  style validate fill:#1e293b,stroke:#6366f1,color:#fff
+  style plan fill:#1e293b,stroke:#6366f1,color:#fff
+  style apply fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
 ## Validate → plan → apply

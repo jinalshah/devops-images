@@ -30,6 +30,7 @@ flowchart LR
   class XT,YT base
   class M,T all
   class R1,R2,R3 neutral
+  style matrix fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
 `latest` is only pushed from `main`. When you pull, Docker picks the matching entry from the manifest automatically.

@@ -4,7 +4,7 @@ Fixes for the problems people hit most often with DevOps Images. Find your sympt
 
 ```mermaid
 flowchart TD
-  Q{"Where does it fail?"} --> P["Pulling the image"]
+  Q(["Where does it fail?"]) --> P["Pulling the image"]
   Q --> R["Starting or running<br/>the container"]
   Q --> A["Cloud or Git<br/>authentication"]
   Q --> T["A tool inside<br/>the container"]
@@ -12,13 +12,6 @@ flowchart TD
   Q --> B["Building the image<br/>yourself"]
   Q --> D["Docs site preview"]
 
-  click P href "#pull"
-  click R href "#runtime"
-  click A href "#auth"
-  click T href "#tools"
-  click AI href "#ai-clis"
-  click B href "#build"
-  click D href "#docs"
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
   classDef base fill:#0d9488,stroke:#0f766e,color:#fff

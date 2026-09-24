@@ -5,8 +5,9 @@ Every DevOps image works as a CI job container. Your pipeline gets Terraform, Te
 ## How it fits together
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph CI["Your CI system"]
+    direction LR
     GHA["GitHub Actions"]
     GLC["GitLab CI"]
     JNK["Jenkins"]
@@ -14,20 +15,15 @@ flowchart LR
   end
   REG["ghcr.io · registry.gitlab.com<br/>Docker Hub"]
   subgraph IMG["Job container"]
+    direction LR
     ALL["all-devops"]
     AWS["aws-devops"]
     GCP["gcp-devops"]
   end
-  subgraph JOBS["What the job runs"]
-    TF["Terraform / Terragrunt"]
-    K8S["Helm + kubectl"]
-    ANS["Ansible"]
-    SEC["Trivy · TFLint · ansible-lint"]
-    AI["AI review<br/>claude · codex · copilot · agy"]
-  end
+  JOBS["What every job can run<br/>Terraform · Terragrunt · Helm · kubectl · Ansible<br/>Trivy · TFLint · ansible-lint<br/>AI review: claude · codex · copilot · agy"]
   GHA & GLC & JNK & CCI --> REG
   REG --> ALL & AWS & GCP
-  ALL & AWS & GCP --> TF & K8S & ANS & SEC & AI
+  IMG --> JOBS
 
   classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
@@ -39,8 +35,9 @@ flowchart LR
   class ALL all
   class AWS aws
   class GCP gcp
-  class TF,K8S,ANS,SEC base
-  class AI ai
+  class JOBS base
+  style CI fill:#1e293b,stroke:#6366f1,color:#fff
+  style IMG fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
 All three images share the same base, so every job can run the same Terraform, Kubernetes, Ansible, security and AI tools. The only difference is the cloud CLI: <span class="di-pill di-pill--all">all-devops</span> has AWS and Google Cloud, <span class="di-pill di-pill--aws">aws-devops</span> has AWS only and <span class="di-pill di-pill--gcp">gcp-devops</span> has Google Cloud only.

@@ -561,3 +561,17 @@
     animation: none;
   }
 }
+
+/* ---------- Mermaid colours ---------------------------------------------- */
+/* Diagrams colour their nodes with the site palette, so labels are white.
+   Nodes without their own class get a slate fill, and subgraphs set a dark
+   fill in the diagram source so their white titles stay readable. */
+
+:root,
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-mermaid-label-fg-color: #fff;
+  --md-mermaid-label-bg-color: #475569;
+  --md-mermaid-node-bg-color: #475569;
+  --md-mermaid-node-fg-color: #334155;
+}

@@ -78,6 +78,8 @@ flowchart LR
   class HG,CG gcp
   class HS,CS base
   class HC,HX,HP,HM,CC,CX,CP,CM ai
+  style Host fill:#1e293b,stroke:#6366f1,color:#fff
+  style Container fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
 | Host path | Container path | Used by | Available in |

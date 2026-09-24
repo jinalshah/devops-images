@@ -124,6 +124,7 @@ flowchart LR
   class JA all
   class JW aws
   class JG gcp
+  style Triggers fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
 1. **Triggers**: `image-builder.yml` runs on pull requests, manual dispatch and every Sunday at 03:00 UTC. Separately, `update-tool-versions.yml` runs daily at 02:00 UTC, bumps the version repo variables (gcloud, Packer, Terragrunt, TFLint, ghorg, k9s, Python) and dispatches `image-builder.yml` if anything changed.
