@@ -1,1654 +1,872 @@
 # Tool Basics
 
-This comprehensive guide covers all tools included in the images, from basic to advanced usage. Each tool includes a description, common use cases, and practical examples.
+A quick, practical reference for every tool in the images: what it's for, which image has it, and the commands you'll reach for most.
+
+:lucide-search: Want to search and filter the full list instead? Open the [interactive tool explorer](../use-images/quick-reference.md#tool-explorer).
+
+<div class="grid cards" markdown>
+
+-   :simple-terraform:{ .lg .middle } __Infrastructure as code__
+
+    ---
+
+    Terraform (via tfswitch), Terragrunt, TFLint, Packer
+
+    [:octicons-arrow-right-24: IaC tools](#iac)
+
+-   :simple-kubernetes:{ .lg .middle } __Kubernetes__
+
+    ---
+
+    kubectl, Helm 3, k9s
+
+    [:octicons-arrow-right-24: Kubernetes tools](#kubernetes)
+
+-   :lucide-cloud:{ .lg .middle } __Cloud CLIs__
+
+    ---
+
+    AWS CLI v2 + Session Manager, Google Cloud CLI + GKE auth plugin
+
+    [:octicons-arrow-right-24: Cloud CLIs](#cloud-clis)
+
+-   :simple-ansible:{ .lg .middle } __Automation__
+
+    ---
+
+    Ansible, ansible-lint, pre-commit, Task, make
+
+    [:octicons-arrow-right-24: Automation tools](#automation)
+
+-   :simple-trivy:{ .lg .middle } __Security__
+
+    ---
+
+    Trivy for images, filesystems, IaC and secrets
+
+    [:octicons-arrow-right-24: Trivy](#security)
+
+-   :simple-github:{ .lg .middle } __Git & collaboration__
+
+    ---
+
+    Git, GitHub CLI (`gh`), ghorg
+
+    [:octicons-arrow-right-24: Git tools](#git)
+
+-   :simple-python:{ .lg .middle } __Languages__
+
+    ---
+
+    Python 3.14 with pip packages, Node.js LTS with npm and npx
+
+    [:octicons-arrow-right-24: Languages](#languages)
+
+-   :lucide-bot:{ .lg .middle } __AI coding agents__
+
+    ---
+
+    Claude Code, OpenAI Codex CLI, GitHub Copilot CLI, Antigravity CLI (`agy`)
+
+    [:octicons-arrow-right-24: AI CLIs](#ai-clis)
+
+-   :lucide-database:{ .lg .middle } __Database clients__
+
+    ---
+
+    mongosh, psql 17, mysql 8.4
+
+    [:octicons-arrow-right-24: Databases](#databases)
+
+-   :lucide-network:{ .lg .middle } __Network & diagnostics__
+
+    ---
+
+    dig, nmap, ncat, telnet, curl, wget, lftp, openssl, ssh
+
+    [:octicons-arrow-right-24: Network tools](#network)
+
+-   :lucide-square-terminal:{ .lg .middle } __Shells & aliases__
+
+    ---
+
+    Zsh (Oh My Zsh, default), Bash, Fish, plus handy `tf*` and `k*` aliases
+
+    [:octicons-arrow-right-24: Shells](#shells)
+
+-   :lucide-wrench:{ .lg .middle } __Everyday utilities__
+
+    ---
+
+    jq, zip/unzip, tar, vim, less, tree, bubblewrap
+
+    [:octicons-arrow-right-24: Utilities](#utilities)
+
+</div>
+
+## Which image has what?
+
+Every tool on this page is in all three images unless its **Available in** line says otherwise. Only the cloud layers differ:
+
+| Tool | <span class="di-pill di-pill--all">all-devops</span> | <span class="di-pill di-pill--aws">aws-devops</span> | <span class="di-pill di-pill--gcp">gcp-devops</span> |
+|------|:---:|:---:|:---:|
+| Shared base (everything else on this page) | :material-check: | :material-check: | :material-check: |
+| AWS CLI v2, Session Manager plugin | :material-check: | :material-check: | |
+| boto3, cfn-lint, s3cmd, crcmod, pytest, requests, bs4, lxml | :material-check: | :material-check: | |
+| Google Cloud CLI (`gcloud`, `gsutil`, `bq`) | :material-check: | | :material-check: |
+| gcloud components: `beta`, `docker-credential-gcr`, `gke-gcloud-auth-plugin` | :material-check: | | :material-check: |
+
+!!! info "Not in the images"
+    These are sometimes assumed but are **not** installed, so add them yourself if you need them: the Docker CLI or daemon (no Docker-in-Docker), standalone `kustomize` (use `kubectl kustomize` or `kubectl apply -k`), `yq`, `pipx`, `terraform-docs`, `redis-cli`, Go, Java and `gcloud alpha`.
 
 ---
 
-## Infrastructure as Code (IaC)
+## Infrastructure as code { #iac }
 
 ### Terraform
 
-**What it does:** Terraform is an infrastructure as code tool that lets you define and provision infrastructure across cloud providers using declarative configuration files.
+Declarative infrastructure provisioning for any cloud.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · latest release at build time, installed with `tfswitch`
 
-**Common use cases:**
-- Provisioning cloud infrastructure (VMs, networks, storage)
-- Managing Kubernetes clusters
-- Multi-cloud deployments
-- Infrastructure versioning and collaboration
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    terraform init        # download providers and modules
+    terraform fmt -recursive
+    terraform validate
+    terraform plan
+    terraform apply
+    terraform destroy
+    terraform output
+    ```
 
-```bash
-# Initialize Terraform working directory
-terraform init
+=== "Advanced"
 
-# Validate configuration files
-terraform validate
+    ```bash
+    # Workspaces
+    terraform workspace new staging
+    terraform workspace select staging
 
-# Preview changes without applying
-terraform plan
+    # Variable files and non-interactive apply (CI)
+    terraform plan -var-file="prod.tfvars" -out=tfplan
+    terraform apply tfplan
 
-# Apply changes to infrastructure
-terraform apply
+    # Target a single resource
+    terraform apply -target=aws_instance.example
 
-# Destroy managed infrastructure
-terraform destroy
+    # Bring existing infrastructure under management
+    terraform import aws_instance.example i-1234567890abcdef0
+    ```
 
-# Format configuration files
-terraform fmt
+=== "Switch versions (tfswitch)"
 
-# Show current state
-terraform show
-```
+    ```bash
+    # Install and use the latest release
+    tfswitch --latest
 
-**Advanced usage:**
+    # Install and use a specific version
+    tfswitch 1.9.8
 
-```bash
-# Use a specific workspace
-terraform workspace select production
-terraform workspace new staging
+    # With no argument, tfswitch reads .terraform-version or
+    # the required_version constraint in your .tf files
+    tfswitch
+    ```
 
-# Plan with variable file
-terraform plan -var-file="prod.tfvars"
-
-# Apply with auto-approval (CI/CD)
-terraform apply -auto-approve
-
-# Target specific resources
-terraform apply -target=aws_instance.example
-
-# Import existing infrastructure
-terraform import aws_instance.example i-1234567890abcdef0
-```
-
-**Switching Terraform versions:**
-
-The images include `tfswitch` for managing Terraform versions:
-
-```bash
-# Install and use latest Terraform version
-tfswitch --latest
-
-# Install specific version
-tfswitch 1.7.0
-
-# Use version from .terraform-version file
-tfswitch
-```
-
----
+!!! tip "Shortcuts"
+    The shells ship with `tf`, `tfi`, `tfp`, `tfa`, `tfd`, `tff`, `tfv` and `tfo` aliases. See [shell aliases](#aliases).
 
 ### Terragrunt
 
-**What it does:** Terragrunt is a thin wrapper for Terraform that provides extra tools for keeping configurations DRY, managing remote state, and working with multiple modules.
+A thin wrapper around Terraform for DRY configuration, remote state and multi-module stacks.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · pinned per build, bumped automatically
 
-**Common use cases:**
-- Managing multiple Terraform modules
-- Keeping backend configuration DRY
-- Executing commands across multiple modules
-- Managing dependencies between modules
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    # Single module (Terraform commands pass straight through)
+    terragrunt init
+    terragrunt plan
+    terragrunt apply
 
-```bash
-# Initialize with Terragrunt
-terragrunt init
+    # Every module under the current directory
+    terragrunt run --all plan
+    terragrunt run --all apply
+    terragrunt run --all destroy
+    ```
 
-# Plan across all modules
-terragrunt run-all plan
+=== "Advanced"
 
-# Apply across all modules
-terragrunt run-all apply
+    ```bash
+    # Skip interactive prompts (CI)
+    terragrunt run --all apply --non-interactive
 
-# Destroy across all modules
-terragrunt run-all destroy
-```
+    # Include dependencies that live outside the current directory
+    terragrunt run --all apply --queue-include-external
 
-**Advanced usage:**
+    # Validate every module
+    terragrunt run --all validate
 
-```bash
-# Run plan with specific terragrunt variables
-terragrunt plan --terragrunt-non-interactive
+    # Show the dependency graph (DOT format)
+    terragrunt dag graph
+    ```
 
-# Execute across modules with dependency awareness
-terragrunt run-all apply --terragrunt-include-external-dependencies
-
-# Validate all configurations
-terragrunt run-all validate
-
-# Show dependency graph
-terragrunt graph-dependencies
-```
-
----
+!!! warning "Old commands are gone"
+    Recent Terragrunt releases replaced the old CLI. `run-all` is now `run --all`, `--terragrunt-non-interactive` is `--non-interactive`, `graph-dependencies` is `dag graph`, and `--terragrunt-include-external-dependencies` is `--queue-include-external`.
 
 ### TFLint
 
-**What it does:** TFLint is a Terraform linter that finds possible errors, warns about deprecated syntax, and enforces best practices.
+A Terraform linter that catches errors, deprecated syntax and provider-specific mistakes before `plan`.
 
-**Available in:** All images
-
-**Common use cases:**
-- Catching errors before terraform plan
-- Enforcing naming conventions
-- Detecting deprecated syntax
-- Validating module usage
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · pinned per build, bumped automatically
 
 ```bash
-# Initialize TFLint (install plugins)
-tflint --init
-
-# Lint current directory
-tflint
-
-# Show all available rules
-tflint --list-rules
-```
-
-**Advanced usage:**
-
-```bash
-# Lint with specific config file
+tflint --init                    # install the plugins listed in .tflint.hcl
+tflint                           # lint the current directory
+tflint --recursive               # lint every module below here
 tflint --config=.tflint.hcl
-
-# Lint recursively
-tflint --recursive
-
-# Output in different formats
-tflint --format=json
-tflint --format=compact
-
-# Enable specific rule
+tflint --format=compact          # also: json, checkstyle, junit, sarif
 tflint --enable-rule=terraform_naming_convention
 ```
 
----
-
 ### Packer
 
-**What it does:** Packer automates the creation of machine images across multiple platforms from a single source configuration.
+Builds machine images (AMIs, GCE images and more) from one template.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · pinned per build, bumped automatically
 
-**Common use cases:**
-- Building AMIs for AWS
-- Creating GCP images
-- Building Docker containers
-- Creating multi-platform images from one template
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    packer init .        # install required plugins
+    packer fmt .
+    packer validate .
+    packer build .
+    packer build -var-file="variables.pkrvars.hcl" .
+    ```
 
-```bash
-# Initialize Packer configuration (install plugins)
-packer init .
+=== "Advanced"
 
-# Validate Packer template
-packer validate .
+    ```bash
+    # Build only one source
+    packer build -only=amazon-ebs.ubuntu .
 
-# Build images
-packer build .
+    # Override variables on the command line
+    packer build -var 'region=eu-west-2' -var 'instance_type=t3.micro' .
 
-# Build with variable file
-packer build -var-file="variables.pkrvars.hcl" .
-```
+    # Step through the build, or replace existing artefacts
+    packer build -debug .
+    packer build -force .
+    ```
 
-**Advanced usage:**
-
-```bash
-# Build only specific builders
-packer build -only=amazon-ebs.ubuntu .
-
-# Enable debug mode
-packer build -debug .
-
-# Use variables from command line
-packer build -var 'region=us-west-2' -var 'instance_type=t3.micro' .
-
-# Force rebuild
-packer build -force .
-```
+!!! note
+    Packer's `docker` builder needs a Docker daemon, which the images don't include. Cloud builders such as `amazon-ebs` and `googlecompute` work fine.
 
 ---
 
-## Kubernetes and Container Orchestration
+## Kubernetes { #kubernetes }
 
 ### kubectl
 
-**What it does:** kubectl is the command-line tool for interacting with Kubernetes clusters, allowing you to deploy applications, inspect resources, and manage cluster operations.
+The Kubernetes command-line client.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · latest stable release at build time, installed at `/usr/local/bin/kubectl`
 
-**Common use cases:**
-- Managing Kubernetes deployments
-- Troubleshooting pods and services
-- Viewing logs and events
-- Applying manifests
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    kubectl config get-contexts
+    kubectl config use-context my-cluster
+    kubectl cluster-info
 
-```bash
-# Get cluster information
-kubectl cluster-info
+    kubectl get pods -A
+    kubectl get deployments,services
+    kubectl describe pod <pod-name>
+    kubectl logs <pod-name> -f
+    kubectl exec -it <pod-name> -- /bin/sh
+    ```
 
-# List all contexts
-kubectl config get-contexts
+=== "Advanced"
 
-# Switch context
-kubectl config use-context my-cluster
+    ```bash
+    # Apply manifests (a file, a directory, or a kustomization)
+    kubectl apply -f deployment.yaml
+    kubectl apply -f ./manifests/
+    kubectl apply -k ./overlays/prod
+    kubectl kustomize ./overlays/prod    # render without applying
 
-# Get pods in all namespaces
-kubectl get pods -A
+    # Day-2 operations
+    kubectl scale deployment/nginx --replicas=5
+    kubectl rollout status deployment/nginx
+    kubectl rollout undo deployment/nginx
+    kubectl port-forward svc/nginx 8080:80
 
-# Get specific resource types
-kubectl get deployments
-kubectl get services
-kubectl get nodes
+    # Needs metrics-server in the cluster
+    kubectl top nodes
 
-# Describe resource details
-kubectl describe pod <pod-name>
+    kubectl get events --sort-by='.lastTimestamp'
+    ```
 
-# View logs
-kubectl logs <pod-name>
-kubectl logs <pod-name> -f  # Follow logs
+=== "Connect to a cluster"
 
-# Execute command in pod
-kubectl exec -it <pod-name> -- /bin/bash
-```
+    ```bash
+    # Reuse your host kubeconfig
+    docker run -it --rm -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
 
-**Advanced usage:**
+    # EKS (aws-devops, all-devops)
+    aws eks update-kubeconfig --name my-cluster --region eu-west-2
 
-```bash
-# Apply configuration from file
-kubectl apply -f deployment.yaml
+    # GKE (gcp-devops, all-devops): uses the bundled gke-gcloud-auth-plugin
+    gcloud container clusters get-credentials my-cluster --region europe-west2
+    ```
 
-# Apply all manifests in directory
-kubectl apply -f ./manifests/
-
-# Delete resources
-kubectl delete pod <pod-name>
-kubectl delete -f deployment.yaml
-
-# Scale deployments
-kubectl scale deployment/nginx --replicas=5
-
-# Port forward to pod
-kubectl port-forward pod/<pod-name> 8080:80
-
-# Get resource usage
-kubectl top nodes
-kubectl top pods
-
-# Label and select resources
-kubectl label pods <pod-name> env=production
-kubectl get pods -l env=production
-
-# View events
-kubectl get events --sort-by='.lastTimestamp'
-
-# Create resources imperatively
-kubectl create deployment nginx --image=nginx:latest
-kubectl expose deployment nginx --port=80 --type=LoadBalancer
-```
-
----
+!!! tip "Shortcuts"
+    `k`, `kg`, `kd`, `kl`, `ka` and `kr` are aliases for `kubectl`, `get`, `describe`, `logs`, `apply` and `run`, and kubectl tab-completion is enabled in Zsh and Bash.
 
 ### Helm
 
-**What it does:** Helm is the package manager for Kubernetes, helping you define, install, and upgrade complex Kubernetes applications using charts.
+The Kubernetes package manager.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · latest Helm 3 release at build time
 
-**Common use cases:**
-- Installing third-party applications on Kubernetes
-- Managing application releases and rollbacks
-- Templating Kubernetes manifests
-- Sharing application packages
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm search repo prometheus
 
-```bash
-# Add a chart repository
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add stable https://charts.helm.sh/stable
+    helm install monitoring prometheus-community/kube-prometheus-stack \
+      --namespace monitoring --create-namespace
+    helm list -A
+    helm upgrade monitoring prometheus-community/kube-prometheus-stack -n monitoring
+    helm uninstall monitoring -n monitoring
+    ```
 
-# Update repository index
-helm repo update
+=== "Advanced"
 
-# Search for charts
-helm search repo nginx
+    ```bash
+    # Inspect and override values
+    helm show values prometheus-community/prometheus > values.yaml
+    helm install prom prometheus-community/prometheus -f values.yaml
+    helm install prom prometheus-community/prometheus --set server.replicaCount=2
 
-# Install a chart
-helm install my-release bitnami/nginx
+    # Render locally or preview an install
+    helm template prom prometheus-community/prometheus -f values.yaml
+    helm install prom prometheus-community/prometheus --dry-run --debug
 
-# List installed releases
-helm list
-helm list -A  # All namespaces
+    # History and rollback
+    helm history prom
+    helm rollback prom 1
 
-# Upgrade a release
-helm upgrade my-release bitnami/nginx
+    # Author your own chart
+    helm create my-chart
+    helm lint my-chart
+    helm package my-chart
+    ```
 
-# Uninstall a release
-helm uninstall my-release
-```
-
-**Advanced usage:**
-
-```bash
-# Install with custom values
-helm install my-release bitnami/nginx -f custom-values.yaml
-helm install my-release bitnami/nginx --set replicaCount=3
-
-# Show chart values
-helm show values bitnami/nginx
-
-# Dry-run installation
-helm install my-release bitnami/nginx --dry-run --debug
-
-# Rollback to previous release
-helm rollback my-release 1
-
-# Get release history
-helm history my-release
-
-# Create your own chart
-helm create my-chart
-
-# Package a chart
-helm package my-chart
-
-# Lint chart
-helm lint my-chart
-```
-
----
+!!! warning "The `stable` repo is gone"
+    `https://charts.helm.sh/stable` was deprecated years ago and no longer receives updates. Use the project's own chart repository (for example `prometheus-community`) or an OCI registry instead.
 
 ### k9s
 
-**What it does:** k9s is a terminal-based UI for managing Kubernetes clusters, providing a faster and more intuitive way to observe and interact with your clusters.
+A terminal UI for watching and managing Kubernetes clusters.
 
-**Available in:** All images
-
-**Common use cases:**
-- Real-time cluster monitoring
-- Quick resource navigation
-- Interactive log viewing
-- Pod management and troubleshooting
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · pinned per build, bumped automatically
 
 ```bash
-# Launch k9s
-k9s
-
-# Launch in specific namespace
-k9s -n kube-system
-
-# Launch with specific context
+k9s                        # current context
+k9s -n kube-system         # start in a namespace
 k9s --context my-cluster
+k9s --readonly             # disable modifying commands
 ```
 
-**Interactive commands (within k9s):**
-- `:pods` - View pods
-- `:svc` - View services
-- `:deploy` - View deployments
-- `:ns` - View namespaces
-- `/` - Filter resources
-- `l` - View logs
-- `d` - Describe resource
-- `e` - Edit resource
-- `?` - Help
+Inside k9s, type `:pods`, `:svc`, `:deploy` or `:ns` to switch views, `/` to filter, ++l++ for logs, ++d++ to describe, ++e++ to edit, `?` for help and ++ctrl+c++ to quit.
 
 ---
 
-## Cloud Provider CLIs
+## Cloud CLIs { #cloud-clis }
 
-### AWS CLI (`aws-devops` and `all-devops`)
+### AWS CLI v2
 
-**What it does:** The AWS Command Line Interface is a unified tool to manage AWS services from the command line.
+**Available in:** <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--aws">aws-devops</span>
 
-**Available in:** `aws-devops`, `all-devops`
+=== "Basics"
 
-**Common use cases:**
-- Managing EC2 instances and security groups
-- Working with S3 buckets
-- Deploying CloudFormation stacks
-- Managing IAM users and roles
-- Querying AWS resources
+    ```bash
+    aws sts get-caller-identity        # who am I?
+    aws configure                      # access keys
+    aws configure sso                  # IAM Identity Center
+    aws sso login --profile my-profile
 
-**Basic usage:**
+    aws s3 ls
+    aws ec2 describe-instances --output table
+    ```
 
-```bash
-# Verify authentication
-aws sts get-caller-identity
+=== "Advanced"
 
-# List S3 buckets
-aws s3 ls
+    ```bash
+    # S3
+    aws s3 cp file.txt s3://my-bucket/
+    aws s3 sync ./site s3://my-bucket/site --delete
 
-# List EC2 instances
-aws ec2 describe-instances
+    # Filter and project with JMESPath
+    aws ec2 describe-instances \
+      --filters "Name=instance-state-name,Values=running" \
+      --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`]|[0].Value]' \
+      --output table
 
-# List available regions
-aws ec2 describe-regions
+    # CloudFormation (lint templates first with cfn-lint)
+    cfn-lint template.yaml
+    aws cloudformation deploy --stack-name my-stack --template-file template.yaml
 
-# Get account information
-aws iam get-user
+    # SSM Parameter Store
+    aws ssm get-parameter --name /my/parameter --with-decryption
 
-# Configure profile
-aws configure
-```
+    # Per-command profile and region
+    aws s3 ls --profile production --region eu-west-2
+    ```
 
-**Advanced usage:**
+The AWS layer also adds `s3cmd`, and the Python packages `boto3`, `cfn-lint`, `crcmod`, `pytest`, `requests`, `bs4` and `lxml`. `aws` tab-completion is enabled in Zsh and Bash.
 
-```bash
-# S3 operations
-aws s3 cp file.txt s3://my-bucket/
-aws s3 sync ./local-folder s3://my-bucket/remote-folder
-aws s3 mb s3://my-new-bucket
+### AWS Session Manager plugin
 
-# EC2 management
-aws ec2 run-instances --image-id ami-12345 --instance-type t3.micro
-aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance"
-aws ec2 stop-instances --instance-ids i-1234567890abcdef0
+Shell access and port forwarding to EC2 instances without SSH keys or bastion hosts.
 
-# CloudFormation
-aws cloudformation create-stack --stack-name my-stack --template-body file://template.yaml
-aws cloudformation describe-stacks --stack-name my-stack
-aws cloudformation update-stack --stack-name my-stack --template-body file://template.yaml
-
-# SSM Parameter Store
-aws ssm get-parameter --name /my/parameter --with-decryption
-aws ssm put-parameter --name /my/parameter --value "secret" --type SecureString
-
-# Query with JMESPath
-aws ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId,State.Name,Tags[?Key==`Name`].Value|[0]]' --output table
-
-# Use different profiles
-aws s3 ls --profile production
-
-# Output formats
-aws ec2 describe-instances --output json
-aws ec2 describe-instances --output table
-aws ec2 describe-instances --output yaml
-```
-
----
-
-### AWS Session Manager Plugin (`aws-devops` and `all-devops`)
-
-**What it does:** The Session Manager plugin enables you to start interactive sessions with EC2 instances without requiring SSH access or bastion hosts.
-
-**Available in:** `aws-devops`, `all-devops`
-
-**Common use cases:**
-- Secure shell access to EC2 instances
-- Port forwarding to private resources
-- Session auditing and logging
-- Bastion-less architecture
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--aws">aws-devops</span>
 
 ```bash
-# Start interactive session
+# Interactive shell (the aws-ssm alias does the same thing)
 aws ssm start-session --target i-1234567890abcdef0
+aws-ssm i-1234567890abcdef0
 
-# Port forwarding
+# Forward local port 8080 to port 80 on the instance
 aws ssm start-session --target i-1234567890abcdef0 \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["80"],"localPortNumber":["8080"]}'
-
-# Run commands
-aws ssm send-command --instance-ids i-1234567890abcdef0 \
-  --document-name "AWS-RunShellScript" \
-  --parameters 'commands=["uptime"]'
 ```
+
+!!! tip
+    When port forwarding from a container, publish the local port too (for example `docker run -p 8080:8080 ...`) and add `"host":["..."]` with `AWS-StartPortForwardingSessionToRemoteHost` to reach RDS or other private endpoints.
+
+### Google Cloud CLI
+
+`gcloud`, `gsutil` and `bq`, plus the `beta`, `docker-credential-gcr` and `gke-gcloud-auth-plugin` components. The SDK lives in `/usr/lib/google-cloud-sdk`.
+
+**Available in:** <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--gcp">gcp-devops</span>
+
+=== "Basics"
+
+    ```bash
+    gcloud auth login                         # user login (prints a URL in a container)
+    gcloud auth application-default login     # ADC for Terraform and client libraries
+    gcloud auth list
+    gcloud config set project my-project-id
+    gcloud config list
+
+    gcloud projects list
+    gcloud compute instances list
+    ```
+
+=== "Advanced"
+
+    ```bash
+    # Service account (gcloud itself ignores GOOGLE_APPLICATION_CREDENTIALS)
+    gcloud auth activate-service-account --key-file=/secrets/sa.json
+
+    # Cloud Storage
+    gcloud storage buckets create gs://my-bucket --location=europe-west2
+    gcloud storage cp file.txt gs://my-bucket/
+    gsutil ls gs://my-bucket/
+
+    # BigQuery
+    bq ls
+    bq query --use_legacy_sql=false 'SELECT 1'
+
+    # Named configurations
+    gcloud config configurations create production
+    gcloud config configurations activate production
+    ```
+
+=== "GKE"
+
+    ```bash
+    gcloud container clusters list
+    gcloud container clusters get-credentials my-cluster --region europe-west2
+    kubectl get nodes
+
+    # The auth plugin that kubectl calls behind the scenes
+    gke-gcloud-auth-plugin --version
+    ```
+
+!!! success "GKE works out of the box"
+    The `gke-gcloud-auth-plugin` component is installed, so `gcloud container clusters get-credentials` writes a working kubeconfig and `kubectl`, `helm` and `k9s` can talk to GKE straight away.
+
+!!! note
+    `gcloud alpha` commands are not installed. `gcloud beta` is.
 
 ---
 
-### Google Cloud CLI (`gcp-devops` and `all-devops`)
-
-**What it does:** The Google Cloud CLI (gcloud) is the primary command-line tool for interacting with Google Cloud Platform services.
-
-**Available in:** `gcp-devops`, `all-devops`
-
-**Common use cases:**
-- Managing Compute Engine instances
-- Working with Cloud Storage
-- Managing GKE clusters
-- Deploying Cloud Functions
-- Managing IAM policies
-
-**Basic usage:**
-
-```bash
-# Authenticate
-gcloud auth login
-
-# List authenticated accounts
-gcloud auth list
-
-# Set project
-gcloud config set project my-project-id
-
-# View current configuration
-gcloud config list
-
-# List projects
-gcloud projects list
-
-# List compute instances
-gcloud compute instances list
-
-# List GKE clusters
-gcloud container clusters list
-```
-
-**Advanced usage:**
-
-```bash
-# Compute Engine operations
-gcloud compute instances create my-instance \
-  --machine-type=e2-medium \
-  --zone=us-central1-a \
-  --image-family=debian-11 \
-  --image-project=debian-cloud
-
-gcloud compute instances stop my-instance --zone=us-central1-a
-gcloud compute ssh my-instance --zone=us-central1-a
-
-# Cloud Storage operations
-gcloud storage buckets create gs://my-bucket --location=us-central1
-gcloud storage cp file.txt gs://my-bucket/
-gcloud storage ls gs://my-bucket/
-
-# GKE cluster management
-gcloud container clusters create my-cluster --zone=us-central1-a
-gcloud container clusters get-credentials my-cluster --zone=us-central1-a
-
-# IAM management
-gcloud projects get-iam-policy my-project-id
-gcloud projects add-iam-policy-binding my-project-id \
-  --member='user:email@example.com' \
-  --role='roles/viewer'
-
-# Cloud Functions
-gcloud functions deploy my-function \
-  --runtime=python39 \
-  --trigger-http \
-  --entry-point=main
-
-# Use different configurations
-gcloud config configurations create production
-gcloud config configurations activate production
-```
-
----
-
-## Configuration Management and Automation
+## Automation { #automation }
 
 ### Ansible
 
-**What it does:** Ansible is an agentless automation tool for configuration management, application deployment, and task automation using simple YAML playbooks.
+Agentless configuration management and orchestration with YAML playbooks.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · installed with pip, alongside `jmespath` (for `json_query`) and `paramiko`
 
-**Common use cases:**
-- Server configuration and provisioning
-- Application deployment
-- Multi-tier orchestration
-- Cloud resource provisioning
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    ansible --version
+    ansible all -i inventory.ini -m ping
+    ansible webservers -i inventory.ini -a "uptime"
 
-```bash
-# Check version
-ansible --version
+    ansible-playbook -i inventory.ini playbook.yml
+    ansible-playbook playbook.yml --syntax-check
+    ansible-playbook playbook.yml --check --diff    # dry run
+    ```
 
-# Ping all hosts
-ansible all -m ping -i inventory.ini
+=== "Advanced"
 
-# Run ad-hoc command
-ansible webservers -a "uptime" -i inventory.ini
+    ```bash
+    ansible-playbook playbook.yml -e "version=1.2.3 env=production"
+    ansible-playbook playbook.yml --limit webserver01
+    ansible-playbook playbook.yml --tags "configure,deploy" --skip-tags "tests"
+    ansible-playbook playbook.yml -vvv
 
-# Run playbook
-ansible-playbook playbook.yml
+    # Secrets
+    ansible-vault encrypt secrets.yml
+    ansible-playbook playbook.yml --ask-vault-pass
 
-# Run with inventory file
-ansible-playbook -i production.ini playbook.yml
+    # Collections
+    ansible-galaxy collection install -r requirements.yml
+    ```
 
-# Check syntax
-ansible-playbook --syntax-check playbook.yml
-
-# Dry run
-ansible-playbook --check playbook.yml
-```
-
-**Advanced usage:**
-
-```bash
-# Run with extra variables
-ansible-playbook playbook.yml -e "version=1.2.3 env=production"
-
-# Limit to specific hosts
-ansible-playbook playbook.yml --limit webserver01
-
-# Use vault for secrets
-ansible-playbook playbook.yml --ask-vault-pass
-ansible-vault encrypt secrets.yml
-ansible-vault decrypt secrets.yml
-
-# Tags
-ansible-playbook playbook.yml --tags "configuration,deploy"
-ansible-playbook playbook.yml --skip-tags "testing"
-
-# Verbose output
-ansible-playbook playbook.yml -v    # verbose
-ansible-playbook playbook.yml -vvv  # more verbose
-```
-
----
+!!! tip
+    Mount your SSH keys read-only (`-v ~/.ssh:/root/.ssh:ro`) so Ansible can reach your hosts.
 
 ### ansible-lint
 
-**What it does:** ansible-lint checks Ansible playbooks for best practices, potential errors, and style guidelines.
+Checks playbooks and roles against best practices. Installed with the `yamllint` extra, so `yamllint` is available too.
 
-**Available in:** All images
-
-**Common use cases:**
-- Validating playbook syntax
-- Enforcing best practices
-- Pre-commit checks
-- CI/CD quality gates
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
 
 ```bash
-# Lint a playbook
+ansible-lint                    # lint the current project
 ansible-lint playbook.yml
+ansible-lint -L                 # list rules
+ansible-lint --fix              # apply automatic fixes
 
-# Lint all YAML files in directory
-ansible-lint .
+# Skip rules by name
+ansible-lint -x command-instead-of-module,no-changed-when playbook.yml
 
-# List all rules
-ansible-lint -L
-
-# Exclude specific rules
-ansible-lint -x 301,302 playbook.yml
+yamllint .
 ```
 
----
+!!! warning
+    Numeric rule IDs such as `301` and `302` were removed. Use rule names (`command-instead-of-module`, `no-changed-when` and so on), either with `-x` or in `.ansible-lint`.
 
 ### pre-commit
 
-**What it does:** pre-commit is a framework for managing and maintaining multi-language pre-commit hooks, ensuring code quality before commits.
+Runs linters and formatters as Git hooks.
 
-**Available in:** All images
-
-**Common use cases:**
-- Running linters before commit
-- Formatting code automatically
-- Preventing bad commits
-- Enforcing team standards
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
 
 ```bash
-# Install git hook scripts
-pre-commit install
-
-# Run all hooks on all files
+pre-commit install               # add the hook to .git/hooks
 pre-commit run --all-files
-
-# Run specific hook
-pre-commit run terraform-fmt --all-files
-
-# Update hooks to latest versions
+pre-commit run terraform_fmt --all-files   # one hook, by id
 pre-commit autoupdate
-
-# Uninstall hooks
 pre-commit uninstall
 ```
 
+### Task (go-task) and make
+
+Task is a YAML-based task runner; GNU `make` is there too.
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · Task is the latest release at build time
+
+=== "Commands"
+
+    ```bash
+    task --list          # or task -l
+    task plan
+    task fmt validate    # run several tasks
+    task apply ENV=prod  # pass a variable
+
+    make plan
+    ```
+
+=== "Example Taskfile.yml"
+
+    ```yaml
+    version: '3'
+
+    vars:
+      ENV: dev
+
+    tasks:
+      fmt:
+        desc: Format Terraform code
+        cmds:
+          - terraform fmt -recursive
+
+      validate:
+        desc: Validate Terraform
+        cmds:
+          - terraform validate
+
+      plan:
+        desc: Plan for an environment
+        cmds:
+          - terraform plan -var-file=envs/{{.ENV}}.tfvars
+
+      apply:
+        desc: Apply for an environment
+        deps: [validate]
+        cmds:
+          - terraform apply -var-file=envs/{{.ENV}}.tfvars
+    ```
+
 ---
 
-## Security and Compliance
+## Security { #security }
 
 ### Trivy
 
-**What it does:** Trivy is a comprehensive security scanner for containers, filesystems, and IaC configurations, detecting vulnerabilities, misconfigurations, and secrets.
+Scans container images, filesystems, repositories and IaC for vulnerabilities, misconfigurations and secrets.
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · installed from Aqua's yum repository
 
-**Common use cases:**
-- Scanning container images for vulnerabilities
-- Detecting misconfigurations in IaC files
-- Finding exposed secrets in code
-- CI/CD security gates
+=== "Basics"
 
-**Basic usage:**
+    ```bash
+    trivy image nginx:latest
+    trivy fs .                         # vulnerabilities in lock files, plus secrets
+    trivy config ./terraform/          # IaC misconfigurations
+    trivy fs --scanners secret .
+    trivy repo https://github.com/jinalshah/devops-images
+    ```
 
-```bash
-# Scan container image
-trivy image nginx:latest
-trivy image ghcr.io/jinalshah/devops/images/all-devops:latest
+=== "Advanced"
 
-# Scan filesystem
-trivy fs /path/to/project
+    ```bash
+    # Fail CI on serious findings only
+    trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed nginx:latest
 
-# Scan IaC configurations
-trivy config ./terraform/
+    # Output formats
+    trivy image --format json -o results.json nginx:latest
+    trivy image --format sarif -o results.sarif nginx:latest
 
-# Scan for secrets
-trivy fs --scanners secret ./
-```
+    # Custom Rego checks for IaC
+    trivy config --config-check ./checks ./terraform/
 
-**Advanced usage:**
+    # Compliance report
+    trivy image --compliance docker-cis-1.6.0 nginx:latest
 
-```bash
-# Filter by severity
-trivy image --severity HIGH,CRITICAL nginx:latest
+    # Clear caches and the downloaded databases
+    trivy clean --all
+    ```
 
-# Output formats
-trivy image --format json nginx:latest
-trivy image --format table nginx:latest
-trivy image --format sarif nginx:latest
+!!! info "First scan downloads the database"
+    No vulnerability database is baked into the image, so the first scan in a fresh container downloads it. Mount a cache to reuse it: `-v ~/.cache/trivy:/root/.cache/trivy`.
 
-# Ignore unfixed vulnerabilities
-trivy image --ignore-unfixed nginx:latest
-
-# Use custom policy
-trivy config --policy ./policy ./terraform/
-
-# Generate compliance report
-trivy image --compliance docker-cis nginx:latest
-
-# Cache management
-trivy image --clear-cache
-```
+!!! tip "No Docker daemon needed"
+    There is no Docker in the image, so `trivy image` pulls the image straight from the registry. For private registries, log in with `trivy registry login` or set `TRIVY_USERNAME` and `TRIVY_PASSWORD`.
 
 ---
 
-## Development and Collaboration
-
-### GitHub CLI (gh)
-
-**What it does:** gh is the official GitHub command-line tool for working with GitHub features like pull requests, issues, and repositories.
-
-**Available in:** All images
-
-**Common use cases:**
-- Creating and managing pull requests
-- Managing issues
-- Repository operations
-- GitHub Actions workflows
-- Viewing repository information
-
-**Basic usage:**
-
-```bash
-# Authenticate
-gh auth login
-
-# Check authentication status
-gh auth status
-
-# View repository
-gh repo view
-
-# Clone repository
-gh repo clone owner/repo
-
-# Create repository
-gh repo create my-new-repo --public
-
-# List pull requests
-gh pr list
-
-# Create pull request
-gh pr create --title "Feature" --body "Description"
-
-# View pull request
-gh pr view 123
-
-# List issues
-gh issue list
-
-# Create issue
-gh issue create --title "Bug" --body "Description"
-```
-
-**Advanced usage:**
-
-```bash
-# Checkout PR locally
-gh pr checkout 123
-
-# Review PR
-gh pr review 123 --approve
-gh pr review 123 --comment --body "Looks good"
-
-# Merge PR
-gh pr merge 123 --squash
-
-# GitHub Actions
-gh workflow list
-gh workflow run image-builder.yml
-gh run list
-gh run view
-
-# Releases
-gh release create v1.0.0 --title "Version 1.0.0" --notes "Release notes"
-gh release list
-
-# Gists
-gh gist create file.txt
-gh gist list
-```
-
----
-
-### ghorg
-
-**What it does:** ghorg is a tool for quickly cloning all repositories from a GitHub organization or user.
-
-**Available in:** All images
-
-**Common use cases:**
-- Backing up organization repositories
-- Cloning multiple repos for offline work
-- Syncing organisation codebases
-- Repository migrations
-
-**Basic usage:**
-
-```bash
-# Clone all repos from organization
-ghorg clone my-org
-
-# Clone all repos from user
-ghorg clone my-username --clone-type=user
-
-# Clone with SSH
-ghorg clone my-org --protocol=ssh
-
-# Reclone (update existing clones)
-ghorg reclone my-org
-```
-
----
-
-### Task (go-task)
-
-**What it does:** Task is a task runner / build tool that aims to be simpler and easier to use than GNU Make, using YAML configuration.
-
-**Available in:** All images
-
-**Common use cases:**
-- Project build automation
-- Running development tasks
-- Multi-step workflows
-- Cross-platform task execution
-
-**Basic usage:**
-
-```bash
-# List available tasks
-task --list
-task -l
-
-# Run a task
-task build
-
-# Run multiple tasks
-task clean build test
-
-# Run with variables
-task deploy ENV=production
-```
-
-**Example Taskfile.yml:**
-
-```yaml
-version: '3'
-
-tasks:
-  build:
-    desc: Build the application
-    cmds:
-      - go build -o app main.go
-
-  test:
-    desc: Run tests
-    cmds:
-      - go test ./...
-
-  deploy:
-    desc: Deploy application
-    cmds:
-      - task: build
-      - ./deploy.sh {{.ENV}}
-```
-
----
-
-## Programming Languages and Package Managers
-
-### Python 3
-
-**What it does:** Python is a high-level programming language. The images include Python 3.14 with pip for package management.
-
-**Available in:** All images
-
-**Pre-installed packages:**
-- `ansible` - Automation framework
-- `ansible-lint` - Ansible playbook linter
-- `boto3` - AWS SDK (`aws-devops`, `all-devops`)
-- `cfn-lint` - CloudFormation linter (`aws-devops`, `all-devops`)
-- `jmespath` - JSON query language
-- `mkdocs-material` - Documentation generator
-- `paramiko` - SSH library
-- `pre-commit` - Git hook framework
-- `pytest` - Testing framework (`aws-devops`, `all-devops`)
-- `requests` - HTTP library (`aws-devops`, `all-devops`)
-- `s3cmd` - S3 tool (`aws-devops`, `all-devops`)
-- `zensical` - Static site generator for documentation
-
-**Basic usage:**
-
-```bash
-# Check Python version
-python3 --version
-
-# Run Python script
-python3 script.py
-
-# Install package
-pip install package-name
-
-# Install from requirements
-pip install -r requirements.txt
-
-# List installed packages
-pip list
-
-# Create virtual environment
-python3 -m venv myenv
-source myenv/bin/activate
-```
-
----
-
-### Node.js and npm
-
-**What it does:** Node.js is a JavaScript runtime built on Chrome's V8 engine. npm is the package manager for Node.js.
-
-**Available in:** All images (LTS version)
-
-**Common use cases:**
-- Running JavaScript applications
-- Building web applications
-- Installing development tools
-- Package management
-
-**Basic usage:**
-
-```bash
-# Check versions
-node --version
-npm --version
-npx --version
-
-# Run JavaScript file
-node app.js
-
-# Initialize new project
-npm init
-npm init -y  # Skip prompts
-
-# Install packages
-npm install express
-npm install -g @angular/cli  # Global installation
-
-# Install from package.json
-npm install
-
-# Run scripts
-npm start
-npm test
-npm run build
-```
-
----
-
-## AI and Code Assistant CLIs
-
-### Claude CLI
-
-**What it does:** Official CLI for Anthropic's Claude AI assistant for code generation, analysis, and automation.
-
-**Available in:** All images
-
-**Common use cases:**
-- Code generation and refactoring
-- Documentation generation
-- Code review assistance
-- Automated problem solving
-
-**Basic usage:**
-
-```bash
-# Check version (requires authentication for full functionality)
-claude --version
-
-# Authenticate
-claude auth login
-
-# Ask questions
-claude "Explain this function" --file main.py
-
-# Generate code
-claude "Create a Python function to parse JSON"
-```
-
-**Note:** Requires authentication via `~/.claude` configuration. Mount this directory when running the container.
-
----
-
-### OpenAI Codex CLI
-
-**What it does:** CLI tool for OpenAI's Codex model for code generation and completion.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Check installation
-codex --version
-
-# Note: Requires OpenAI API key and authentication
-```
-
-**Note:** Requires authentication configuration. Mount `~/.codex` when running the container.
-
----
-
-### GitHub Copilot CLI
-
-**What it does:** Command-line interface for GitHub Copilot to get code suggestions directly in the terminal.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Check installation
-copilot --version
-
-# Note: Requires GitHub Copilot subscription and authentication
-```
-
-**Note:** Requires GitHub authentication. Mount `~/.copilot` when running the container.
-
----
-
-### Google Antigravity CLI
-
-**What it does:** Google's agent-first CLI for code assistance, generation, and multi-agent workflows.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Check installation
-agy --version
-
-# Note: Requires Google authentication or Antigravity session state
-```
-
-**Note:** Mount `~/.gemini` when running the container so `agy` can access Google Antigravity credentials/session state.
-
----
-
-## Database Clients
-
-### MongoDB Shell (mongosh)
-
-**What it does:** mongosh is the modern MongoDB shell for connecting to and interacting with MongoDB databases.
-
-**Available in:** All images (MongoDB 8.0 compatible)
-
-**Common use cases:**
-- Connecting to MongoDB instances
-- Running database queries
-- Database administration
-- Data import/export
-
-**Basic usage:**
-
-```bash
-# Connect to local MongoDB
-mongosh
-
-# Connect to remote MongoDB
-mongosh "mongodb://username:password@hostname:27017/database"
-
-# Connect with connection string
-mongosh "mongodb+srv://cluster.mongodb.net/myDatabase"
-
-# Run command
-mongosh --eval "db.adminCommand('listDatabases')"
-```
-
-**Interactive commands:**
-
-```javascript
-// Show databases
-show dbs
-
-// Use database
-use mydb
-
-// Show collections
-show collections
-
-// Query documents
-db.mycollection.find()
-db.mycollection.findOne({ name: "John" })
-
-// Insert document
-db.mycollection.insertOne({ name: "Jane", age: 30 })
-
-// Update document
-db.mycollection.updateOne({ name: "Jane" }, { $set: { age: 31 } })
-
-// Delete document
-db.mycollection.deleteOne({ name: "Jane" })
-```
-
----
-
-### PostgreSQL Client (psql)
-
-**What it does:** psql is the interactive terminal client for PostgreSQL databases.
-
-**Available in:** All images (PostgreSQL 17)
-
-**Common use cases:**
-- Connecting to PostgreSQL databases
-- Running SQL queries
-- Database administration
-- Schema management
-
-**Basic usage:**
-
-```bash
-# Connect to local PostgreSQL
-psql -U username -d database
-
-# Connect to remote PostgreSQL
-psql -h hostname -U username -d database -p 5432
-
-# Run SQL file
-psql -U username -d database -f script.sql
-
-# Run single command
-psql -U username -d database -c "SELECT version();"
-
-# Export query results
-psql -U username -d database -c "SELECT * FROM users;" -o output.txt
-```
-
-**Interactive commands:**
-
-```sql
--- List databases
-\l
-
--- Connect to database
-\c database_name
-
--- List tables
-\dt
-
--- Describe table
-\d table_name
-
--- List schemas
-\dn
-
--- Execute SQL file
-\i script.sql
-
--- Quit
-\q
-```
-
----
-
-### MySQL Client
-
-**What it does:** mysql is the command-line client for MySQL and MariaDB databases.
-
-**Available in:** All images
-
-**Common use cases:**
-- Connecting to MySQL/MariaDB databases
-- Running SQL queries
-- Database imports and exports
-- Schema management
-
-**Basic usage:**
-
-```bash
-# Connect to MySQL
-mysql -u username -p -h hostname database
-
-# Execute SQL file
-mysql -u username -p database < script.sql
-
-# Execute command
-mysql -u username -p -e "SHOW DATABASES;"
-
-# Dump database
-mysqldump -u username -p database > backup.sql
-```
-
----
-
-## Network and Diagnostic Tools
-
-### dig (DNS lookup)
-
-**What it does:** dig is a flexible DNS lookup utility for querying DNS name servers.
-
-**Available in:** All images (part of bind-utils)
-
-**Common use cases:**
-- DNS troubleshooting
-- Checking DNS records
-- Verifying DNS propagation
-- Diagnosing DNS issues
-
-**Basic usage:**
-
-```bash
-# Basic lookup
-dig google.com
-
-# Query specific record type
-dig google.com A
-dig google.com MX
-dig google.com TXT
-dig google.com NS
-
-# Query specific nameserver
-dig @8.8.8.8 google.com
-
-# Reverse DNS lookup
-dig -x 8.8.8.8
-
-# Short output
-dig google.com +short
-
-# Trace DNS path
-dig google.com +trace
-```
-
----
-
-### nslookup
-
-**What it does:** nslookup is a network administration tool for querying Domain Name System records.
-
-**Available in:** All images (part of bind-utils)
-
-**Basic usage:**
-
-```bash
-# Basic lookup
-nslookup google.com
-
-# Query specific nameserver
-nslookup google.com 8.8.8.8
-
-# Interactive mode
-nslookup
-> server 8.8.8.8
-> set type=MX
-> google.com
-> exit
-```
-
----
-
-### ncat (Netcat)
-
-**What it does:** ncat is a networking utility for reading, writing, and redirecting data across network connections.
-
-**Available in:** All images (part of nmap-ncat)
-
-**Common use cases:**
-- Port scanning
-- Network debugging
-- Banner grabbing
-- Simple TCP/UDP connections
-
-**Basic usage:**
-
-```bash
-# Check version
-ncat --version
-
-# Connect to host and port
-ncat google.com 80
-
-# Listen on port
-ncat -l 8080
-
-# Port scan
-ncat -zv hostname 20-100
-
-# Simple chat
-# Server: ncat -l 9999
-# Client: ncat hostname 9999
-
-# Transfer file
-# Server: ncat -l 9999 > received_file
-# Client: ncat hostname 9999 < file_to_send
-```
-
----
-
-### telnet
-
-**What it does:** telnet is a network protocol tool for bidirectional interactive text-oriented communication.
-
-**Available in:** All images
-
-**Common use cases:**
-- Testing TCP connections
-- Checking port availability
-- Debugging network services
-- Simple protocol testing
-
-**Basic usage:**
-
-```bash
-# Connect to host and port
-telnet hostname 80
-
-# Test SMTP
-telnet mail.example.com 25
-
-# Test HTTP
-telnet google.com 80
-GET / HTTP/1.1
-Host: google.com
-```
-
----
-
-### curl and wget
-
-**What it does:** curl and wget are command-line tools for transferring data with URLs, supporting various protocols.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# curl examples
-curl https://api.example.com
-curl -o file.txt https://example.com/file.txt
-curl -X POST -H "Content-Type: application/json" -d '{"key":"value"}' https://api.example.com
-
-# wget examples
-wget https://example.com/file.txt
-wget -r https://example.com  # Recursive download
-wget -c https://example.com/large-file.zip  # Resume download
-```
-
----
-
-## Shell and Terminal Tools
-
-### Zsh (Default Shell)
-
-**What it does:** Zsh is an extended Unix shell with advanced features and customisation.
-
-**Available in:** All images (default shell)
-
-**Features:**
-- Oh My Zsh framework pre-installed
-- Theme: candy
-- Command completion
-- Command history
-- Directory navigation enhancements
-
-**Basic usage:**
-
-```bash
-# Start zsh (default shell)
-zsh
-
-# Oh My Zsh configuration file
-~/.zshrc
-```
-
----
-
-### Bash
-
-**What it does:** Bash is the GNU Bourne-Again Shell, a widely-used Unix shell.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Start bash
-bash
-
-# Configuration file
-~/.bashrc
-```
-
----
-
-### Fish
-
-**What it does:** Fish is a smart and user-friendly command-line shell with autosuggestions and syntax highlighting.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Start fish
-fish
-
-# Interactive configuration
-fish_config
-```
-
----
-
-## Compression and Archive Tools
-
-### zip/unzip
-
-**What it does:** Tools for creating and extracting ZIP archives.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Create zip archive
-zip archive.zip file1 file2
-zip -r archive.zip directory/
-
-# Extract zip archive
-unzip archive.zip
-unzip archive.zip -d /destination/
-
-# List contents
-unzip -l archive.zip
-```
-
----
-
-### tar, gzip, bzip2
-
-**What it does:** Tools for archiving and compression.
-
-**Available in:** All images
-
-**Basic usage:**
-
-```bash
-# Create tar.gz archive
-tar -czf archive.tar.gz directory/
-
-# Extract tar.gz archive
-tar -xzf archive.tar.gz
-
-# Create tar.bz2 archive
-tar -cjf archive.tar.bz2 directory/
-
-# Extract tar.bz2 archive
-tar -xjf archive.tar.bz2
-
-# List contents
-tar -tzf archive.tar.gz
-```
-
----
-
-## Additional Utilities
-
-### jq (JSON processor)
-
-**What it does:** jq is a lightweight command-line JSON processor for parsing, filtering, and transforming JSON data.
-
-**Available in:** All images
-
-**Common use cases:**
-- Parsing API responses
-- Filtering JSON data
-- Transforming JSON structures
-- Pretty-printing JSON
-
-**Basic usage:**
-
-```bash
-# Pretty-print JSON
-echo '{"name":"John","age":30}' | jq .
-
-# Extract specific field
-echo '{"name":"John","age":30}' | jq '.name'
-
-# Filter array
-echo '[{"name":"John","age":30},{"name":"Jane","age":25}]' | jq '.[] | select(.age > 26)'
-
-# Transform data
-echo '{"first":"John","last":"Doe"}' | jq '{fullName: "\(.first) \(.last)"}'
-
-# Read from file
-jq '.users[] | .name' data.json
-```
-
----
+## Git and collaboration { #git }
 
 ### Git
 
-**What it does:** Git is a distributed version control system for tracking changes in source code.
-
-**Available in:** All images
-
-**Basic usage:**
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
 
 ```bash
-# Clone repository
-git clone https://github.com/user/repo.git
+git clone git@github.com:owner/repo.git
+git switch -c feature/my-change
+git add -p
+git commit -m "Describe the change"
+git push -u origin feature/my-change
+git log --oneline --graph -20
+```
 
-# Basic workflow
-git add .
-git commit -m "Commit message"
-git push
+!!! tip
+    Mount `~/.ssh:/root/.ssh:ro` and `~/.gitconfig:/root/.gitconfig:ro` so commits carry your identity and SSH remotes work.
 
-# Branch operations
-git branch feature-branch
-git checkout feature-branch
-git merge main
+### GitHub CLI (`gh`)
 
-# View status and history
-git status
-git log
-git diff
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+=== "Basics"
+
+    ```bash
+    gh auth login          # or export GH_TOKEN=...
+    gh auth status
+    gh repo clone owner/repo
+    gh pr list
+    gh pr create --fill
+    gh pr view 123 --web
+    gh issue list
+    ```
+
+=== "Advanced"
+
+    ```bash
+    gh pr checkout 123
+    gh pr review 123 --approve
+    gh pr merge 123 --squash --delete-branch
+
+    # GitHub Actions
+    gh workflow list
+    gh workflow run image-builder.yml
+    gh run watch
+
+    # Releases and raw API calls
+    gh release create v1.0.0 --generate-notes
+    gh api /users/jinalshah/packages/container/devops%2Fimages%2Fall-devops/versions --jq '.[0].metadata.container.tags'
+    ```
+
+### ghorg
+
+Clones every repository in a GitHub organisation or user account (GitLab, Bitbucket and Gitea too).
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span> · pinned per build, bumped automatically
+
+```bash
+export GHORG_GITHUB_TOKEN=ghp_or_fine_grained_token
+
+ghorg clone my-org
+ghorg clone my-username --clone-type=user
+ghorg clone my-org --protocol=ssh
+ghorg clone my-org --path=/srv/repos
+
+# Running the same clone again pulls updates into existing clones
+ghorg clone my-org
+
+ghorg ls
+```
+
+A sample config is pre-installed at `~/.config/ghorg/conf.yaml`. `ghorg reclone` runs named clone commands that you define in `~/.config/ghorg/reclone.yaml`; it isn't a "refresh" command.
+
+---
+
+## Languages { #languages }
+
+### Python 3.14
+
+Python 3.14.7 is compiled from source and set as the default `python3`.
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+| Pip package | Available in |
+|-------------|--------------|
+| `ansible`, `ansible-lint` (with `yamllint`), `jmespath`, `paramiko`, `pre-commit` | <span class="di-pill di-pill--base">all three images</span> |
+| `zensical`, `mkdocs-material` (documentation sites) | <span class="di-pill di-pill--base">all three images</span> |
+| `boto3`, `cfn-lint`, `s3cmd`, `crcmod`, `pytest`, `requests`, `bs4`, `lxml` | <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--aws">aws-devops</span> |
+
+```bash
+python3 --version
+python3 -m pip list
+python3 -m pip install -r requirements.txt
+
+# Virtual environments
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Preview a Zensical docs site from the container
+zensical serve -a 0.0.0.0:8000
+```
+
+!!! warning "Use `python3 -m pip`"
+    A bare `pip` may belong to the distribution's own Python rather than 3.14. `python3 -m pip` always installs into the interpreter you'll run.
+
+!!! note
+    For `zensical serve`, publish the port (`docker run -p 8000:8000 ...`) and bind to `0.0.0.0` as shown so your browser can reach it.
+
+### Node.js LTS
+
+The current Node.js LTS release from NodeSource (not pinned to a major version), with `npm` and `npx`.
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+```bash
+node --version
+npm --version
+
+npm ci                # install from package-lock.json
+npm run build
+npx some-cli --help   # run a package without installing it globally
 ```
 
 ---
 
-### vim and less
+## AI coding agents { #ai-clis }
 
-**What it does:** Text editors and pagers for viewing and editing files.
+All four are agentic coding assistants: they read and edit files and run commands, interactively or from scripts. Each needs its own account or API key. For full setup, see [AI CLI setup](ai-cli-setup.md).
 
-**Available in:** All images
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
 
-**Basic vim usage:**
+| CLI | Command | Sign in | Script or CI | Mount to keep the login |
+|-----|---------|---------|--------------|-------------------------|
+| :simple-claude: Claude Code | `claude` | `/login` inside `claude` | `claude -p "..."` with `ANTHROPIC_API_KEY` | `~/.claude` |
+| :lucide-bot: OpenAI Codex CLI | `codex` | `codex login` | `codex exec "..."` with `CODEX_API_KEY` | `~/.codex` |
+| :simple-githubcopilot: GitHub Copilot CLI | `copilot` | `/login` inside `copilot` | `copilot -p "..." --allow-all-tools` with `COPILOT_GITHUB_TOKEN` | `~/.copilot` |
+| :simple-googlegemini: Antigravity CLI | `agy` | Google sign-in on first run | `agy -p "..."` | `~/.gemini` |
 
-```bash
-# Open file
-vim filename
+=== ":simple-claude: Claude Code"
 
-# Basic commands (in vim)
-# i - Insert mode
-# Esc - Normal mode
-# :w - Save
-# :q - Quit
-# :wq - Save and quit
-```
+    ```bash
+    claude                                   # interactive; run /login the first time
+    claude -p "Explain what main.tf creates"
+    git diff | claude -p "Review this diff for security issues"
+    cat plan.txt | claude -p "Summarise this Terraform plan" --output-format json
+    claude -c                                # continue the last conversation
+    ```
 
----
+    There is no `--file` flag: pipe content in, or name the path in the prompt. Always use `-p` in scripts, because without it `claude` opens the interactive UI.
 
-### tree
+=== ":lucide-bot: Codex CLI"
 
-**What it does:** tree displays directory structures in a tree-like format.
+    ```bash
+    codex                                    # interactive
+    codex login                              # ChatGPT sign-in
+    codex login --device-auth                # headless sign-in
+    printenv OPENAI_API_KEY | codex login --with-api-key
+    codex exec "Add input validation to scripts/deploy.sh"
+    codex exec --json "List the Terraform modules in this repo"
+    ```
 
-**Available in:** All images
+=== ":simple-githubcopilot: Copilot CLI"
 
-**Basic usage:**
+    ```bash
+    copilot                                  # interactive; run /login the first time
+    export COPILOT_GITHUB_TOKEN=github_pat_...   # fine-grained PAT with "Copilot Requests"
+    copilot -p "Write a Makefile target that runs tflint" --allow-all-tools
+    ```
 
-```bash
-# Display directory tree
-tree
+    This is the standalone agentic Copilot CLI, not the old `gh copilot` extension. Classic `ghp_` tokens aren't supported.
 
-# Limit depth
-tree -L 2
+=== ":simple-googlegemini: Antigravity CLI"
 
-# Show hidden files
-tree -a
+    ```bash
+    agy                                      # interactive; prints a sign-in URL, paste the code back
+    agy -p "Explain this Helm chart"
+    git diff | agy -p "Review this diff"
+    agy -p "Summarise the repo" --output-format json --print-timeout 5m
+    agy --version
+    ```
 
-# Show only directories
-tree -d
-```
+    Antigravity CLI replaces Google's Gemini CLI. For headless use with a Gemini API key, set `{"modelProvider": "gemini"}` in `~/.gemini/antigravity-cli/settings.json` **and** export `GEMINI_API_KEY`; the variable alone isn't enough.
 
----
-
-## Authentication Note for AI CLIs
-
-All AI CLI tools (`claude`, `codex`, `copilot`, `agy`) require authentication before use. When running containers with these tools:
+Mount the config directories to keep logins between runs:
 
 ```bash
 docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
   -v ~/.claude:/root/.claude \
   -v ~/.codex:/root/.codex \
   -v ~/.copilot:/root/.copilot \
@@ -1656,4 +874,181 @@ docker run -it --rm \
   ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-Refer to each tool's official documentation for authentication setup.
+!!! danger "Treat these directories like passwords"
+    They hold OAuth tokens and API keys. Don't bake them into images or commit them, and prefer environment variables from your CI secret store in pipelines.
+
+---
+
+## Database clients { #databases }
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+=== ":simple-postgresql: psql 17"
+
+    ```bash
+    psql -h db.example.com -U app -d appdb
+    psql "postgresql://app@db.example.com:5432/appdb?sslmode=require"
+    psql -h db.example.com -U app -d appdb -c "SELECT version();"
+    psql -h db.example.com -U app -d appdb -f migration.sql
+    ```
+
+    Inside `psql`: `\l` lists databases, `\c db` connects, `\dt` lists tables, `\d table` describes one, `\q` quits.
+
+=== ":simple-mysql: MySQL 8.4 client"
+
+    ```bash
+    mysql -h db.example.com -u app -p appdb
+    mysql -h db.example.com -u app -p -e "SHOW DATABASES;"
+    mysql -h db.example.com -u app -p appdb < script.sql
+    mysqldump -h db.example.com -u app -p appdb > backup.sql
+    ```
+
+=== ":simple-mongodb: mongosh"
+
+    ```bash
+    mongosh "mongodb+srv://cluster0.example.mongodb.net/mydb" --username app
+    mongosh "mongodb://app@db.example.com:27017/mydb" --eval "db.stats()"
+    ```
+
+    Inside `mongosh`: `show dbs`, `use mydb`, `show collections`, `db.users.find({ active: true })`.
+
+!!! tip "Reaching a database on your host"
+    From a container, `localhost` is the container itself. Use `host.docker.internal` on Docker Desktop, or run with `--network host` on Linux.
+
+---
+
+## Network and diagnostics { #network }
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+=== "DNS"
+
+    ```bash
+    dig example.com
+    dig example.com MX +short
+    dig @8.8.8.8 example.com
+    dig -x 8.8.8.8
+    dig example.com +trace
+    nslookup example.com
+    host example.com
+    ```
+
+=== "Ports and connectivity"
+
+    ```bash
+    # Is one TCP port open?
+    ncat -zv db.example.com 5432
+    telnet db.example.com 5432
+
+    # Scan a range of ports
+    nmap -p 20-100 host.example.com
+    nmap -sT -p 443,8443 host.example.com
+
+    ping -c 3 example.com
+    ```
+
+=== "HTTP and TLS"
+
+    ```bash
+    curl -sSfL https://example.com -o page.html
+    curl -s https://api.github.com/repos/jinalshah/devops-images | jq '.stargazers_count'
+    wget -c https://example.com/large-file.zip   # resume a download
+
+    # Inspect a certificate
+    openssl s_client -connect example.com:443 -servername example.com </dev/null \
+      | openssl x509 -noout -subject -issuer -dates
+    ```
+
+=== "File transfer and SSH"
+
+    ```bash
+    lftp -u user sftp://files.example.com     # FTP, FTPS, SFTP client with mirroring
+    ssh user@host.example.com
+    scp ./file.txt user@host.example.com:/tmp/
+    ```
+
+!!! warning "ncat can't scan ranges"
+    `ncat -zv host 20-100` does not scan ports 20 to 100. Use `ncat -zv host 443` for a single port and `nmap -p 20-100 host` for a range.
+
+---
+
+## Shells and aliases { #shells }
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+- **Zsh** is the default shell (`CMD ["/bin/zsh"]`), with Oh My Zsh and the `candy` theme. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` followed by `-> %`.
+- **Bash** has a coloured prompt and bash-completion. Start it with `bash`, or run one-off commands with `docker run ... bash -c "..."`.
+- **Fish** is installed but not configured; start it with `fish`.
+
+### Shell aliases { #aliases }
+
+These are defined in both `~/.zshrc` and `~/.bashrc` (from `scripts/10-zshrc.sh` and `scripts/20-bashrc.sh`). Fish has none of them.
+
+| Alias | Expands to | | Alias | Expands to |
+|-------|-----------|-|-------|-----------|
+| `tf` | `terraform` | | `k` | `kubectl` |
+| `tfi` | `terraform init` | | `ka` | `kubectl apply` |
+| `tfp` | `terraform plan` | | `kd` | `kubectl describe` |
+| `tfa` | `terraform apply` | | `kg` | `kubectl get` |
+| `tfd` | `terraform destroy` | | `kl` | `kubectl logs` |
+| `tff` | `terraform fmt -recursive` | | `kr` | `kubectl run` |
+| `tfv` | `terraform validate` | | `aws-ssm` | `aws ssm start-session --target` |
+| `tfo` | `terraform output` | | `ll` / `la` / `l` | `ls -alF` / `ls -A` / `ls -CF` |
+
+Both shells also enable tab-completion for `kubectl` and `aws`.
+
+!!! note
+    Aliases only exist in interactive shells. In `docker run ... <command>` or CI steps, use the full command names.
+
+---
+
+## Everyday utilities { #utilities }
+
+**Available in:** <span class="di-pill di-pill--base">all three images</span>
+
+=== ":lucide-file-json: jq"
+
+    ```bash
+    echo '{"name":"web","replicas":3}' | jq .
+    jq -r '.resources[].type' terraform.tfstate
+    kubectl get pods -o json | jq -r '.items[] | select(.status.phase != "Running") | .metadata.name'
+    aws ec2 describe-regions | jq -r '.Regions[].RegionName'
+    ```
+
+=== ":lucide-archive: Archives"
+
+    ```bash
+    zip -r build.zip dist/
+    unzip -l build.zip
+    unzip build.zip -d /tmp/build
+
+    tar -czf backup.tar.gz ./configs
+    tar -tzf backup.tar.gz
+    tar -xzf backup.tar.gz -C /tmp
+    ```
+
+=== ":lucide-folder-tree: Files and editing"
+
+    ```bash
+    tree -L 2
+    tree -a -I '.git|.terraform'
+    less terraform.log
+    vim main.tf
+    ```
+
+=== ":lucide-shield: bubblewrap"
+
+    ```bash
+    # Unprivileged sandboxing; Claude Code's Linux sandbox relies on it
+    bwrap --version
+    ```
+
+    Running `bwrap` inside a container usually needs extra privileges (user namespaces), so don't expect sandbox modes to work in a default `docker run`.
+
+---
+
+## Next steps
+
+[:lucide-bot: AI CLI setup](ai-cli-setup.md){ .md-button .md-button--primary }
+[:lucide-key-round: Authentication](../use-images/authentication.md){ .md-button }
+[:lucide-life-buoy: Troubleshooting](../troubleshooting/index.md){ .md-button }

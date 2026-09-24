@@ -1,390 +1,264 @@
-# All DevOps Image
+---
+title: all-devops
+---
 
-The **all-devops** image is the complete multi-cloud toolkit with both AWS and GCP tools, providing maximum flexibility for teams working across cloud providers.
+<div class="di-hero" markdown style="background: linear-gradient(120deg, #5b21b6 0%, #7c3aed 50%, #db2777 100%)">
 
-!!! info "Image Details"
-    **Size**: ~3.2 GB | **Architectures**: amd64, arm64 | **Base**: Rocky Linux 10
+<div class="di-hero-badges"><span>AWS + Google Cloud</span><span>amd64 + arm64</span><span>~1.6 GB download</span></div>
 
-## When to Use This Image
+# all-devops
 
-✅ **Perfect for**:
+The complete multi-cloud toolkit: the shared base **plus** AWS CLI v2 with Session Manager **and** the Google Cloud CLI with the GKE auth plugin.
 
-- Platform teams managing multi-cloud infrastructure (AWS + GCP)
-- Organisations with a hybrid cloud strategy
-- CI/CD pipelines deploying to multiple cloud providers
-- Development teams who need maximum flexibility
-- Exploring both AWS and GCP tools without switching images
+`ghcr.io/jinalshah/devops/images/all-devops`
 
-⚠️  **Consider alternatives if**:
+[:lucide-play: Quick start](#quick-start){ .md-button .md-button--primary }
+[:lucide-hammer: Build it yourself](../build-images/all-devops.md){ .md-button }
 
-- You only use AWS → Use [aws-devops](aws-devops.md) to save ~400 MB
-- You only use GCP → Use [gcp-devops](gcp-devops.md) to save ~300 MB
-- Image size is critical → See [optimisation guide](../build-images/optimization.md)
+</div>
 
-## Pull the Image
+## When to use it
 
-=== "GHCR (Recommended)"
+<div class="grid cards" markdown>
 
-    ```bash
-    # Latest version
-    docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+-   :material-check:{ .lg .middle } __Great for__
 
-    # Pinned version (recommended for CI/CD)
-    docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    ```
+    ---
 
-    ✅ No rate limits | ✅ Fast CDN | ✅ Best uptime
+    - Platform teams running AWS **and** Google Cloud
+    - CI pipelines that deploy to more than one cloud
+    - A single "does everything" workstation image
 
-=== "GitLab Registry"
+-   :lucide-scale:{ .lg .middle } __Consider instead__
 
-    ```bash
-    # Latest version
-    docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+    ---
 
-    # Pinned version
-    docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-    ```
+    - AWS only: <span class="di-pill di-pill--aws">aws-devops</span>
+    - Google Cloud only: <span class="di-pill di-pill--gcp">gcp-devops</span>
 
-    ✅ Native GitLab CI integration
+    The shared base is most of the size, so the single-cloud images are only a few hundred MB smaller.
 
-=== "Docker Hub"
+</div>
 
-    ```bash
-    # Latest version
-    docker pull js01/all-devops:latest
+| Image | Compressed download | Unpacked (amd64) |
+|-------|---------------------|------------------|
+| <span class="di-pill di-pill--all">all-devops</span> | ~1.6 GB | ~5.0 GB |
+| <span class="di-pill di-pill--aws">aws-devops</span> | ~1.55 GB | ~4.6 GB |
+| <span class="di-pill di-pill--gcp">gcp-devops</span> | ~1.5 GB | ~4.6 GB |
 
-    # Pinned version
-    docker pull js01/all-devops:1.0.abc1234
-    ```
+## What's inside
 
-    ⚠️  Rate limits apply (100 pulls/6h for anonymous users)
+```mermaid
+flowchart LR
+  B["Shared base<br/>IaC, Kubernetes, Ansible, Trivy,<br/>AI CLIs, DB clients"] --> A["all-devops"]
+  W["AWS layer<br/>AWS CLI v2, Session Manager,<br/>boto3, cfn-lint, s3cmd"] --> A
+  G["GCP layer<br/>gcloud, gsutil, bq,<br/>gke-gcloud-auth-plugin"] --> A
 
-## What's Included
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class B base
+  class W aws
+  class G gcp
+  class A all
+```
 
-### Infrastructure as Code
+<div class="grid cards" markdown>
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Terraform** | Multi-version via tfswitch | Infrastructure provisioning |
-| **Terragrunt** | Latest | DRY Terraform configurations |
-| **TFLint** | Latest | Terraform linting |
-| **Packer** | Latest | Image building |
+-   :fontawesome-brands-aws:{ .lg .middle } __AWS__
 
-### Kubernetes & Containers
+    ---
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **kubectl** | Latest | Kubernetes management |
-| **Helm 3** | Latest | Kubernetes package manager |
-| **k9s** | Latest | Kubernetes terminal UI |
+    AWS CLI v2, Session Manager plugin, and the Python packages boto3, cfn-lint, s3cmd, requests, pytest, bs4 and lxml
 
-### AWS Tools ☁️
+-   :simple-googlecloud:{ .lg .middle } __Google Cloud__
 
-| Tool | Purpose |
-|------|---------|
-| **AWS CLI v2** | AWS service management |
-| **Session Manager Plugin** | EC2 instance access without SSH |
-| **boto3** | AWS SDK for Python |
-| **cfn-lint** | CloudFormation linting |
-| **s3cmd** | S3 operations |
+    ---
 
-### GCP Tools ☁️
+    `gcloud` (with `beta`), `gsutil`, `bq`, `docker-credential-gcr`, `gke-gcloud-auth-plugin`
 
-| Tool | Purpose |
-|------|---------|
-| **gcloud** | GCP service management |
-| **docker-credential-gcr** | GCR authentication |
-| **gsutil** | Cloud Storage operations (via gcloud) |
+-   :simple-terraform:{ .lg .middle } __Infrastructure as code__
 
-### Configuration & Security
+    ---
 
-| Tool | Purpose |
-|------|---------|
-| **Ansible** | Configuration management |
-| **ansible-lint** | Playbook validation |
-| **Trivy** | Vulnerability scanning |
-| **pre-commit** | Git hook framework |
-| **Task** | Modern task runner |
+    Terraform (via tfswitch), Terragrunt, TFLint, Packer
 
-### AI-Powered Development
+-   :simple-kubernetes:{ .lg .middle } __Kubernetes__
 
-| Tool | Provider | Best For |
-|------|----------|----------|
-| **claude** | Anthropic | Code review, architecture |
-| **codex** | OpenAI | Code generation |
-| **copilot** | GitHub | IDE integration |
-| **agy** | Google | Agentic, GCP tasks |
+    ---
 
-See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication and usage.
+    kubectl, Helm 3, k9s (`kubectl kustomize` is built in)
 
-### Development Tools
+-   :simple-ansible:{ .lg .middle } __Automation & security__
 
-| Tool | Version |
-|------|---------|
-| **Python** | 3.14 |
-| **Node.js** | LTS |
-| **Git** | Latest |
-| **GitHub CLI (gh)** | Latest |
-| **jq** | Latest |
+    ---
 
-### Database Clients
+    Ansible, ansible-lint, pre-commit, Task, Trivy
 
-| Tool | Version |
-|------|---------|
-| **mongosh** | v8.0 |
-| **psql** | PostgreSQL 17 |
-| **mysql** | Latest |
+-   :lucide-bot:{ .lg .middle } __AI coding agents__
 
-### Network & Utilities
+    ---
 
-- **dig, nslookup** - DNS troubleshooting
-- **ncat, telnet** - Network connectivity
-- **curl, wget, lftp** - Data transfer clients
-- **vim, less** - Editors/pagers
-- **tree** - Directory visualisation
+    Claude Code (`claude`), OpenAI Codex CLI (`codex`), GitHub Copilot CLI (`copilot`), Google Antigravity CLI (`agy`)
 
-## Quick Start
+-   :lucide-database:{ .lg .middle } __Database clients__
 
-### Interactive Shell
+    ---
+
+    `mongosh` (MongoDB 8.0), `psql` 17, `mysql` 8.4
+
+-   :simple-python:{ .lg .middle } __Languages & utilities__
+
+    ---
+
+    Python 3.14, Node.js LTS, Git, `gh`, jq, ghorg, Zensical, dig, nmap, ncat, curl, zsh, bash, fish
+
+</div>
+
+The four AI CLIs are all agentic terminal assistants: they read and edit files and run commands, interactively or non-interactively. See the [AI CLI setup guide](../tool-basics/ai-cli-setup.md) for sign-in.
+
+Search the full list in the [tool explorer](quick-reference.md#tool-explorer).
+
+## Quick start
 
 ```bash
 docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.ssh:/root/.ssh \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-### One-Liner Commands
-
-```bash
-# Check versions
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest aws --version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest gcloud --version
-
-# Verify authentication
-docker run --rm -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  aws sts get-caller-identity
-
-docker run --rm -v ~/.config/gcloud:/root/.config/gcloud \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  gcloud auth list
-```
-
-## Real-World Examples
-
-### Multi-Cloud Terraform Deployment
-
-Deploy infrastructure to both AWS and GCP:
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Deploy AWS infrastructure
-    cd aws/
-    terraform init
-    terraform apply -auto-approve
-
-    # Deploy GCP infrastructure
-    cd ../gcp/
-    terraform init
-    terraform apply -auto-approve
-  "
-```
-
-### Multi-Cloud Kubernetes Deployment
-
-Deploy to both EKS and GKE:
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.ssh:/root/.ssh:ro \
   -v ~/.aws:/root/.aws \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v ~/.kube:/root/.kube \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Deploy to EKS
-    aws eks update-kubeconfig --region us-east-1 --name my-eks-cluster
-    helm upgrade --install myapp ./charts/myapp --namespace production
-
-    # Deploy to GKE
-    gcloud container clusters get-credentials my-gke-cluster --region us-central1
-    helm upgrade --install myapp ./charts/myapp --namespace production
-  "
+  ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Security Scanning Across Cloud Configs
+Then check both clouds from inside the container:
 
 ```bash
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Scan Terraform configs
-    trivy config ./terraform/aws
-    trivy config ./terraform/gcp
-
-    # Lint CloudFormation
-    cfn-lint ./cloudformation/**/*.yaml
-
-    # Validate Terraform
-    cd terraform/aws && terraform validate
-    cd ../gcp && terraform validate
-  "
+aws sts get-caller-identity
+gcloud auth list
 ```
 
-## CI/CD Integration
+## Common tasks
 
-### GitHub Actions
+=== ":simple-terraform: Multi-cloud Terraform"
 
-```yaml
-name: Multi-Cloud Deploy
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.aws:/root/.aws \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'terraform -chdir=aws init && terraform -chdir=aws plan &&
+               terraform -chdir=gcp init && terraform -chdir=gcp plan'
+    ```
 
-on:
-  push:
-    branches: [main]
+    The Google provider uses Application Default Credentials, so run `gcloud auth application-default login` on the host first.
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== ":simple-kubernetes: EKS and GKE"
 
-    steps:
-      - uses: actions/checkout@v4
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.aws:/root/.aws \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c '
+        aws eks update-kubeconfig --region eu-west-2 --name my-eks
+        helm upgrade --install myapp ./charts/myapp -n production
+        gcloud container clusters get-credentials my-gke --region europe-west2
+        helm upgrade --install myapp ./charts/myapp -n production
+      '
+    ```
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+    Each `update-kubeconfig` / `get-credentials` switches the current context, so each `helm` call targets the cluster just added. The GKE context uses `gke-gcloud-auth-plugin`, which is why `~/.config/gcloud` must be mounted whenever you use it.
 
-      - name: Configure GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+=== ":simple-trivy: Scan and lint"
 
-      - name: Deploy to AWS
-        run: |
-          cd terraform/aws
-          terraform init
-          terraform apply -auto-approve
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'trivy config terraform/ && cfn-lint "cloudformation/**/*.yaml" && tflint --recursive'
+    ```
 
-      - name: Deploy to GCP
-        run: |
-          cd terraform/gcp
-          terraform init
-          terraform apply -auto-approve
-```
+## In CI
 
-### GitLab CI
+=== ":simple-githubactions: GitHub Actions"
 
-```yaml
-stages:
-  - deploy
+    ```yaml
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          id-token: write
+        container:
+          image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+        steps:
+          - uses: actions/checkout@v4
+          - uses: aws-actions/configure-aws-credentials@v4
+            with:
+              role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+              aws-region: eu-west-2
+          - uses: google-github-actions/auth@v2
+            with:
+              workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+              service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          - run: terraform -chdir=terraform/aws init && terraform -chdir=terraform/aws apply -auto-approve
+          - run: terraform -chdir=terraform/gcp init && terraform -chdir=terraform/gcp apply -auto-approve
+    ```
 
-deploy:multi-cloud:
-  stage: deploy
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    # AWS deployment
-    - cd terraform/aws
-    - terraform init
-    - terraform apply -auto-approve
-    # GCP deployment
-    - cd ../gcp
-    - terraform init
-    - terraform apply -auto-approve
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
-  before_script:
-    - echo $GCP_SA_KEY | base64 -d > /tmp/gcp-key.json
-  only:
-    - main
-```
+=== ":simple-gitlab: GitLab CI"
+
+    ```yaml
+    deploy:
+      image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+      variables:
+        GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+      before_script:
+        - echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-key.json
+        - gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+      script:
+        - terraform -chdir=terraform/aws init && terraform -chdir=terraform/aws apply -auto-approve
+        - terraform -chdir=terraform/gcp init && terraform -chdir=terraform/gcp apply -auto-approve
+    ```
+
+    `GOOGLE_APPLICATION_CREDENTIALS` is read by Terraform and client libraries; `gcloud` itself needs the explicit `activate-service-account`. AWS keys come from masked CI/CD variables.
+
+!!! info "Pinning"
+    `1.0.<sha>` tags are per-commit and refreshed by scheduled rebuilds. Pin by digest when you need byte-for-byte reproducibility; see [Tags and version pinning](index.md#tags-and-version-pinning).
 
 ## Troubleshooting
 
-??? question "AWS commands failing with 'Unable to locate credentials'"
+??? question "`Unable to locate credentials` from the AWS CLI"
+    Check the mount and the identity:
 
-    **Problem**: AWS CLI can't find credentials
-
-    **Solution**: Ensure ~/.aws is mounted correctly
     ```bash
-    # Verify mount
     docker run --rm -v ~/.aws:/root/.aws \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      ls -la /root/.aws
-
-    # Test authentication
-    docker run --rm -v ~/.aws:/root/.aws \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      aws sts get-caller-identity
+      bash -c 'ls -la /root/.aws && aws sts get-caller-identity'
     ```
 
-??? question "gcloud commands failing with authentication errors"
+    With IAM Identity Center (SSO) profiles, run `aws sso login --profile <name>` first; the token cache lives in `~/.aws/sso/cache`, so it is shared through the mount.
 
-    **Problem**: GCP CLI can't authenticate
+??? question "gcloud or GKE authentication errors"
+    Sign in on the host (or inside the container with the mount in place), then verify:
 
-    **Solution**: Run gcloud auth on host first
     ```bash
-    # On host machine
     gcloud auth login
-    gcloud auth application-default login
+    gcloud auth application-default login   # for Terraform and client libraries
 
-    # Then use in container
-    docker run --rm \
-      -v ~/.config/gcloud:/root/.config/gcloud \
+    docker run --rm -v ~/.config/gcloud:/root/.config/gcloud \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
       gcloud auth list
     ```
 
-??? question "Image pull is slow"
+??? question "Pull is slow"
+    The image is about 1.6 GB compressed. Use GHCR, keep one pinned tag across pipeline jobs so runners reuse cached layers, and remove old images with `docker image prune`.
 
-    **Problem**: Large image size (~3.2 GB)
+## Next steps
 
-    **Solutions**:
-
-    1. Use GHCR instead of Docker Hub (faster CDN)
-    2. Consider using [aws-devops](aws-devops.md) or [gcp-devops](gcp-devops.md) if you only need one cloud
-    3. Pre-pull images in CI/CD setup phase
-    4. Use pinned versions to leverage Docker layer caching
-
-## Performance Tips
-
-!!! tip "Optimise for CI/CD"
-
-    1. **Pin versions**: Use immutable tags like `1.0.abc1234` instead of `latest`
-    2. **Pre-pull images**: Pull during CI setup phase, not during actual work
-    3. **Layer caching**: Use consistent image versions across pipeline jobs
-    4. **Registry choice**: GHCR has the best performance for most regions
-
-!!! tip "Reduce Local Disk Usage"
-
-    ```bash
-    # Remove old images
-    docker image prune -a
-
-    # Or use smaller cloud-specific images
-    docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest  # ~400 MB smaller
-    ```
-
-## Next Steps
-
-- [Authentication Guide](authentication.md) - Set up AWS, GCP, and AI CLI credentials
-- [Workflows](../workflows/index.md) - Multi-cloud workflow patterns
-- [Architecture](../architecture/index.md) - Understand what's inside
-- [Choosing an Image](../choosing-an-image.md) - Compare all variants
+- [Authentication guide](authentication.md): AWS, Google Cloud and AI CLI credentials
+- [Workflows & patterns](../workflows/index.md): multi-cloud pipelines
+- [Architecture](../architecture/index.md): how the layers fit together

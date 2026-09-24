@@ -2,6 +2,15 @@
 
 Fast lookup guide for common DevOps Images commands, volume mounts, and usage patterns.
 
+## Tool explorer
+
+Search every tool in the images and filter by image or category. Hover over a tool to see the command that checks it's installed.
+
+<div class="di-widget" data-di-tools markdown>
+!!! note "Interactive explorer"
+    This explorer needs JavaScript. Without it, see [Tool Basics](../tool-basics/index.md) for the full list.
+</div>
+
 ---
 
 ## Essential Commands

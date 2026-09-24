@@ -1,595 +1,301 @@
-# GitLab CI/CD Integration
+# :simple-gitlab: GitLab CI
 
-Complete guide to using DevOps Images in GitLab CI pipelines for automated infrastructure deployment, testing, and validation.
+Set `image:` on a job, or once in `default:`, and every `script:` line runs inside the DevOps image. The images are also published to the GitLab registry at `registry.gitlab.com/jinal-shah/devops/images/<image>`, which is handy if your runners only reach GitLab.
 
-!!! tip "Why GitLab CI?"
-    - Native GitLab integration
-    - GitLab Container Registry optimised for CI
-    - Generous free tier (400 minutes/month for free tier)
-    - Built-in security scanning and compliance features
+## The pipeline at a glance
 
----
+```mermaid
+flowchart LR
+  subgraph validate
+    FMT["fmt + validate"]
+    LINT["tflint"]
+    SCAN["trivy"]
+  end
+  subgraph plan
+    PLAN["terraform plan<br/>tfplan artifact"]
+  end
+  subgraph apply
+    GATE{"when: manual<br/>protected env"}
+    APPLY["terraform apply tfplan"]
+  end
+  MR["Merge request"] --> AI["ai-review<br/>MR note"]
+  FMT & LINT & SCAN --> PLAN --> GATE --> APPLY
 
-## Basic Setup
-
-### Simple Terraform Deployment
-
-Deploy infrastructure on every push to main:
-
-```yaml
-stages:
-  - deploy
-
-deploy:production:
-  stage: deploy
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234  # (1)!
-  script:
-    - terraform init
-    - terraform apply -auto-approve
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID  # (2)!
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  only:
-    - main  # (3)!
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  class FMT,LINT,SCAN,PLAN base
+  class AI ai
+  class GATE aws
+  class APPLY all
+  class MR neutral
 ```
 
-1. Use GitLab Container Registry for faster pulls in GitLab CI
-2. Use GitLab CI/CD variables (Settings → CI/CD → Variables)
-3. Only run on main branch
+## Validate → plan → apply
 
----
+```yaml title=".gitlab-ci.yml"
+default:
+  image: registry.gitlab.com/jinal-shah/devops/images/aws-devops:1.0.abc1234
 
-## Multi-Stage Pipeline
-
-### Validate → Plan → Apply
-
-Comprehensive pipeline with validation, planning, and conditional deployment:
-
-```yaml
-stages:
-  - validate
-  - plan
-  - apply
+stages: [validate, plan, apply]
 
 variables:
-  TF_ROOT: ${CI_PROJECT_DIR}/terraform  # (1)!
-  TF_STATE_NAME: default
+  TF_ROOT: terraform
+  TF_PLUGIN_CACHE_DIR: $CI_PROJECT_DIR/.terraform-plugin-cache
 
-cache:  # (2)!
-  paths:
-    - ${TF_ROOT}/.terraform
+cache:
+  key:
+    files: [terraform/.terraform.lock.hcl]
+  paths: [.terraform-plugin-cache/]
 
-# Validate Stage
-terraform:validate:
+# Short-lived AWS credentials from GitLab's OIDC token (see "Cloud credentials")
+.aws-oidc:
+  id_tokens:
+    AWS_ID_TOKEN:
+      aud: sts.amazonaws.com
+  variables:
+    AWS_ROLE_ARN: arn:aws:iam::123456789012:role/gitlab-terraform
+    AWS_REGION: eu-west-2
+  before_script:
+    - echo "$AWS_ID_TOKEN" > /tmp/web-identity-token
+    - export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/web-identity-token
+
+.tf:
+  extends: .aws-oidc
+  before_script:
+    - !reference [.aws-oidc, before_script]
+    - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+    - cd "$TF_ROOT"
+    - terraform init -input=false
+
+fmt-validate:
+  extends: .tf
   stage: validate
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
   script:
-    - cd ${TF_ROOT}
     - terraform fmt -check -recursive
-    - terraform init -backend=false
     - terraform validate
 
 tflint:
   stage: validate
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
   script:
-    - cd ${TF_ROOT}
+    - cd "$TF_ROOT"
     - tflint --init
-    - tflint
+    - tflint --recursive
 
-trivy:scan:
+trivy:
   stage: validate
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
   script:
-    - trivy config ${TF_ROOT} --exit-code 1 --severity HIGH,CRITICAL
-  allow_failure: true  # (3)!
+    - trivy config --severity HIGH,CRITICAL --exit-code 1 "$TF_ROOT"
 
-# Plan Stage
-terraform:plan:
+plan:
+  extends: .tf
   stage: plan
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
   script:
-    - cd ${TF_ROOT}
-    - terraform init
-    - terraform plan -out=tfplan
-  artifacts:  # (4)!
-    paths:
-      - ${TF_ROOT}/tfplan
-    expire_in: 1 day
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  only:
-    - merge_requests
-    - main
+    - terraform plan -input=false -out=tfplan
+    - >
+      terraform show -json tfplan | jq -r
+      '([.resource_changes[]?.change.actions?]|flatten)|{"create":(map(select(.=="create"))|length),"update":(map(select(.=="update"))|length),"delete":(map(select(.=="delete"))|length)}'
+      > plan-summary.json
+  artifacts:
+    paths: [$TF_ROOT/tfplan]
+    reports:
+      terraform: $TF_ROOT/plan-summary.json
+    expire_in: 1 week
 
-# Apply Stage
-terraform:apply:
+apply:
+  extends: .tf
   stage: apply
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+  needs: [plan]
   script:
-    - cd ${TF_ROOT}
-    - terraform init
-    - terraform apply tfplan
-  dependencies:
-    - terraform:plan
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  environment:  # (5)!
+    - terraform apply -input=false tfplan
+  environment:
     name: production
-    action: start
-  when: manual  # (6)!
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
 ```
 
-1. Define common variables for reuse
-2. Cache Terraform plugins for faster builds
-3. Allow vulnerability scans to fail without blocking pipeline
-4. Save plan as artifact for apply stage
-5. Track deployments in GitLab Environments
-6. Require manual approval for production deployments
+The three `validate` jobs have no dependencies on each other, so they run in parallel. The `terraform` report shows a create/update/delete summary on the merge request.
 
----
+!!! tip "Pinning"
+    `1.0.abc1234` is a per-commit tag: stable for that commit, but refreshed by the scheduled rebuilds with newer tool versions. For strict reproducibility, pin `registry.gitlab.com/jinal-shah/devops/images/aws-devops@sha256:<digest>`.
 
-## Multi-Cloud Deployment
+!!! warning "Plan files can contain secrets"
+    `tfplan` includes variable values and sometimes sensitive attributes. Keep `expire_in` short and restrict who can download job artifacts on protected branches.
 
-### Deploy to Both AWS and GCP
+## Cloud credentials
 
-```yaml
-stages:
-  - deploy-aws
-  - deploy-gcp
+=== ":fontawesome-brands-aws: AWS (OIDC)"
 
-deploy:aws:
-  stage: deploy-aws
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - cd terraform/aws
-    - terraform init
-    - terraform apply -auto-approve
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  environment:
-    name: aws-production
-  only:
-    - main
+    The `.aws-oidc` template in the pipeline above does this. GitLab issues an ID token for the job, the template writes it to a file, and the AWS CLI and Terraform exchange it for the role in `AWS_ROLE_ARN` through the standard web-identity variables. No long-lived keys are stored.
 
-deploy:gcp:
-  stage: deploy-gcp
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  before_script:
-    - echo $GCP_SA_KEY | base64 -d > /tmp/gcp-key.json  # (1)!
-    - export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-  script:
-    - cd terraform/gcp
-    - terraform init
-    - terraform apply -auto-approve
-  after_script:
-    - rm -f /tmp/gcp-key.json  # (2)!
-  environment:
-    name: gcp-production
-  only:
-    - main
-```
+    Your IAM role needs a trust policy for GitLab's OIDC provider (`https://gitlab.com`, or your self-managed URL), limited to your project and protected branches.
 
-1. Decode base64-encoded service account key from GitLab variable
-2. Clean up sensitive files after deployment
+=== ":simple-googlecloud: Google Cloud"
 
----
+    Store the service-account key as a **File** type CI/CD variable called `GCP_SA_KEY`.
 
-## Parallel Matrix Builds
+    ```yaml
+    deploy-gcp:
+      image: registry.gitlab.com/jinal-shah/devops/images/gcp-devops:1.0.abc1234
+      variables:
+        GOOGLE_APPLICATION_CREDENTIALS: $GCP_SA_KEY   # for Terraform
+      script:
+        - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"   # for gcloud
+        - gcloud config set project my-project
+        - cd terraform/gcp && terraform init -input=false && terraform apply -input=false -auto-approve
+    ```
 
-### Deploy to Multiple Environments
+    `gcloud` ignores `GOOGLE_APPLICATION_CREDENTIALS` for its own auth, which is why both lines are needed.
+
+=== ":lucide-key-round: Static keys"
+
+    Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as masked, protected CI/CD variables. The AWS CLI and Terraform pick them up automatically; you don't need to repeat them under `variables:`.
+
+## Many environments with `parallel:matrix`
 
 ```yaml
-stages:
-  - deploy
-
-.deploy_template: &deploy_template  # (1)!
+plan-all:
+  stage: plan
+  parallel:
+    matrix:
+      - CLOUD: aws
+        ENV: [dev, staging, production]
+      - CLOUD: gcp
+        ENV: [dev, staging, production]
   image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
   script:
-    - cd terraform/${CLOUD}/${ENVIRONMENT}
-    - terraform init
-    - terraform apply -auto-approve
-  only:
-    - main
-
-deploy:aws-dev:
-  <<: *deploy_template
-  variables:
-    CLOUD: aws
-    ENVIRONMENT: dev
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-  environment:
-    name: aws-dev
-
-deploy:aws-staging:
-  <<: *deploy_template
-  variables:
-    CLOUD: aws
-    ENVIRONMENT: staging
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-  environment:
-    name: aws-staging
-
-deploy:gcp-dev:
-  <<: *deploy_template
-  before_script:
-    - echo $GCP_SA_KEY | base64 -d > /tmp/gcp-key.json
-    - export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
-  variables:
-    CLOUD: gcp
-    ENVIRONMENT: dev
-  environment:
-    name: gcp-dev
-```
-
-1. Use YAML anchors to avoid repetition
-
----
-
-## Security Scanning Pipeline
-
-### Comprehensive Security Checks
-
-```yaml
-stages:
-  - security
-
-security:trivy:
-  stage: security
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - trivy config ./terraform --format json --output trivy-report.json
-    - trivy config ./terraform --severity HIGH,CRITICAL
+    - cd "terraform/$CLOUD/$ENV"
+    - terraform init -input=false
+    - terraform plan -input=false -out=tfplan
   artifacts:
-    reports:
-      container_scanning: trivy-report.json  # (1)!
-    paths:
-      - trivy-report.json
-    expire_in: 30 days
+    paths: [terraform/$CLOUD/$ENV/tfplan]
+```
 
-security:tflint:
-  stage: security
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+Use <span class="di-pill di-pill--all">all-devops</span> when one job definition covers both clouds.
+
+## Security scanning
+
+```yaml
+security-scan:
+  stage: validate
   script:
-    - cd terraform
-    - tflint --init
-    - tflint --format junit > tflint-report.xml
+    - trivy fs --scanners vuln,secret,misconfig --format json --output trivy.json .
+    - trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
+    - tflint --init && tflint --recursive
+    - if [ -d ansible ]; then ansible-lint ansible/; fi
   artifacts:
-    reports:
-      junit: terraform/tflint-report.xml
-
-security:cfn-lint:
-  stage: security
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - cfn-lint cloudformation/**/*.yaml
-  only:
-    changes:
-      - cloudformation/**/*.yaml
-
-security:ansible-lint:
-  stage: security
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - ansible-lint ansible/
-  only:
-    changes:
-      - ansible/**/*.yml
+    when: always
+    paths: [trivy.json]
 ```
 
-1. GitLab displays security reports in merge requests
+!!! info "Plain artifact, not a GitLab security report"
+    Trivy's JSON does not match GitLab's `container_scanning` report schema, so it's published as a plain artifact to download. If you want findings in GitLab's security dashboard, use GitLab's own scanning templates alongside this job.
 
----
+!!! warning "No Docker in the image"
+    You can't `docker build` or `docker run` inside these jobs, and a `docker:dind` service doesn't help because there is no `docker` CLI to talk to it. Build images in a separate job that uses `image: docker` with the `docker:dind` service. Scan the pushed image by reference from the DevOps image; Trivy pulls it from the registry itself:
 
-## Kubernetes Deployment
+    ```yaml
+    scan-image:
+      variables:
+        TRIVY_USERNAME: $CI_REGISTRY_USER
+        TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+      script:
+        - trivy image --severity HIGH,CRITICAL --exit-code 1 "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    ```
 
-### Deploy to EKS/GKE with Helm
+## Deploy to Kubernetes
 
-```yaml
-stages:
-  - deploy
+=== "EKS"
 
-deploy:eks:
-  stage: deploy
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    # Configure kubectl
-    - aws eks update-kubeconfig --region us-east-1 --name my-eks-cluster
+    ```yaml
+    deploy-eks:
+      extends: .aws-oidc
+      stage: apply
+      script:
+        - aws eks update-kubeconfig --region "$AWS_REGION" --name my-cluster
+        - helm upgrade --install myapp ./charts/myapp -n production --create-namespace --wait
+        - kubectl rollout status deployment/myapp -n production
+      environment: { name: production }
+    ```
 
-    # Deploy with Helm
-    - |
-      helm upgrade --install myapp ./charts/myapp \
-        --namespace production \
-        --create-namespace \
-        --set image.tag=${CI_COMMIT_SHORT_SHA} \
-        --wait \
-        --timeout 5m
+=== "GKE"
 
-    # Verify deployment
-    - kubectl rollout status deployment/myapp -n production
-    - kubectl get pods -n production
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  environment:
-    name: eks-production
-    kubernetes:  # (1)!
-      namespace: production
-  only:
-    - main
-```
+    ```yaml
+    deploy-gke:
+      image: registry.gitlab.com/jinal-shah/devops/images/gcp-devops:1.0.abc1234
+      stage: apply
+      script:
+        - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
+        - gcloud container clusters get-credentials my-cluster --region europe-west2 --project my-project
+        - helm upgrade --install myapp ./charts/myapp -n production --create-namespace --wait
+        - kubectl rollout status deployment/myapp -n production
+      environment: { name: production }
+    ```
 
-1. GitLab tracks Kubernetes deployments in the environment page
+## AI review as a merge request note
 
----
-
-## Child Pipelines
-
-### Modular Pipeline Architecture
-
-**Main `.gitlab-ci.yml`**:
+`CI_JOB_TOKEN` can't create merge request notes, so create a **project access token** with the `api` scope (Reporter role or higher). Store it as a masked variable called `GITLAB_REVIEW_TOKEN`, and your Anthropic key as `ANTHROPIC_API_KEY`.
 
 ```yaml
-stages:
-  - trigger
-
-trigger:terraform:
-  stage: trigger
-  trigger:
-    include: .gitlab/ci/terraform-pipeline.yml
-    strategy: depend  # (1)!
-  only:
-    changes:
-      - terraform/**
-
-trigger:ansible:
-  stage: trigger
-  trigger:
-    include: .gitlab/ci/ansible-pipeline.yml
-    strategy: depend
-  only:
-    changes:
-      - ansible/**
-```
-
-1. Wait for child pipeline to complete before continuing
-
-**`.gitlab/ci/terraform-pipeline.yml`**:
-
-```yaml
-stages:
-  - validate
-  - deploy
-
-validate:
+ai-review:
   stage: validate
   image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - terraform fmt -check
-    - terraform validate
-
-deploy:
-  stage: deploy
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - terraform init
-    - terraform apply -auto-approve
-  when: manual
-```
-
----
-
-## AI-Assisted Code Review
-
-### Automated Review with Claude CLI
-
-```yaml
-stages:
-  - review
-
-ai:review:
-  stage: review
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  before_script:
-    - mkdir -p ~/.claude
-    - echo "$CLAUDE_API_KEY" > ~/.claude/config.json
-  script:
-    # Get diff from merge request
-    - git diff origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}...HEAD -- terraform/ > changes.diff
-
-    # Review with Claude
-    - |
-      claude "Review this Terraform code for security issues and best practices" \
-        --file changes.diff \
-        > review-output.md
-
-    # Post comment to MR
-    - |
-      curl --request POST \
-        --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
-        --data "body=$(cat review-output.md)" \
-        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
-  only:
-    - merge_requests
-```
-
----
-
-## GitLab AutoDevOps Integration
-
-### Extend AutoDevOps with Custom Tools
-
-```yaml
-include:
-  - template: Auto-DevOps.gitlab-ci.yml
-
-variables:
-  AUTO_DEVOPS_IMAGE: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-
-# Override default test job
-test:
-  extends: .auto-devops
-  image: $AUTO_DEVOPS_IMAGE
-  script:
-    - terraform validate
-    - trivy config .
-    - tflint
-
-# Add custom infrastructure deployment
-deploy:infrastructure:
-  stage: deploy
-  image: $AUTO_DEVOPS_IMAGE
-  script:
-    - terraform init
-    - terraform apply -auto-approve
-  environment:
-    name: production
-  when: manual
-  only:
-    - main
-```
-
----
-
-## Best Practices
-
-!!! tip "Performance Optimisation"
-
-    1. **Use GitLab Container Registry**: Faster pulls in GitLab CI
-    2. **Cache Terraform plugins**: Use `cache:` directive
-    3. **Pin image versions**: Use immutable tags
-    4. **Parallel jobs**: Use `parallel:` keyword for matrix builds
-    5. **Optimise artifacts**: Only save necessary files
-
-!!! tip "Security Best Practices"
-
-    1. **Use CI/CD Variables**: Store secrets in project/group variables
-    2. **Protected variables**: Mark sensitive variables as protected
-    3. **Masked variables**: Hide secret values in job logs
-    4. **Use environments**: Add approval gates for production
-    5. **SAST scanning**: Enable GitLab SAST for security scanning
-
-!!! warning "Common Pitfalls"
-
-    - ❌ **Using `latest` tag**: Non-reproducible builds
-    - ❌ **Hardcoding secrets**: Always use CI/CD variables
-    - ❌ **No manual gates**: Use `when: manual` for production
-    - ❌ **Ignoring cache**: Slow builds without caching
-
----
-
-## GitLab-Specific Features
-
-### Container Scanning
-
-```yaml
-include:
-  - template: Security/Container-Scanning.gitlab-ci.yml
-
-container_scanning:
   variables:
-    CS_IMAGE: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+    GIT_DEPTH: 0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - >
+      git diff "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME...HEAD" -- terraform/ ansible/
+      | claude -p "Review this infrastructure diff for security issues and risky changes. Reply in Markdown."
+      > review.md
+    - >
+      jq -Rs '{body: .}' review.md
+      | curl --fail -sS -X POST
+      -H "PRIVATE-TOKEN: $GITLAB_REVIEW_TOKEN" -H "Content-Type: application/json"
+      --data @- "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes"
+  allow_failure: true
 ```
 
-### Dependency Scanning
+To use another agent, swap the `claude -p` line for `codex exec "..."` (with `CODEX_API_KEY`) or `agy -p "..."`. [AI-assisted DevOps](ai-assisted-devops.md) covers the auth for each one.
+
+## Child pipelines
+
+Split a monorepo into one pipeline per stack, and only run the stacks that changed:
 
 ```yaml
-include:
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
+network:
+  trigger:
+    include: stacks/network/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes: [stacks/network/**/*]
 
-dependency_scanning:
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+app:
+  trigger:
+    include: stacks/app/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes: [stacks/app/**/*]
 ```
-
-### SAST (Static Application Security Testing)
-
-```yaml
-include:
-  - template: Security/SAST.gitlab-ci.yml
-
-sast:
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-```
-
----
 
 ## Troubleshooting
 
-??? question "Image pull fails"
+??? question "Two pipelines collide on the state lock"
+    Add `resource_group: terraform-production` to the `plan` and `apply` jobs. GitLab then runs jobs in the same group one at a time, which serialises access to the state.
 
-    **Problem**: GitLab CI can't pull the container image
+??? question "`git diff` finds no merge base"
+    Shallow clones don't include the target branch. Set `GIT_DEPTH: 0` on the job and `git fetch` the target branch first, as in the AI review job above.
 
-    **Solutions**:
-    ```yaml
-    # 1. Verify image path for GitLab registry
-    image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+??? question "`terraform: command not found` after overriding `image:`"
+    Check that the job's `image:` points at a DevOps image and not at a service or helper image, and that the tag exists. There is no `1.0` tag; use `latest` or `1.0.<sha>`.
 
-    # 2. For private images, ensure CI_JOB_TOKEN has access
-    before_script:
-      - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
-    ```
+## Next steps
 
-??? question "Terraform state locking conflicts"
-
-    **Problem**: Multiple jobs access Terraform state simultaneously
-
-    **Solution**: Use `resource_group` to serialize jobs
-    ```yaml
-    terraform:apply:
-      resource_group: terraform-state
-      script:
-        - terraform apply -auto-approve
-    ```
-
-??? question "Variables not available"
-
-    **Problem**: CI/CD variables not accessible in job
-
-    **Solutions**:
-    1. Verify variable is not marked as "protected" if running on non-protected branch
-    2. Check variable scope (project vs. group vs. instance)
-    3. Ensure variable key name matches exactly (case-sensitive)
-
----
-
-## Example Repository Structure
-
-```
-.
-├── .gitlab-ci.yml
-├── .gitlab/
-│   └── ci/
-│       ├── terraform-pipeline.yml
-│       ├── ansible-pipeline.yml
-│       └── k8s-pipeline.yml
-├── terraform/
-│   ├── dev/
-│   ├── staging/
-│   └── production/
-├── ansible/
-│   └── playbooks/
-└── charts/
-    └── myapp/
-```
-
----
-
-## Next Steps
-
-- [GitHub Actions Integration](ci-cd-github.md) - GitHub Actions examples
-- [Jenkins Integration](ci-cd-jenkins.md) - Jenkins pipeline examples
-- [CircleCI Integration](ci-cd-circleci.md) - CircleCI config examples
-- [AI-Assisted DevOps](ai-assisted-devops.md) - AI workflow automation
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining multiple tools
+- [GitHub Actions](ci-cd-github.md) · [Jenkins](ci-cd-jenkins.md) · [CircleCI](ci-cd-circleci.md)
+- [Terraform workflows](terraform-workflows.md)
+- [AI-assisted DevOps](ai-assisted-devops.md)
