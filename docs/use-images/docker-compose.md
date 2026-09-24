@@ -108,12 +108,15 @@ mongosh "$MONGO_URL" --eval 'db.runCommand({ ping: 1 })'
 
 ## Local S3 backend for Terraform
 
-[MinIO](https://min.io/) provides an S3-compatible API, which is handy for trying out remote state without an AWS account.
+[MinIO](https://github.com/minio/minio) provides an S3-compatible API, which is handy for trying out remote state without an AWS account.
+
+!!! note "MinIO images"
+    MinIO no longer publishes community images: `minio/minio` and `minio/mc` are gone from Docker Hub. This example uses Chainguard's free builds (`cgr.dev/chainguard/minio` and `cgr.dev/chainguard/minio-client`). The client image has no shell, so it reads the server address from `MC_HOST_local` and runs a single `mc` command.
 
 ```yaml title="compose.yaml"
 services:
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -123,18 +126,18 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000"]
       interval: 5s
       retries: 10
 
   create-bucket:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      sh -c "mc alias set local http://minio:9000 minioadmin minioadmin &&
-             mc mb --ignore-existing local/terraform-state"
+    environment:
+      MC_HOST_local: http://minioadmin:minioadmin@minio:9000
+    command: mb --ignore-existing local/terraform-state
 
   devops:
     image: ghcr.io/jinalshah/devops/images/all-devops:latest
