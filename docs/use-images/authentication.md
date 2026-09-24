@@ -1,200 +1,143 @@
 # Authentication & Credentials
 
-Learn how to securely configure cloud provider credentials, SSH keys, and AI CLI authentication when using DevOps Images.
+The images never contain secrets. Your credentials stay on your host (or in your CI secret store), and you hand them to the container at run time, either by **mounting a config directory** or by **passing an environment variable**.
 
-## Volume Mount Strategy
+<div class="grid cards" markdown>
 
-The DevOps Images use volume mounts to access your credentials from the host machine, ensuring secrets never get baked into the container image.
+-   :fontawesome-brands-aws:{ .lg .middle } __AWS__
+
+    ---
+
+    Profiles, IAM Identity Center (SSO), instance roles and CI OIDC.
+
+    [:octicons-arrow-right-24: AWS](#aws)
+
+-   :simple-googlecloud:{ .lg .middle } __Google Cloud__
+
+    ---
+
+    `gcloud` user logins, service accounts, ADC and Workload Identity.
+
+    [:octicons-arrow-right-24: Google Cloud](#google-cloud)
+
+-   :lucide-key-round:{ .lg .middle } __SSH & Git__
+
+    ---
+
+    Keys, agent forwarding and HTTPS tokens for `git` and `gh`.
+
+    [:octicons-arrow-right-24: SSH & Git](#ssh-and-git)
+
+-   :lucide-bot:{ .lg .middle } __AI assistants__
+
+    ---
+
+    Claude Code, Codex CLI, Copilot CLI and Antigravity CLI.
+
+    [:octicons-arrow-right-24: AI assistants](#ai-assistants)
+
+</div>
+
+## What to mount
 
 ```mermaid
-graph TB
-    HOST[Host Machine] --> MOUNTS[Volume Mounts]
+flowchart LR
+  subgraph Host
+    direction TB
+    HA["~/.aws"]
+    HG["~/.config/gcloud"]
+    HS["~/.ssh"]
+    HC["~/.claude + ~/.claude.json"]
+    HX["~/.codex"]
+    HP["~/.copilot"]
+    HM["~/.gemini"]
+  end
+  subgraph Container["Container (/root)"]
+    direction TB
+    CA["aws"]
+    CG["gcloud · gsutil · bq"]
+    CS["ssh · git"]
+    CC["claude"]
+    CX["codex"]
+    CP["copilot"]
+    CM["agy"]
+  end
+  HA --> CA
+  HG --> CG
+  HS --> CS
+  HC --> CC
+  HX --> CX
+  HP --> CP
+  HM --> CM
 
-    subgraph "Host Credentials"
-        AWS_H[~/.aws]
-        GCP_H[~/.config/gcloud]
-        SSH_H[~/.ssh]
-        CLAUDE_H[~/.claude]
-        CODEX_H[~/.codex]
-        COPILOT_H[~/.copilot]
-        ANTIGRAVITY_H[~/.gemini]
-    end
-
-    subgraph "Container Paths"
-        AWS_C[/root/.aws]
-        GCP_C[/root/.config/gcloud]
-        SSH_C[/root/.ssh]
-        CLAUDE_C[/root/.claude]
-        CODEX_C[/root/.codex]
-        COPILOT_C[/root/.copilot]
-        ANTIGRAVITY_C[/root/.gemini]
-    end
-
-    AWS_H -.->|-v ~/.aws:/root/.aws| AWS_C
-    GCP_H -.->|-v ~/.config/gcloud:/root/.config/gcloud| GCP_C
-    SSH_H -.->|-v ~/.ssh:/root/.ssh| SSH_C
-    CLAUDE_H -.->|-v ~/.claude:/root/.claude| CLAUDE_C
-    CODEX_H -.->|-v ~/.codex:/root/.codex| CODEX_C
-    COPILOT_H -.->|-v ~/.copilot:/root/.copilot| COPILOT_C
-    ANTIGRAVITY_H -.->|-v ~/.gemini:/root/.gemini| ANTIGRAVITY_C
-
-    subgraph "Available Tools"
-        AWS_CLI[aws cli]
-        GCLOUD[gcloud]
-        GIT[git]
-        CLAUDE_CLI[claude]
-        CODEX_CLI[codex]
-        COPILOT_CLI[copilot]
-        ANTIGRAVITY_CLI[agy]
-    end
-
-    AWS_C --> AWS_CLI
-    GCP_C --> GCLOUD
-    SSH_C --> GIT
-    CLAUDE_C --> CLAUDE_CLI
-    CODEX_C --> CODEX_CLI
-    COPILOT_C --> COPILOT_CLI
-    ANTIGRAVITY_C --> ANTIGRAVITY_CLI
-
-    style HOST fill:#4A90E2,color:#fff
-    style AWS_CLI fill:#FF9F43,color:#fff
-    style GCLOUD fill:#5F8D4E,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  class HA,CA aws
+  class HG,CG gcp
+  class HS,CS base
+  class HC,HX,HP,HM,CC,CX,CP,CM ai
 ```
 
-## Complete Docker Run Command
+| Host path | Container path | Used by | Available in |
+|-----------|----------------|---------|--------------|
+| `~/.aws` | `/root/.aws` | `aws`, Terraform, boto3 | <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--aws">aws-devops</span> |
+| `~/.config/gcloud` | `/root/.config/gcloud` | `gcloud`, `gsutil`, `bq`, ADC | <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--gcp">gcp-devops</span> |
+| `~/.ssh` | `/root/.ssh` | `ssh`, `git`, Ansible | <span class="di-pill di-pill--base">every image</span> |
+| `~/.gitconfig` | `/root/.gitconfig` | `git` name and email | <span class="di-pill di-pill--base">every image</span> |
+| `~/.claude`, `~/.claude.json` | `/root/.claude`, `/root/.claude.json` | `claude` | <span class="di-pill di-pill--base">every image</span> |
+| `~/.codex` | `/root/.codex` | `codex` | <span class="di-pill di-pill--base">every image</span> |
+| `~/.copilot` | `/root/.copilot` | `copilot` | <span class="di-pill di-pill--base">every image</span> |
+| `~/.gemini` | `/root/.gemini` | `agy` | <span class="di-pill di-pill--base">every image</span> |
+
+Everything at once:
 
 ```bash
 docker run -it --rm \
-  --name devops-work \
-  -v $PWD:/workspace \
+  -v "$PWD":/srv -w /srv \
   -v ~/.aws:/root/.aws \
   -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.ssh:/root/.ssh \
+  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.gitconfig:/root/.gitconfig:ro \
   -v ~/.claude:/root/.claude \
+  -v ~/.claude.json:/root/.claude.json \
   -v ~/.codex:/root/.codex \
   -v ~/.copilot:/root/.copilot \
   -v ~/.gemini:/root/.gemini \
-  -w /workspace \
   ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-!!! tip "Code Annotation"
-    Hover over the numbers for explanations of each mount:
+!!! tip "Mount only what the task needs"
+    A Terraform plan against AWS needs `~/.aws` and nothing else. Keeping mounts small limits what a mistake, or an over-eager AI agent, can reach. Mount SSH keys and `.gitconfig` read-only (`:ro`).
 
-```bash
-docker run -it --rm \
-  -v $PWD:/workspace \  # (1)!
-  -v ~/.aws:/root/.aws \  # (2)!
-  -v ~/.config/gcloud:/root/.config/gcloud \  # (3)!
-  -v ~/.ssh:/root/.ssh \  # (4)!
-  -v ~/.claude:/root/.claude \  # (5)!
-  -v ~/.codex:/root/.codex \  # (6)!
-  -v ~/.copilot:/root/.copilot \  # (7)!
-  -v ~/.gemini:/root/.gemini \  # (8)!
-  -w /workspace \  # (9)!
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+!!! warning "Missing host paths become directories"
+    If a mounted path doesn't exist on the host, Docker creates it as an empty root-owned directory. Create files such as `~/.claude.json` and `~/.gitconfig` first (for example with `touch`), or leave those mounts out.
 
-1.  Mount current directory to `/workspace` for accessing your project files
-2.  Mount AWS credentials for `aws` CLI authentication
-3.  Mount GCP credentials for `gcloud` authentication
-4.  Mount SSH keys for Git operations and remote server access
-5.  Mount Claude AI credentials for `claude` CLI
-6.  Mount Codex credentials for OpenAI `codex` CLI
-7.  Mount Copilot credentials for GitHub `copilot` CLI
-8.  Mount Antigravity CLI credentials/session state for Google `agy`
-9.  Set working directory to `/workspace` so you start in your project
+---
 
-## AWS Authentication
+## AWS { #aws }
 
-The DevOps Images support multiple AWS authentication methods.
-
-=== "IAM User (Access Keys)"
-
-    ### Setup
+=== ":lucide-user: Profiles (access keys)"
 
     ```bash
-    # On host machine
-    aws configure
-    ```
+    aws configure --profile staging   # on the host
 
-    This creates `~/.aws/credentials` and `~/.aws/config`.
-
-    ### Usage
-
-    ```bash
     docker run --rm \
       -v ~/.aws:/root/.aws \
+      -e AWS_PROFILE=staging \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
       aws sts get-caller-identity
     ```
 
-    ### Credentials File
+    `aws configure` writes `~/.aws/credentials` and `~/.aws/config`. Select a profile with `-e AWS_PROFILE=...` or `aws --profile ...`.
 
-    ```ini
-    # ~/.aws/credentials
-    [default]
-    aws_access_key_id = AKIAIOSFODNN7EXAMPLE
-    aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-
-    [staging]
-    aws_access_key_id = AKIAI44QH8DHBEXAMPLE
-    aws_secret_access_key = je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY
-    ```
-
-    ```ini
-    # ~/.aws/config
-    [default]
-    region = us-east-1
-    output = json
-
-    [profile staging]
-    region = us-west-2
-    output = json
-    ```
-
-=== "IAM Role (EC2/ECS)"
-
-    ### For EC2 Instances
-
-    No credentials needed! The instance role is automatically detected.
+=== ":lucide-log-in: IAM Identity Center (SSO)"
 
     ```bash
-    # Run on EC2 instance with IAM role attached
-    docker run --rm \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      aws sts get-caller-identity
-    ```
+    aws configure sso                              # once, on the host
+    aws sso login --profile my-sso-profile         # when the session expires
 
-    ### For ECS Tasks
-
-    ```json
-    {
-      "taskRoleArn": "arn:aws:iam::123456789012:role/ecsTaskRole",
-      "containerDefinitions": [{
-        "name": "devops",
-        "image": "ghcr.io/jinalshah/devops/images/aws-devops:latest",
-        "command": ["terraform", "apply", "-auto-approve"]
-      }]
-    }
-    ```
-
-=== "SSO (AWS IAM Identity Centre)"
-
-    ### Setup
-
-    ```bash
-    # On host machine
-    aws configure sso
-    # Follow prompts to set up SSO
-
-    # Login
-    aws sso login --profile my-sso-profile
-    ```
-
-    ### Usage
-
-    ```bash
     docker run --rm \
       -v ~/.aws:/root/.aws \
       -e AWS_PROFILE=my-sso-profile \
@@ -202,462 +145,328 @@ The DevOps Images support multiple AWS authentication methods.
       aws sts get-caller-identity
     ```
 
-=== "Environment Variables"
+    The SSO token cache lives in `~/.aws/sso/cache`, so the mounted directory carries your login into the container. IAM Identity Center is the recommended way for people to sign in to AWS.
 
-    ### Usage
+=== ":lucide-server: Instance or task role"
+
+    On EC2, ECS or EKS the SDKs find the role automatically, so you don't need to mount anything:
 
     ```bash
     docker run --rm \
-      -e AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE \
-      -e AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
-      -e AWS_DEFAULT_REGION=us-east-1 \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
       aws sts get-caller-identity
     ```
 
-    !!! warning "Security Warning"
-        Avoid using environment variables for credentials in shared environments. Prefer volume mounts or IAM roles.
+    If this hangs on EC2, the container probably can't reach the instance metadata service: IMDSv2's default hop limit of 1 blocks bridged containers. Raise the hop limit to 2 or run with `--network host`.
 
-### Using Multiple AWS Profiles
+=== ":lucide-key: Environment variables"
 
-```bash
-# Set profile via environment variable
-docker run --rm \
-  -v ~/.aws:/root/.aws \
-  -e AWS_PROFILE=staging \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws sts get-caller-identity
+    Pass variables through from your shell, without typing values on the command line:
 
-# Or use --profile flag
-docker run --rm \
-  -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws --profile staging sts get-caller-identity
-```
+    ```bash
+    docker run --rm \
+      -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+      -e AWS_REGION=eu-west-2 \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      aws sts get-caller-identity
+    ```
 
-### AWS Session Manager
+    !!! warning
+        Prefer short-lived credentials (SSO, roles, OIDC) over long-lived access keys.
 
-For EC2 instance access using Session Manager:
+### Session Manager
+
+`session-manager-plugin` is in <span class="di-pill di-pill--aws">aws-devops</span> and <span class="di-pill di-pill--all">all-devops</span>, so you can reach instances without SSH or open ports:
 
 ```bash
-# Connect to instance
 docker run -it --rm \
   -v ~/.aws:/root/.aws \
   ghcr.io/jinalshah/devops/images/aws-devops:latest \
   aws ssm start-session --target i-1234567890abcdef0
+```
 
-# Port forwarding
+Port forwarding (publish the local port with `-p`):
+
+```bash
 docker run -it --rm \
   -v ~/.aws:/root/.aws \
   -p 8080:8080 \
   ghcr.io/jinalshah/devops/images/aws-devops:latest \
   aws ssm start-session --target i-1234567890abcdef0 \
     --document-name AWS-StartPortForwardingSession \
-    --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
+    --parameters '{"portNumber":["80"],"localPortNumber":["8080"]}'
 ```
 
 ---
 
-## GCP Authentication
+## Google Cloud { #google-cloud }
 
-The DevOps Images support multiple GCP authentication methods.
+!!! info "gcloud and ADC are two different logins"
+    - **gcloud's own login** (`gcloud auth login` or `gcloud auth activate-service-account`) is what `gcloud`, `gsutil` and `bq` use.
+    - **Application Default Credentials** (ADC) are what client libraries and Terraform use: `gcloud auth application-default login`, or `GOOGLE_APPLICATION_CREDENTIALS` pointing at a key file.
 
-=== "Service Account Key"
+    gcloud **ignores** `GOOGLE_APPLICATION_CREDENTIALS` for its own commands, so setting it doesn't log `gcloud` in. Both logins are stored in `~/.config/gcloud`.
 
-    ### Setup
-
-    ```bash
-    # On host machine - download service account key
-    export GOOGLE_APPLICATION_CREDENTIALS=~/gcp-key.json
-
-    # Authenticate gcloud
-    gcloud auth activate-service-account --key-file=~/gcp-key.json
-    ```
-
-    ### Usage
+=== ":lucide-user: User login"
 
     ```bash
+    gcloud auth login                       # on the host (for gcloud)
+    gcloud auth application-default login   # on the host (for Terraform and SDKs)
+    gcloud config set project my-project-id
+
     docker run --rm \
       -v ~/.config/gcloud:/root/.config/gcloud \
-      -v ~/gcp-key.json:/root/gcp-key.json \
+      ghcr.io/jinalshah/devops/images/gcp-devops:latest \
+      gcloud auth list
+    ```
+
+=== ":lucide-file-key: Service account key"
+
+    Mount the key, activate it for gcloud, and point ADC at it for Terraform and SDKs:
+
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/keys/deployer.json:/root/gcp-key.json:ro \
       -e GOOGLE_APPLICATION_CREDENTIALS=/root/gcp-key.json \
       ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-      gcloud auth list
+      bash -c 'gcloud auth activate-service-account --key-file=/root/gcp-key.json && gcloud auth list && terraform plan'
     ```
 
-=== "gcloud auth login"
+    `gcloud auth login --cred-file=/root/gcp-key.json` also works. Where your organisation allows it, prefer impersonation or Workload Identity Federation over downloaded keys.
 
-    ### Setup
+=== ":simple-kubernetes: Workload Identity (GKE)"
 
-    ```bash
-    # On host machine - interactive login
-    gcloud auth login
-    gcloud config set project my-project-id
-    ```
-
-    ### Usage
-
-    ```bash
-    docker run --rm \
-      -v ~/.config/gcloud:/root/.config/gcloud \
-      ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-      gcloud auth list
-    ```
-
-=== "Application Default Credentials"
-
-    ### Setup
-
-    ```bash
-    # On host machine
-    gcloud auth application-default login
-    ```
-
-    ### Usage
-
-    ```bash
-    docker run --rm \
-      -v ~/.config/gcloud:/root/.config/gcloud \
-      ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-      gcloud auth application-default print-access-token
-    ```
-
-=== "Workload Identity (GKE)"
-
-    ### For GKE Pods
-
-    No credentials needed! Workload Identity is automatically configured.
+    On GKE with Workload Identity, the pod's Kubernetes service account maps to a Google service account, so there's nothing to mount:
 
     ```yaml
     apiVersion: v1
     kind: Pod
     metadata:
-      name: devops-pod
+      name: devops
     spec:
       serviceAccountName: my-ksa
       containers:
-      - name: devops
-        image: ghcr.io/jinalshah/devops/images/gcp-devops:latest
-        command: ["gcloud", "auth", "list"]
+        - name: devops
+          image: ghcr.io/jinalshah/devops/images/gcp-devops:latest
+          command: ["gcloud", "auth", "list"]
     ```
 
-### GCP Multiple Projects
+### GKE clusters
+
+`gke-gcloud-auth-plugin` is installed, so `kubectl` works against GKE once gcloud is logged in:
 
 ```bash
-# Set active project
-docker run --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  gcloud config set project my-project-id
-
-# Or use --project flag
-docker run --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  gcloud compute instances list --project my-project-id
+gcloud container clusters get-credentials my-cluster --region europe-west2 --project my-project-id
+kubectl get nodes
 ```
+
+Use `--project` on any command, or `gcloud config set project ...`, to switch projects.
 
 ---
 
-## SSH Key Authentication
+## SSH & Git { #ssh-and-git }
 
-For Git operations and remote server access.
-
-### Setup
-
-```bash
-# Use your existing SSH keys
-docker run -it --rm \
-  -v ~/.ssh:/root/.ssh \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ssh-add -l
-```
-
-### Git Over SSH
-
-```bash
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.ssh:/root/.ssh \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  git clone git@github.com:yourusername/your-repo.git
-```
-
-### SSH to Remote Servers
-
-```bash
-docker run -it --rm \
-  -v ~/.ssh:/root/.ssh \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ssh user@remote-server.com
-```
-
-!!! tip "SSH Agent Forwarding"
-    For SSH agent forwarding on macOS/Linux:
+=== ":lucide-key-round: Mount your keys"
 
     ```bash
     docker run -it --rm \
-      -v $SSH_AUTH_SOCK:/ssh-agent \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.ssh:/root/.ssh:ro \
+      -v ~/.gitconfig:/root/.gitconfig:ro \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      ssh -T git@github.com
+    ```
+
+    After that, `git clone git@github.com:org/repo.git`, `ssh user@host` and Ansible all use your keys.
+
+=== ":simple-linux: Agent forwarding (Linux)"
+
+    Forward your running `ssh-agent` so private keys never enter the container:
+
+    ```bash
+    docker run -it --rm \
+      -v "$SSH_AUTH_SOCK":/ssh-agent \
       -e SSH_AUTH_SOCK=/ssh-agent \
-      -v ~/.ssh:/root/.ssh \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      ssh user@remote-server.com
+      ssh-add -l
     ```
 
----
+=== ":simple-apple: Agent forwarding (Docker Desktop)"
 
-## AI CLI Authentication
+    Docker Desktop on macOS provides a fixed socket for the host agent:
 
-All DevOps Images include four AI CLI tools. Each requires separate authentication.
-
-### Claude CLI (Anthropic)
-
-**Setup**: Interactive authentication
-
-```bash
-docker run -it --rm \
-  -v ~/.claude:/root/.claude \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude auth login
-```
-
-Follow the prompts to authenticate with your Anthropic account.
-
-**Usage**:
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this Terraform code" --file main.tf
-```
-
-**Verification**:
-
-```bash
-docker run --rm \
-  -v ~/.claude:/root/.claude \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude --version
-```
-
-### Codex CLI (OpenAI)
-
-**Setup**: API key configuration
-
-```bash
-# Set API key as environment variable
-export OPENAI_API_KEY="sk-..."
-
-# Or create config file
-mkdir -p ~/.codex
-echo "OPENAI_API_KEY=sk-..." > ~/.codex/config
-```
-
-**Usage**:
-
-```bash
-docker run --rm \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "generate terraform module for AWS VPC"
-```
-
-### GitHub Copilot CLI
-
-**Setup**: GitHub authentication
-
-```bash
-docker run -it --rm \
-  -v ~/.copilot:/root/.copilot \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot auth login
-```
-
-**Usage**:
-
-```bash
-docker run --rm \
-  -v ~/.copilot:/root/.copilot \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot suggest "how to deploy to kubernetes"
-```
-
-### Google Antigravity CLI
-
-**Setup**: Use Google credentials or Antigravity session state
-
-```bash
-docker run -it --rm \
-  -v ~/.gemini:/root/.gemini \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  agy --version
-```
-
-**Usage**:
-
-```bash
-docker run --rm \
-  -v ~/.gemini:/root/.gemini \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  agy "explain this error" --stdin < error.log
-```
-
-!!! info "AI CLI Setup Details"
-    For comprehensive AI CLI setup guides, examples, and use cases, see:
-
-    - [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) - Detailed authentication and configuration
-    - [AI-Assisted DevOps Workflows](../workflows/ai-assisted-devops.md) - Real-world examples
-
----
-
-## CI/CD Authentication
-
-### GitHub Actions
-
-```yaml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/aws-devops:latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Deploy
-        run: terraform apply -auto-approve
-```
-
-### GitLab CI
-
-```yaml
-deploy:
-  image: registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
-  script:
-    - terraform apply -auto-approve
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-```
-
-### Environment Variables Summary
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `AWS_ACCESS_KEY_ID` | AWS access key | `AKIAIOSFODNN7EXAMPLE` |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | `wJalrXUtnFEMI/K7MDENG/...` |
-| `AWS_DEFAULT_REGION` | AWS region | `us-east-1` |
-| `AWS_PROFILE` | AWS profile name | `staging` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | GCP service account key path | `/root/gcp-key.json` |
-| `OPENAI_API_KEY` | OpenAI API key | `sk-...` |
-| `SSH_AUTH_SOCK` | SSH agent socket | `/ssh-agent` |
-
----
-
-## Troubleshooting Authentication
-
-### AWS
-
-```bash
-# Verify AWS credentials
-docker run --rm \
-  -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws sts get-caller-identity
-
-# Debug AWS configuration
-docker run --rm \
-  -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws configure list
-```
-
-### GCP
-
-```bash
-# Verify GCP authentication
-docker run --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  gcloud auth list
-
-# Verify active project
-docker run --rm \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  gcloud config get-value project
-```
-
-### Common Issues
-
-!!! warning "Permission Denied on SSH Keys"
-    **Problem**: SSH keys have incorrect permissions after mounting
-
-    **Solution**:
     ```bash
-    # Fix permissions inside container
     docker run -it --rm \
-      -v ~/.ssh:/root/.ssh \
+      -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+      -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      chmod 600 /root/.ssh/id_rsa
+      ssh-add -l
     ```
 
-!!! warning "AWS Credentials Not Found"
-    **Problem**: `Unable to locate credentials`
+!!! note "`ssh-add -l` needs an agent"
+    `ssh-add -l` only works when `SSH_AUTH_SOCK` points at a forwarded agent. With keys mounted and no agent, use `ssh -T git@github.com` to test instead.
 
-    **Solution**: Ensure volume mount is correct
+### Git over HTTPS with `gh`
+
+The GitHub CLI is in every image. Give it a token and let it act as git's credential helper:
+
+```bash
+docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
+  -e GH_TOKEN \
+  ghcr.io/jinalshah/devops/images/all-devops:latest \
+  bash -c 'gh auth setup-git && git clone https://github.com/org/private-repo.git'
+```
+
+---
+
+## AI assistants { #ai-assistants }
+
+Each assistant has its own login. Sign in interactively once with the config directory mounted, or pass a token in CI. The [AI CLI setup guide](../tool-basics/ai-cli-setup.md) covers each one in detail.
+
+!!! info "Gemini CLI → Antigravity CLI"
+    Google [replaced Gemini CLI with Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) (`agy`), and the images ship `agy`. It still stores its state in `~/.gemini`, so keep mounting that directory.
+
+| Assistant | Interactive sign-in | CI / headless | Mount |
+|-----------|---------------------|---------------|-------|
+| :simple-claude: `claude` | `claude`, then `/login` | `ANTHROPIC_API_KEY`, or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` | `~/.claude` + `~/.claude.json` |
+| :lucide-sparkles: `codex` | `codex login --device-auth` | `CODEX_API_KEY` with `codex exec` | `~/.codex` |
+| :simple-githubcopilot: `copilot` | `copilot`, then `/login` | `COPILOT_GITHUB_TOKEN` (fine-grained PAT with Copilot Requests) | `~/.copilot` |
+| :simple-googlegemini: `agy` | `agy`, sign in with Google, paste the code | `GEMINI_API_KEY` + `{"modelProvider": "gemini"}` in `~/.gemini/antigravity-cli/settings.json`, or ADC + `AGY_ADC_AUTH=true` | `~/.gemini` |
+
+=== ":lucide-terminal: Interactive"
+
     ```bash
-    # Verify mount
-    docker run --rm \
-      -v ~/.aws:/root/.aws \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      ls -la /root/.aws
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.claude:/root/.claude \
+      -v ~/.claude.json:/root/.claude.json \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      claude
     ```
 
-!!! warning "GCP Application Default Credentials Not Found"
-    **Problem**: `Could not automatically determine credentials`
+    Type `/login`, open the URL it prints on your host, and paste the code back. The login is saved to the mounted `~/.claude`. Copilot (`copilot` then `/login`) and Antigravity (`agy`) work the same way. For Codex, run `codex login --device-auth`.
 
-    **Solution**: Run `gcloud auth application-default login` on host first
+=== ":lucide-workflow: CI / scripts"
 
----
+    ```bash
+    # Claude Code
+    git diff | claude -p "Review this diff"
 
-## Security Best Practices
+    # Codex CLI (API key read from CODEX_API_KEY)
+    codex exec "Review the Terraform in ./terraform for security issues"
 
-!!! danger "Never Commit Credentials"
-    - ❌ Never commit `.aws/credentials`, `.env`, or service account keys to Git
-    - ✅ Use volume mounts to inject credentials at runtime
-    - ✅ Use CI/CD secrets for automated pipelines
-    - ✅ Rotate credentials regularly
-    - ✅ Use IAM roles when running on cloud platforms
+    # Copilot CLI (token read from COPILOT_GITHUB_TOKEN)
+    copilot -p "Review the Terraform in ./terraform for security issues" --allow-all-tools
 
-!!! tip "Minimal Permissions"
-    - Follow principle of least privilege
-    - Create separate IAM users/service accounts for different projects
-    - Use read-only credentials for testing
-    - Enable MFA on cloud accounts
+    # Antigravity CLI (API key read from GEMINI_API_KEY)
+    mkdir -p ~/.gemini/antigravity-cli
+    echo '{"modelProvider": "gemini"}' > ~/.gemini/antigravity-cli/settings.json
+    git diff | agy -p "Review this diff"
+    ```
 
-!!! tip "Credential Isolation"
-    - Use different volume mounts for different projects
-    - Don't share credentials between development and production
-    - Consider using separate containers for sensitive operations
+    To store an OpenAI API key for later (rather than per run), use `printenv OPENAI_API_KEY | codex login --with-api-key`.
 
 ---
 
-## Next Steps
+## CI/CD
 
-- [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) - Comprehensive AI CLI authentication and usage
-- [Quick Reference](quick-reference.md) - Common volume mount patterns
-- [Troubleshooting](../troubleshooting/index.md) - Authentication error solutions
-- [Workflows](../workflows/index.md) - Real-world CI/CD examples
+=== ":simple-githubactions: GitHub Actions (OIDC)"
+
+    ```yaml
+    permissions:
+      id-token: write
+      contents: read
+
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        container:
+          image: ghcr.io/jinalshah/devops/images/aws-devops:latest
+        steps:
+          - uses: actions/checkout@v4
+
+          - uses: aws-actions/configure-aws-credentials@v4
+            with:
+              role-to-assume: arn:aws:iam::123456789012:role/github-deploy
+              aws-region: eu-west-2
+
+          - run: terraform init && terraform apply -auto-approve
+    ```
+
+    OIDC swaps a short-lived GitHub token for temporary AWS credentials, so no access keys are stored. Google Cloud has the same pattern with `google-github-actions/auth` and Workload Identity Federation.
+
+=== ":simple-gitlab: GitLab CI"
+
+    ```yaml
+    deploy:
+      image: registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+      script:
+        - aws sts get-caller-identity
+        - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"
+        - terraform init && terraform apply -auto-approve
+    ```
+
+    Define `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION` as masked CI/CD variables, and `GCP_SA_KEY` as a **File** variable. GitLab puts a File variable's contents in a temporary file and sets the variable to that file's path. Set `GOOGLE_APPLICATION_CREDENTIALS: $GCP_SA_KEY` too if Terraform needs ADC.
+
+### Environment variable cheat sheet
+
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `AWS_PROFILE` | AWS CLI / SDKs | Pick a profile from `~/.aws/config` |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` | AWS CLI / SDKs | Static or temporary credentials |
+| `AWS_REGION` | AWS CLI / SDKs | Default region |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Terraform, Google client libraries, `agy` with ADC | Path to a service account key (**not** used by `gcloud` itself) |
+| `SSH_AUTH_SOCK` | `ssh`, `git` | Forwarded agent socket |
+| `GH_TOKEN` | `gh`, `copilot` | GitHub token |
+| `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` | `claude` | Anthropic API key or subscription token |
+| `CODEX_API_KEY` | `codex exec` | OpenAI API key for one run |
+| `COPILOT_GITHUB_TOKEN` | `copilot` | Fine-grained PAT with Copilot Requests |
+| `GEMINI_API_KEY` | `agy` | Gemini API key (also needs `modelProvider` in `settings.json`) |
+| `AGY_ADC_AUTH=true` | `agy` | Use Application Default Credentials |
+
+---
+
+## Troubleshooting
+
+??? question "AWS: `Unable to locate credentials`"
+    Check that the mount landed and that the profile exists:
+
+    ```bash
+    docker run --rm -v ~/.aws:/root/.aws \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      aws configure list
+    ```
+
+    For SSO profiles, run `aws sso login --profile ...` on the host again when the session expires.
+
+??? question "gcloud works but Terraform says `could not find default credentials`"
+    Terraform uses ADC, not gcloud's login. Run `gcloud auth application-default login` on the host, or set `GOOGLE_APPLICATION_CREDENTIALS` to a mounted key file.
+
+??? question "Terraform works but gcloud says `You do not currently have an active account`"
+    It's the reverse problem: `GOOGLE_APPLICATION_CREDENTIALS` doesn't log `gcloud` in. Run `gcloud auth activate-service-account --key-file=...` (or `gcloud auth login`).
+
+??? question "SSH: `Bad owner or permissions on /root/.ssh/config` or `UNPROTECTED PRIVATE KEY FILE`"
+    Inside the container you are `root`, but on a Linux host the mounted files belong to your own user. SSH refuses config files owned by another user, and private keys that other users can read. Fix the modes on the host (`chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_* ~/.ssh/config`). If the owner check still fails, use [agent forwarding](#ssh-and-git) instead of mounting `~/.ssh`.
+
+??? question "AI assistant asks me to sign in every time"
+    Its config directory isn't mounted. See the [table above](#ai-assistants).
+
+---
+
+## Security checklist
+
+- [x] Mount credentials at run time; never `COPY` them into an image or commit them to Git
+- [x] Prefer short-lived credentials: IAM Identity Center, instance roles, OIDC and Workload Identity
+- [x] Use CI secret stores (masked variables) for tokens and API keys
+- [x] Grant least privilege, and keep development and production credentials separate
+- [x] Mount keys read-only, and only the ones the task needs
+- [x] Treat `~/.codex/auth.json`, `~/.claude`, `~/.copilot` and `~/.gemini` like passwords
+
+## Next steps
+
+- [AI CLI setup guide](../tool-basics/ai-cli-setup.md): sign in to and use each AI assistant
+- [Quick reference](quick-reference.md): common mount patterns
+- [Troubleshooting](../troubleshooting/index.md): more error fixes
+- [Workflows](../workflows/index.md): real-world CI/CD examples

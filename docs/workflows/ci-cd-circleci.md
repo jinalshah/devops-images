@@ -1,714 +1,285 @@
-# CircleCI Integration
+# :simple-circleci: CircleCI
 
-Complete guide to using DevOps Images in CircleCI pipelines for automated infrastructure deployment, testing, and validation.
+Use a DevOps image as the primary container of a Docker executor. Every `run` step then has Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs on `PATH`. The image includes `bash`, so CircleCI's default `/bin/bash -eo pipefail` shell works as usual.
 
-!!! tip "Why CircleCI?"
-    - Cloud-hosted or self-hosted options
-    - Powerful workflow orchestration
-    - Docker layer caching included in paid plans
-    - Generous free tier (6,000 build minutes/month)
+## The pipeline at a glance
 
----
+```mermaid
+flowchart LR
+  V["validate<br/>fmt · tflint · trivy"] --> P["plan<br/>persist tfplan"]
+  P --> H{"hold<br/>type: approval"}
+  H --> A["apply<br/>attach_workspace"]
+  R["ai-review<br/>PR branches"]
 
-## Basic Setup
-
-### Simple Terraform Deployment
-
-Deploy infrastructure on every push to main:
-
-```yaml
-version: 2.1
-
-jobs:
-  deploy:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234  # (1)!
-    steps:
-      - checkout  # (2)!
-
-      - run:
-          name: Terraform Init
-          command: terraform init
-
-      - run:
-          name: Terraform Apply
-          command: terraform apply -auto-approve
-          environment:  # (3)!
-            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-            AWS_DEFAULT_REGION: us-east-1
-
-workflows:
-  deploy-infrastructure:
-    jobs:
-      - deploy:
-          filters:  # (4)!
-            branches:
-              only: main
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class V,P base
+  class R ai
+  class H aws
+  class A all
 ```
 
-1. Use DevOps Image as executor
-2. Check out code from repository
-3. Set environment variables from CircleCI context
-4. Only run on main branch
+## A reusable executor
 
----
-
-## Multi-Stage Pipeline
-
-### Validate → Plan → Apply
+Executors that use `<< parameters.* >>` must declare those parameters:
 
 ```yaml
+executors:
+  devops:
+    parameters:
+      variant:
+        type: enum
+        enum: [all-devops, aws-devops, gcp-devops]
+        default: aws-devops
+      tag:
+        type: string
+        default: "1.0.abc1234"
+      size:
+        type: string
+        default: medium   # use arm.medium to run on arm64
+    docker:
+      - image: ghcr.io/jinalshah/devops/images/<< parameters.variant >>:<< parameters.tag >>
+    resource_class: << parameters.size >>
+```
+
+Then use `executor: devops`, or `executor: { name: devops, variant: all-devops }`. The images are multi-arch, so `arm.*` resource classes pull the arm64 build automatically.
+
+!!! tip "Pinning"
+    `1.0.abc1234` is a per-commit tag: stable for that commit, but refreshed by the scheduled rebuilds with newer tool versions. For strict reproducibility, pin `ghcr.io/jinalshah/devops/images/aws-devops@sha256:<digest>`.
+
+## Validate → plan → approve → apply
+
+```yaml title=".circleci/config.yml"
 version: 2.1
 
 executors:
-  devops-executor:
+  devops:
+    parameters:
+      variant: { type: string, default: aws-devops }
     docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+      - image: ghcr.io/jinalshah/devops/images/<< parameters.variant >>:1.0.abc1234
+
+commands:
+  aws-oidc:
+    steps:
+      - run:
+          name: Assume AWS role with CircleCI OIDC
+          command: |
+            echo "$CIRCLE_OIDC_TOKEN_V2" > /tmp/web-identity-token
+            echo 'export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/web-identity-token' >> "$BASH_ENV"
+            echo "export AWS_ROLE_ARN=${AWS_ROLE_ARN}" >> "$BASH_ENV"
+            echo 'export AWS_REGION=eu-west-2' >> "$BASH_ENV"
+
+  tf-init:
+    steps:
+      - restore_cache:
+          keys:
+            - tf-providers-{{ arch }}-{{ checksum "terraform/.terraform.lock.hcl" }}
+      - run:
+          name: terraform init
+          command: |
+            echo "export TF_PLUGIN_CACHE_DIR=$HOME/.terraform-plugin-cache" >> "$BASH_ENV"
+            source "$BASH_ENV"
+            mkdir -p "$TF_PLUGIN_CACHE_DIR"
+            terraform -chdir=terraform init -input=false
+      - save_cache:
+          key: tf-providers-{{ arch }}-{{ checksum "terraform/.terraform.lock.hcl" }}
+          paths: [~/.terraform-plugin-cache]
 
 jobs:
   validate:
-    executor: devops-executor
+    executor: devops
     steps:
       - checkout
-
-      - run:
-          name: Terraform Format Check
-          command: terraform fmt -check -recursive
-
-      - run:
-          name: TFLint
-          command: |
-            cd terraform
-            tflint --init
-            tflint
-
-      - run:
-          name: Trivy Scan
-          command: |
-            trivy config ./terraform \
-              --severity HIGH,CRITICAL \
-              --exit-code 1
+      - run: terraform fmt -check -recursive terraform/
+      - run: cd terraform && tflint --init && tflint --recursive
+      - run: trivy config --severity HIGH,CRITICAL --exit-code 1 terraform/
 
   plan:
-    executor: devops-executor
+    executor: devops
     steps:
       - checkout
-
-      - run:
-          name: Terraform Plan
-          command: |
-            cd terraform
-            terraform init
-            terraform plan -out=tfplan
-
-      - persist_to_workspace:  # (1)!
-          root: terraform
-          paths:
-            - tfplan
-            - .terraform
+      - aws-oidc
+      - tf-init
+      - run: terraform -chdir=terraform plan -input=false -out=tfplan
+      - persist_to_workspace:
+          root: .
+          paths: [terraform/tfplan]
 
   apply:
-    executor: devops-executor
+    executor: devops
     steps:
       - checkout
-
-      - attach_workspace:  # (2)!
-          at: terraform
-
-      - run:
-          name: Terraform Apply
-          command: |
-            cd terraform
-            terraform init
-            terraform apply tfplan
+      - attach_workspace: { at: . }
+      - aws-oidc
+      - tf-init
+      - run: terraform -chdir=terraform apply -input=false tfplan
 
 workflows:
-  terraform-pipeline:
+  terraform:
     jobs:
       - validate
       - plan:
-          requires:
-            - validate
-      - hold-for-approval:  # (3)!
+          requires: [validate]
+          context: [aws-terraform]
+      - hold:
           type: approval
-          requires:
-            - plan
-          filters:
-            branches:
-              only: main
+          requires: [plan]
+          filters: { branches: { only: main } }
       - apply:
-          requires:
-            - hold-for-approval
+          requires: [hold]
+          context: [aws-terraform]
+          filters: { branches: { only: main } }
 ```
 
-1. Save plan artifact to workspace
-2. Restore plan artifact from workspace
-3. Manual approval gate for production
+!!! warning "Each `run` step is a new shell"
+    `export FOO=bar` in one `run` step is gone in the next. Append exports to `$BASH_ENV` instead, as the `aws-oidc` command does. CircleCI sources that file at the start of every later step.
 
----
+!!! info "OIDC needs a context"
+    `$CIRCLE_OIDC_TOKEN_V2` is only issued to jobs that use at least one context. Set `AWS_ROLE_ARN` in that context, and give the IAM role a trust policy for your CircleCI organisation's OIDC provider.
 
-## Multi-Cloud Deployment
+## Cloud credentials
 
-### Deploy to Both AWS and GCP
+=== ":fontawesome-brands-aws: AWS (OIDC)"
 
-```yaml
-version: 2.1
+    Use the `aws-oidc` command from the config above. No long-lived keys are stored.
 
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== ":simple-googlecloud: Google Cloud"
 
-jobs:
-  deploy-aws:
-    executor: devops-executor
-    steps:
-      - checkout
+    Store the base64-encoded service-account key as `GCP_SA_KEY_B64` in a context.
 
-      - run:
-          name: Deploy AWS Infrastructure
-          command: |
-            cd terraform/aws
-            terraform init
-            terraform apply -auto-approve
-          environment:
-            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-            AWS_DEFAULT_REGION: us-east-1
+    ```yaml
+    - run:
+        name: Authenticate to Google Cloud
+        command: |
+          echo "$GCP_SA_KEY_B64" | base64 -d > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          gcloud config set project my-project
+          echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json' >> "$BASH_ENV"
+    ```
 
-  deploy-gcp:
-    executor: devops-executor
-    steps:
-      - checkout
+    `gcloud` needs `activate-service-account`, and Terraform reads `GOOGLE_APPLICATION_CREDENTIALS`. Use <span class="di-pill di-pill--gcp">gcp-devops</span> or <span class="di-pill di-pill--all">all-devops</span>.
 
-      - run:
-          name: Setup GCP Credentials
-          command: |
-            echo $GCP_SA_KEY | base64 -d > /tmp/gcp-key.json
-            export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+=== ":lucide-key-round: Static keys"
 
-      - run:
-          name: Deploy GCP Infrastructure
-          command: |
-            cd terraform/gcp
-            terraform init
-            terraform apply -auto-approve
+    Put `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in a context. They are exported into every step automatically.
 
-workflows:
-  multi-cloud-deploy:
-    jobs:
-      - deploy-aws:
-          context: aws-production  # (1)!
-          filters:
-            branches:
-              only: main
-      - deploy-gcp:
-          context: gcp-production  # (2)!
-          filters:
-            branches:
-              only: main
-```
-
-1. Use CircleCI context for AWS credentials
-2. Use CircleCI context for GCP credentials
-
----
-
-## Matrix Builds
-
-### Deploy to Multiple Environments
+## Many environments with a matrix
 
 ```yaml
-version: 2.1
-
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    environment:
-      TF_DIR: terraform/<< parameters.cloud >>/<< parameters.environment >>
-
-parameters:
-  cloud:
-    type: string
-  environment:
-    type: string
-
 jobs:
-  deploy:
-    executor: devops-executor
+  plan-env:
     parameters:
-      cloud:
-        type: string
-      environment:
-        type: string
+      env: { type: string }
+    executor: { name: devops, variant: all-devops }
     steps:
       - checkout
-
-      - run:
-          name: Deploy << parameters.cloud >> << parameters.environment >>
-          command: |
-            cd terraform/<< parameters.cloud >>/<< parameters.environment >>
-            terraform init
-            terraform apply -auto-approve
+      - run: |
+          cd terraform/<< parameters.env >>
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
 
 workflows:
-  deploy-all-environments:
+  plan-all:
     jobs:
-      # AWS environments
-      - deploy:
-          name: deploy-aws-dev
-          cloud: aws
-          environment: dev
-          context: aws-dev
-
-      - deploy:
-          name: deploy-aws-staging
-          cloud: aws
-          environment: staging
-          context: aws-staging
-          requires:
-            - deploy-aws-dev
-
-      - deploy:
-          name: deploy-aws-prod
-          cloud: aws
-          environment: production
-          context: aws-production
-          requires:
-            - deploy-aws-staging
-
-      # GCP environments
-      - deploy:
-          name: deploy-gcp-dev
-          cloud: gcp
-          environment: dev
-          context: gcp-dev
-
-      - deploy:
-          name: deploy-gcp-staging
-          cloud: gcp
-          environment: staging
-          context: gcp-staging
-          requires:
-            - deploy-gcp-dev
+      - plan-env:
+          context: [aws-terraform]
+          matrix:
+            parameters:
+              env: [dev, staging, production]
 ```
 
----
-
-## Security Scanning Pipeline
-
-### Comprehensive Security Checks
+## Security scanning
 
 ```yaml
-version: 2.1
-
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
 jobs:
-  trivy-scan:
-    executor: devops-executor
+  security:
+    executor: devops
     steps:
       - checkout
-
-      - run:
-          name: Trivy IaC Scan
-          command: |
-            trivy config ./terraform \
-              --format json \
-              --output trivy-report.json
-            trivy config ./terraform \
-              --severity HIGH,CRITICAL
-
-      - store_artifacts:  # (1)!
-          path: trivy-report.json
-
-  tflint:
-    executor: devops-executor
-    steps:
-      - checkout
-
-      - run:
-          name: TFLint
-          command: |
-            cd terraform
-            tflint --init
-            tflint --minimum-failure-severity=error
-
-  cfn-lint:
-    executor: devops-executor
-    steps:
-      - checkout
-
-      - run:
-          name: CloudFormation Lint
-          command: cfn-lint cloudformation/**/*.yaml
-
-  ansible-lint:
-    executor: devops-executor
-    steps:
-      - checkout
-
-      - run:
-          name: Ansible Lint
-          command: ansible-lint ansible/
-
-workflows:
-  security-scan:
-    jobs:
-      - trivy-scan
-      - tflint
-      - cfn-lint
-      - ansible-lint
+      - run: trivy fs --scanners vuln,secret,misconfig --format json --output trivy.json .
+      - run: trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
+      - run: if [ -d ansible ]; then ansible-lint ansible/; fi
+      - store_artifacts:
+          path: trivy.json
 ```
 
-1. Store scan results as CircleCI artifacts
+!!! warning "No Docker in the image, so `setup_remote_docker` won't help"
+    `setup_remote_docker` gives a job a remote Docker engine, but the job still needs a `docker` CLI, and these images don't include one. Build your application image in a separate job that uses a `cimg/base` image or the `machine` executor. Then scan the pushed image from the DevOps image; Trivy pulls it from the registry itself:
 
----
+    ```yaml
+    - run: |
+        TRIVY_USERNAME="$REGISTRY_USER" TRIVY_PASSWORD="$REGISTRY_TOKEN" \
+          trivy image --severity HIGH,CRITICAL --exit-code 1 ghcr.io/my-org/app:${CIRCLE_SHA1:0:7}
+    ```
 
-## Kubernetes Deployment
+## Deploy to Kubernetes
 
-### Deploy to EKS/GKE with Helm
+=== "EKS"
 
-```yaml
-version: 2.1
+    ```yaml
+    - aws-oidc
+    - run: |
+        aws eks update-kubeconfig --region "$AWS_REGION" --name my-cluster
+        helm upgrade --install myapp ./charts/myapp -n production --create-namespace --wait
+        kubectl rollout status deployment/myapp -n production
+    ```
 
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== "GKE"
 
-jobs:
-  deploy-eks:
-    executor: devops-executor
-    steps:
-      - checkout
+    ```yaml
+    - run: |
+        gcloud container clusters get-credentials my-cluster --region europe-west2 --project my-project
+        helm upgrade --install myapp ./charts/myapp -n production --create-namespace --wait
+        kubectl rollout status deployment/myapp -n production
+    ```
 
-      - run:
-          name: Configure kubectl for EKS
-          command: |
-            aws eks update-kubeconfig \
-              --region us-east-1 \
-              --name my-eks-cluster
-          environment:
-            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    Run the Google Cloud auth step first. `gke-gcloud-auth-plugin` is included in the image.
 
-      - run:
-          name: Deploy with Helm
-          command: |
-            helm upgrade --install myapp ./charts/myapp \
-              --namespace production \
-              --create-namespace \
-              --set image.tag=${CIRCLE_SHA1:0:7} \
-              --wait \
-              --timeout 5m
+## AI review
 
-      - run:
-          name: Verify Deployment
-          command: |
-            kubectl rollout status deployment/myapp -n production
-            kubectl get pods -n production
-
-workflows:
-  k8s-deploy:
-    jobs:
-      - deploy-eks:
-          context: aws-production
-          filters:
-            branches:
-              only: main
-```
-
----
-
-## Docker Layer Caching
-
-### Speed Up Builds with DLC
+Put `ANTHROPIC_API_KEY` and a GitHub token (`GH_TOKEN`) in a context, then review the branch against `main` and comment on the PR:
 
 ```yaml
-version: 2.1
-
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-jobs:
-  build-and-deploy:
-    executor: devops-executor
-    steps:
-      - checkout
-      - setup_remote_docker:  # (1)!
-          docker_layer_caching: true  # (2)!
-
-      - run:
-          name: Build Docker Image
-          command: docker build -t myapp:${CIRCLE_SHA1} .
-
-      - run:
-          name: Push to Registry
-          command: |
-            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push myapp:${CIRCLE_SHA1}
-
-workflows:
-  build-deploy:
-    jobs:
-      - build-and-deploy
-```
-
-1. Enable remote Docker for building images
-2. Enable Docker Layer Caching (requires paid plan)
-
----
-
-## Orbs Integration
-
-### Using CircleCI Orbs with DevOps Images
-
-```yaml
-version: 2.1
-
-orbs:
-  aws-cli: circleci/aws-cli@4.0  # (1)!
-  slack: circleci/slack@4.12
-
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-jobs:
-  deploy:
-    executor: devops-executor
-    steps:
-      - checkout
-
-      - aws-cli/setup:  # (2)!
-          profile_name: default
-
-      - run:
-          name: Terraform Apply
-          command: |
-            terraform init
-            terraform apply -auto-approve
-
-      - slack/notify:  # (3)!
-          event: pass
-          template: success_tagged_deploy_1
-
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-
-workflows:
-  deploy-with-notifications:
-    jobs:
-      - deploy:
-          context:
-            - aws-production
-            - slack
-```
-
-1. Import CircleCI orbs for common tasks
-2. Use AWS CLI orb to configure credentials
-3. Send Slack notifications on success/failure
-
----
-
-## AI-Assisted Code Review
-
-### Automated Review with Claude CLI
-
-```yaml
-version: 2.1
-
-executors:
-  devops-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
 jobs:
   ai-review:
-    executor: devops-executor
+    executor: { name: devops, variant: all-devops }
     steps:
       - checkout
-
       - run:
-          name: Setup Claude CLI
+          name: Review diff with Claude Code
           command: |
-            mkdir -p ~/.claude
-            echo "${CLAUDE_API_KEY}" > ~/.claude/config.json
-
+            git fetch origin main
+            git diff origin/main...HEAD -- terraform/ ansible/ \
+              | claude -p "Review this infrastructure diff for security issues and risky changes. Reply in Markdown." \
+              > review.md
       - run:
-          name: Review Terraform Changes
+          name: Comment on the PR
           command: |
-            git diff origin/main...HEAD -- terraform/ > changes.diff
-            claude "Review this Terraform code for security issues and best practices" \
-              --file changes.diff \
-              > review-output.md
-
+            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
+              gh pr comment "$CIRCLE_PULL_REQUEST" --body-file review.md
+            fi
       - store_artifacts:
-          path: review-output.md
-
-      - run:
-          name: Post Review to PR
-          command: |
-            # Post to GitHub PR comment
-            curl -X POST \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              -d "{\"body\": \"$(cat review-output.md)\"}" \
-              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/issues/${CIRCLE_PULL_REQUEST##*/}/comments
-
-workflows:
-  pr-review:
-    jobs:
-      - ai-review:
-          filters:
-            branches:
-              ignore: main
+          path: review.md
 ```
 
----
-
-## Best Practices
-
-!!! tip "Performance Optimisation"
-
-    1. **Use executors**: Define reusable executors to avoid repetition
-    2. **Enable DLC**: Docker Layer Caching speeds up image pulls (paid feature)
-    3. **Cache dependencies**: Cache Terraform plugins and modules
-    4. **Parallel jobs**: Run independent jobs in parallel
-    5. **Use workspaces**: Share data between jobs efficiently
-
-!!! tip "Security Best Practices"
-
-    1. **Use Contexts**: Store secrets in CircleCI contexts
-    2. **Limit context access**: Restrict contexts to specific teams/projects
-    3. **Use approval jobs**: Add manual gates for production deployments
-    4. **Rotate secrets**: Regularly rotate credentials stored in contexts
-    5. **Audit logs**: Review CircleCI audit logs regularly
-
-!!! warning "Common Pitfalls"
-
-    - ❌ **Using `latest` tag**: Non-reproducible builds
-    - ❌ **Hardcoding secrets**: Always use CircleCI contexts or environment variables
-    - ❌ **No resource classes**: Can lead to slow builds (upgrade to larger resource class)
-    - ❌ **Ignoring artifacts**: Store important files for debugging
-
----
-
-## Resource Classes
-
-### Optimise Build Performance
-
-```yaml
-version: 2.1
-
-executors:
-  small-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    resource_class: small  # 1 vCPU, 2GB RAM
-
-  medium-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    resource_class: medium  # 2 vCPUs, 4GB RAM
-
-  large-executor:
-    docker:
-      - image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    resource_class: large  # 4 vCPUs, 8GB RAM
-
-jobs:
-  lint:
-    executor: small-executor  # Fast linting doesn't need resources
-    steps:
-      - checkout
-      - run: terraform fmt -check
-
-  deploy:
-    executor: large-executor  # Complex deployments benefit from resources
-    steps:
-      - checkout
-      - run: terraform apply -auto-approve
-```
-
----
+`gh pr comment` accepts the full PR URL that CircleCI puts in `$CIRCLE_PULL_REQUEST`. To use a different agent, swap in `codex exec "..."` (with `CODEX_API_KEY`) or `agy -p "..."`; see [AI-assisted DevOps](ai-assisted-devops.md).
 
 ## Troubleshooting
 
-??? question "Image pull rate limited"
+??? question "A variable set in one step is empty in the next"
+    Write it to `$BASH_ENV` (`echo 'export FOO=bar' >> "$BASH_ENV"`) instead of using a bare `export`.
 
-    **Problem**: Docker Hub rate limits exceeded
+??? question "`Unknown variable(s): parameters.xyz` in an executor"
+    The executor uses `<< parameters.xyz >>` without declaring it. Add it under the executor's `parameters:` key, as in [A reusable executor](#a-reusable-executor).
 
-    **Solution**: Use GHCR or authenticate with Docker Hub
-    ```yaml
-    - run:
-        name: Login to Docker Hub
-        command: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-    ```
+??? question "Slow job start"
+    The images are about 1.5 to 1.6 GB compressed, so the first pull on a fresh machine takes a while. CircleCI doesn't guarantee the image is already cached on the machine that runs your job, so use fewer, longer jobs where you can.
 
-??? question "Workspace not persisting"
+## Next steps
 
-    **Problem**: Files not available in downstream jobs
-
-    **Solution**: Use `persist_to_workspace` and `attach_workspace`
-    ```yaml
-    # In first job
-    - persist_to_workspace:
-        root: .
-        paths:
-          - terraform/tfplan
-
-    # In second job
-    - attach_workspace:
-        at: .
-    ```
-
-??? question "Environment variables not set"
-
-    **Problem**: Variables from context not accessible
-
-    **Solution**: Ensure job uses correct context
-    ```yaml
-    workflows:
-      deploy:
-        jobs:
-          - deploy-job:
-              context: production  # Make sure context is specified
-    ```
-
----
-
-## Example Repository Structure
-
-```
-.
-├── .circleci/
-│   └── config.yml
-├── terraform/
-│   ├── dev/
-│   ├── staging/
-│   └── production/
-├── ansible/
-│   └── playbooks/
-└── charts/
-    └── myapp/
-```
-
----
-
-## Next Steps
-
-- [GitHub Actions Integration](ci-cd-github.md) - GitHub Actions examples
-- [GitLab CI Integration](ci-cd-gitlab.md) - GitLab CI examples
-- [Jenkins Integration](ci-cd-jenkins.md) - Jenkins pipeline examples
-- [AI-Assisted DevOps](ai-assisted-devops.md) - AI workflow automation
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining multiple tools
+- [GitHub Actions](ci-cd-github.md) · [GitLab CI](ci-cd-gitlab.md) · [Jenkins](ci-cd-jenkins.md)
+- [Terraform workflows](terraform-workflows.md)
+- [AI-assisted DevOps](ai-assisted-devops.md)

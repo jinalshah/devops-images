@@ -1,744 +1,566 @@
 # Troubleshooting
 
-This guide covers common issues and their solutions when working with DevOps Images.
+Fixes for the problems people hit most often with DevOps Images. Find your symptom below, then open the matching question.
+
+```mermaid
+flowchart TD
+  Q{"Where does it fail?"} --> P["Pulling the image"]
+  Q --> R["Starting or running<br/>the container"]
+  Q --> A["Cloud or Git<br/>authentication"]
+  Q --> T["A tool inside<br/>the container"]
+  Q --> AI["AI CLI login"]
+  Q --> B["Building the image<br/>yourself"]
+  Q --> D["Docs site preview"]
+
+  click P href "#pull"
+  click R href "#runtime"
+  click A href "#auth"
+  click T href "#tools"
+  click AI href "#ai-clis"
+  click B href "#build"
+  click D href "#docs"
+
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class Q neutral
+  class P,R base
+  class A aws
+  class T gcp
+  class AI ai
+  class B,D all
+```
+
+<div class="grid cards" markdown>
+
+-   :simple-docker:{ .lg .middle } __[Pulling images](#pull)__
+
+    ---
+
+    Access denied, unknown tags, rate limits, wrong architecture
+
+-   :lucide-square-terminal:{ .lg .middle } __[Running containers](#runtime)__
+
+    ---
+
+    Root-owned files, permissions, exits, disk space
+
+-   :lucide-key-round:{ .lg .middle } __[Authentication](#auth)__
+
+    ---
+
+    AWS, Google Cloud and SSH credentials
+
+-   :lucide-wrench:{ .lg .middle } __[Tools](#tools)__
+
+    ---
+
+    Command not found, kubectl, GKE, Terraform locks, Trivy, pip
+
+-   :lucide-bot:{ .lg .middle } __[AI CLIs](#ai-clis)__
+
+    ---
+
+    Claude Code, Codex, Copilot and Antigravity logins
+
+-   :lucide-hammer:{ .lg .middle } __[Building images](#build)__
+
+    ---
+
+    Download failures, build args, memory, cross-architecture
+
+</div>
 
 ---
 
-## Image Pull Issues
+## Pulling images { #pull }
 
-### `pull access denied` or `manifest unknown`
+??? question "`pull access denied`, `manifest unknown` or `not found`"
 
-**Symptoms:**
+    ```text
+    Error response from daemon: manifest for ghcr.io/jinalshah/devops/images/all-devops:1.0 not found
+    ```
 
-```text
-Error response from daemon: pull access denied for ghcr.io/jinalshah/devops/images/all-devops
-```
+    1. **Check the path.** The three registries use different paths:
 
-**Solutions:**
+        ```text
+        ghcr.io/jinalshah/devops/images/all-devops:latest
+        registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+        js01/all-devops:latest
+        ```
 
-1. **Verify the image path is correct:**
+    2. **Check the tag.** Only `latest`, `1.0.<7-char sha>` and `1.0.<sha>-amd64` / `-arm64` exist. There is no `1.0` tag and no semver tags. To list published tags on GHCR (your `gh` token needs the `read:packages` scope):
 
-   ```bash
-   # Correct paths
-   ghcr.io/jinalshah/devops/images/all-devops:latest
-   registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
-   js01/all-devops:latest
-   ```
+        ```bash
+        gh api /users/jinalshah/packages/container/devops%2Fimages%2Fall-devops/versions \
+          --jq '.[].metadata.container.tags[]' | head -20
+        ```
 
-2. **Check if you need authentication:**
+    3. **Try another registry** if one is having an outage:
 
-   ```bash
-   # For GHCR
-   docker login ghcr.io
+        ```bash
+        docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+        ```
 
-   # For GitLab
-   docker login registry.gitlab.com
+    The images are public, so you shouldn't need `docker login` to pull. If you are logged in with an expired token, `docker logout ghcr.io` and try again.
 
-   # For Docker Hub
-   docker login
-   ```
+??? question "`toomanyrequests: You have reached your pull rate limit` (Docker Hub)"
 
-3. **Verify the tag exists:**
+    Docker Hub throttles anonymous pulls. Either:
 
-   ```bash
-   # List available tags on GitHub
-   gh api repos/jinalshah/devops-images/pkgs/container/devops%2Fimages%2Fall-devops/versions
-   ```
+    - pull from GHCR instead: `docker pull ghcr.io/jinalshah/devops/images/all-devops:latest`, or
+    - log in to Docker Hub (`docker login`) so the higher authenticated limit applies. In GitHub Actions:
 
-4. **Try a different registry:**
+        ```yaml
+        - uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+        ```
 
-   ```bash
-   # If GHCR fails, try Docker Hub
-   docker pull js01/all-devops:latest
-   ```
+??? question "Pulls are slow or time out"
 
-### Registry rate limits (Docker Hub)
+    The images are about 1.5 to 1.6 GB compressed, so a first pull takes a while. In CI, retry transient failures:
 
-**Symptoms:**
+    ```bash
+    for i in 1 2 3; do
+      docker pull ghcr.io/jinalshah/devops/images/all-devops:latest && break
+      echo "Attempt $i failed, retrying..."
+      sleep $((i * 10))
+    done
+    ```
 
-```text
-Error response from daemon: toomanyrequests: You have reached your pull rate limit
-```
+    Pick the smallest image that has what you need (`aws-devops` or `gcp-devops`), and on self-hosted runners keep the image cached between jobs.
 
-**Solutions:**
+??? question "`exec format error` or a platform mismatch warning"
 
-1. **Use GHCR or GitLab registry instead:**
+    The images are published for `linux/amd64` and `linux/arm64`, and Docker normally picks the right one. If you get the wrong one (for example after pulling a `-amd64` tag on Apple Silicon):
 
-   ```bash
-   docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-   ```
+    ```bash
+    # What did you get?
+    docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest uname -m
+    # x86_64 = amd64, aarch64 = arm64
 
-2. **Authenticate to increase Docker Hub limits:**
+    # Force the native platform
+    docker pull --platform linux/arm64 ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
 
-   ```bash
-   docker login
-   # Then retry pull
-   ```
-
-3. **In CI/CD, use authenticated pulls:**
-
-   ```yaml
-   # GitHub Actions example
-   - name: Login to Docker Hub
-     uses: docker/login-action@v3
-     with:
-       username: ${{ secrets.DOCKERHUB_USERNAME }}
-       password: ${{ secrets.DOCKERHUB_TOKEN }}
-   ```
-
-### Network timeouts during pull
-
-**Solutions:**
-
-1. **Retry with exponential backoff in CI:**
-
-   ```bash
-   for i in {1..3}; do
-     docker pull ghcr.io/jinalshah/devops/images/all-devops:latest && break
-     echo "Retry $i failed, waiting..."
-     sleep $((i * 10))
-   done
-   ```
-
-2. **Use a closer registry mirror or CDN**
-
-3. **Check your network connection and firewall settings**
+    Use the plain `1.0.<sha>` tag (the multi-arch manifest) rather than an arch-suffixed one unless you really need a specific architecture.
 
 ---
 
-## Container Runtime Issues
+## Running containers { #runtime }
 
-### Files created as root on host
+??? question "Files created in the container are owned by root on the host"
 
-**Symptoms:**
-Files created by the container are owned by `root:root` on the host, making them difficult to modify.
+    The container runs as root, so files it writes to a bind mount belong to root on Linux hosts. Options:
 
-**Solution:**
+    === "Fix ownership afterwards"
 
-Run container with your host user ID:
+        ```bash
+        docker run --rm -v "$PWD":/srv -w /srv \
+          ghcr.io/jinalshah/devops/images/all-devops:latest \
+          sh -c 'terraform fmt -recursive && chown -R '"$(id -u):$(id -g)"' /srv'
+        ```
 
-```bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  -v "$PWD":/srv \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt -recursive /srv
-```
+    === "Run as your user"
 
-**Alternative for persistent containers:**
+        ```bash
+        docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+          -v "$PWD":/srv -w /srv \
+          ghcr.io/jinalshah/devops/images/all-devops:latest \
+          terraform fmt -recursive
+        ```
 
-```bash
-# Create a wrapper script
-cat > ~/bin/devops <<'EOF'
-#!/bin/bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest "$@"
-EOF
-chmod +x ~/bin/devops
+    !!! warning
+        With `--user`, `HOME` is still `/root`, which a non-root user can't write to, hence `-e HOME=/tmp`. The shell configuration and aliases in `/root` won't load either. Binaries in `/usr/local/bin` and `/usr/bin` work normally.
 
-# Now use it
-devops terraform plan
-```
+    Docker Desktop on macOS and Windows maps ownership for you, so this mostly affects Linux hosts.
 
-### Permission denied on mounted volumes
+??? question "`Permission denied` on a mounted file or directory"
 
-**Symptoms:**
+    ```text
+    zsh: permission denied: ./script.sh
+    ```
 
-```text
-bash: /srv/script.sh: Permission denied
-```
+    - Make the script executable on the host (`chmod +x script.sh`), or run it with `bash script.sh`.
+    - On SELinux hosts (Fedora, RHEL, Rocky), relabel the mount with `:z` (shared) or `:Z` (private):
 
-**Solutions:**
+        ```bash
+        docker run --rm -v "$PWD":/srv:z -w /srv \
+          ghcr.io/jinalshah/devops/images/all-devops:latest ls
+        ```
 
-1. **Ensure files have execute permissions:**
+??? question "The container exits immediately"
 
-   ```bash
-   chmod +x script.sh
-   ```
+    The default command is `/bin/zsh`, which exits straight away without a terminal. Use `-it` for an interactive shell, or give it a command:
 
-2. **Mount as read-only if you only need to read:**
+    ```bash
+    docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
 
-   ```bash
-   docker run --rm -v "$PWD":/srv:ro ghcr.io/jinalshah/devops/images/all-devops:latest cat /srv/file.txt
-   ```
+    # Keep a container running in the background, then exec into it
+    docker run -d --name devops ghcr.io/jinalshah/devops/images/all-devops:latest sleep infinity
+    docker exec -it devops zsh
+    ```
 
-3. **Check SELinux context (on RHEL/CentOS/Fedora):**
+??? question "`no space left on device`"
 
-   ```bash
-   # Add :z or :Z suffix to volume mount
-   docker run --rm -v "$PWD":/srv:z ghcr.io/jinalshah/devops/images/all-devops:latest ls /srv
-   ```
+    Each image is about 4.6 to 5 GB unpacked, and old tags add up quickly.
 
-### Container exits immediately
+    ```bash
+    docker system df            # what is using space
+    docker image prune -a       # remove unused images
+    docker system prune         # remove stopped containers, networks and dangling images
+    ```
 
-**Symptoms:**
-Container starts and exits right away when using `docker run -d`.
+    On Docker Desktop, you can also raise the disk limit in **Settings → Resources**.
 
-**Solution:**
+??? question "Aliases like `tf` or `k` don't work"
 
-The images default to an interactive shell. Use `-it` or provide a long-running command:
-
-```bash
-# For interactive use
-docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# For background daemon (less common)
-docker run -d ghcr.io/jinalshah/devops/images/all-devops:latest sleep infinity
-```
-
-### Out of disk space
-
-**Symptoms:**
-
-```text
-no space left on device
-```
-
-**Solutions:**
-
-1. **Clean up Docker resources:**
-
-   ```bash
-   # Remove unused images
-   docker image prune -a
-
-   # Remove all unused resources
-   docker system prune -a --volumes
-   ```
-
-2. **Check Docker disk usage:**
-
-   ```bash
-   docker system df
-   ```
-
-3. **Increase Docker Desktop disk allocation (macOS/Windows)**
+    Aliases are defined in `~/.zshrc` and `~/.bashrc`, so they only exist in interactive Zsh and Bash shells. They aren't available in `docker run <image> <command>`, CI steps, Fish, or when you override `HOME`. Use the full command there. See the [alias list](../tool-basics/index.md#aliases).
 
 ---
 
-## Cloud Provider Authentication Issues
+## Authentication { #auth }
 
-### AWS credentials not found
+??? question "AWS: `Unable to locate credentials`"
 
-**Symptoms:**
+    Only `aws-devops` and `all-devops` include the AWS CLI. Give the container credentials in one of these ways:
 
-```text
-Unable to locate credentials. You can configure credentials by running "aws configure"
-```
+    === "Mount ~/.aws"
 
-**Solutions:**
+        ```bash
+        docker run --rm -v ~/.aws:/root/.aws \
+          -e AWS_PROFILE=my-profile \
+          ghcr.io/jinalshah/devops/images/aws-devops:latest \
+          aws sts get-caller-identity
+        ```
 
-1. **Mount AWS credentials directory:**
+        For IAM Identity Center profiles, the mount needs to be writable so `aws sso login` can refresh the token cache.
 
-   ```bash
-   docker run --rm -v ~/.aws:/root/.aws \
-     ghcr.io/jinalshah/devops/images/aws-devops:latest \
-     aws sts get-caller-identity
-   ```
+    === "Environment variables"
 
-2. **Pass credentials as environment variables:**
+        ```bash
+        docker run --rm \
+          -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+          -e AWS_REGION=eu-west-2 \
+          ghcr.io/jinalshah/devops/images/aws-devops:latest \
+          aws sts get-caller-identity
+        ```
 
-   ```bash
-   docker run --rm \
-     -e AWS_ACCESS_KEY_ID \
-     -e AWS_SECRET_ACCESS_KEY \
-     -e AWS_SESSION_TOKEN \
-     ghcr.io/jinalshah/devops/images/aws-devops:latest \
-     aws sts get-caller-identity
-   ```
+    === "On AWS compute"
 
-3. **Use IAM roles (in EC2/ECS):**
-   Container automatically inherits IAM role when running on AWS infrastructure.
+        On EC2, ECS or EKS the SDK picks up the instance, task or pod role automatically. On EC2 with IMDSv2, a container on a bridge network may need the instance's metadata hop limit raised to 2.
 
-### GCP authentication failed
+??? question "Google Cloud: `You do not currently have an active account selected`"
 
-**Symptoms:**
+    Only `gcp-devops` and `all-devops` include `gcloud`.
 
-```text
-ERROR: (gcloud.auth.list) Failed to get authentication
-```
+    === "Mount your gcloud config"
 
-**Solutions:**
+        ```bash
+        docker run --rm -v ~/.config/gcloud:/root/.config/gcloud \
+          ghcr.io/jinalshah/devops/images/gcp-devops:latest \
+          gcloud auth list
+        ```
 
-1. **Mount gcloud config directory:**
+    === "Service account key"
 
-   ```bash
-   docker run --rm -v ~/.config/gcloud:/root/.config/gcloud \
-     ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-     gcloud auth list
-   ```
+        `gcloud` ignores `GOOGLE_APPLICATION_CREDENTIALS` for its own commands, so activate the key explicitly:
 
-2. **Use service account key file:**
+        ```bash
+        docker run --rm -v /path/to/sa.json:/secrets/sa.json:ro \
+          ghcr.io/jinalshah/devops/images/gcp-devops:latest \
+          sh -c 'gcloud auth activate-service-account --key-file=/secrets/sa.json && gcloud projects list'
+        ```
 
-   ```bash
-   docker run --rm \
-     -v /path/to/service-account.json:/key.json \
-     -e GOOGLE_APPLICATION_CREDENTIALS=/key.json \
-     ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-     gcloud auth list
-   ```
+        Keep `GOOGLE_APPLICATION_CREDENTIALS` for Terraform and the client libraries, which do read it.
 
-3. **Authenticate inside container:**
+    === "Log in inside the container"
 
-   ```bash
-   docker run -it ghcr.io/jinalshah/devops/images/gcp-devops:latest
-   # Inside container:
-   gcloud auth login
-   gcloud auth application-default login
-   ```
+        ```bash
+        gcloud auth login                         # for gcloud commands
+        gcloud auth application-default login     # for Terraform and client libraries
+        ```
 
-### SSH key not found for Git operations
+        Both print a URL; open it on your machine and paste the code back.
 
-**Symptoms:**
+??? question "Git: `Permission denied (publickey)`"
 
-```text
-Permission denied (publickey)
-```
+    Mount your SSH directory read-only:
 
-**Solutions:**
+    ```bash
+    docker run -it --rm -v ~/.ssh:/root/.ssh:ro -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
 
-1. **Mount SSH directory:**
-
-   ```bash
-   docker run --rm -v ~/.ssh:/root/.ssh \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     git clone git@github.com:user/repo.git
-   ```
-
-2. **Set correct SSH key permissions:**
-
-   ```bash
-   chmod 600 ~/.ssh/id_rsa
-   chmod 644 ~/.ssh/id_rsa.pub
-   ```
-
-3. **Use HTTPS instead of SSH:**
-
-   ```bash
-   git clone https://github.com/user/repo.git
-   ```
+    If SSH complains about key permissions, fix them on the host (`chmod 600 ~/.ssh/id_ed25519`). If your key lives in an agent (for example 1Password or macOS Keychain) rather than a file, use HTTPS with `gh auth login` instead.
 
 ---
 
-## Build Issues
+## Tools inside the container { #tools }
 
-### Architecture mismatch errors
+??? question "`command not found: aws` or `command not found: gcloud`"
 
-**Symptoms:**
+    You're probably in the wrong image. `aws` and `session-manager-plugin` are only in <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--aws">aws-devops</span>, and `gcloud`, `gsutil` and `bq` are only in <span class="di-pill di-pill--all">all-devops</span> <span class="di-pill di-pill--gcp">gcp-devops</span>.
 
-```text
-exec format error
-```
+    Some tools aren't in any image: the Docker CLI, standalone `kustomize` (use `kubectl apply -k`), `yq`, `terraform-docs` and `gcloud alpha`. The [tool reference](../tool-basics/index.md) lists what's included.
 
-**Solutions:**
+??? question "kubectl: `The connection to the server localhost:8080 was refused`"
 
-1. **Use Buildx for cross-platform builds:**
+    kubectl has no kubeconfig. Mount yours, or generate one inside the container:
 
-   ```bash
-   # Create buildx builder
-   docker buildx create --name multiarch --use
+    ```bash
+    # Mount your host kubeconfig
+    docker run -it --rm -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
 
-   # Build for specific platform
-   docker buildx build --platform linux/arm64 \
-     --target all-devops \
-     -t all-devops:arm64 \
-     --load .
-   ```
+    # Or point at a specific file
+    docker run -it --rm -v ~/.kube/prod.yaml:/kubeconfig:ro -e KUBECONFIG=/kubeconfig \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
 
-2. **Verify your platform:**
+    # EKS
+    aws eks update-kubeconfig --name my-cluster --region eu-west-2
+    ```
 
-   ```bash
-   docker info | grep -i arch
-   uname -m
-   ```
+    If your kubeconfig points at `127.0.0.1` (kind, minikube, Docker Desktop), that address means the container itself. Use `--network host` on Linux, or `host.docker.internal` on Docker Desktop.
 
-3. **Pull platform-specific tag:**
+??? question "GKE: `gcloud container clusters get-credentials` or kubectl fails"
 
-   ```bash
-   # For ARM64
-   docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234-arm64
+    `gke-gcloud-auth-plugin` is installed in <span class="di-pill di-pill--all">all-devops</span> and <span class="di-pill di-pill--gcp">gcp-devops</span>, so GKE works without extra setup. If it still fails:
 
-   # For AMD64
-   docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234-amd64
-   ```
+    ```bash
+    # 1. Is gcloud authenticated, and on the right project?
+    gcloud auth list
+    gcloud config get-value project
 
-### Build fails on downloading tools
+    # 2. Use the cluster's real location: --region for regional clusters, --zone for zonal ones
+    gcloud container clusters list
+    gcloud container clusters get-credentials my-cluster --region europe-west2 --project my-project
 
-**Symptoms:**
+    # 3. Is the plugin there?
+    gke-gcloud-auth-plugin --version
+    ```
 
-```text
-ERROR: failed to solve: process "/bin/sh -c wget ..." did not complete successfully
-```
+    - `Permission denied` or `403`: your account needs at least `roles/container.clusterViewer` to fetch credentials, plus Kubernetes RBAC rights for what you then run.
+    - `executable gke-gcloud-auth-plugin not found`: you're using a kubeconfig written on another machine or in an older image. Run `get-credentials` again inside this container.
+    - Private clusters: the container needs network access to the control-plane endpoint (VPN, authorised networks or DNS-based endpoint).
 
-**Solutions:**
+??? question "Terraform: `Error acquiring the state lock`"
 
-1. **Check network connectivity:**
+    Another run holds the lock, or a crashed run left it behind. Make sure nothing else is running, then:
 
-   ```bash
-   # Test network in Docker
-   docker run --rm alpine ping -c 3 google.com
-   ```
+    ```bash
+    terraform force-unlock <LOCK_ID>
+    ```
 
-2. **Retry the build (transient failures):**
+    For S3 backends, `use_lockfile = true` is the current locking option; `dynamodb_table` is deprecated. Check that the container has credentials for the backend (see [Authentication](#auth)).
 
-   ```bash
-   docker build --target all-devops -t all-devops:local .
-   ```
+??? question "Trivy: the first scan is slow or can't download its database"
 
-3. **Build with no cache to force re-download:**
+    No vulnerability database is baked into the image, so each fresh container downloads it. Cache it between runs:
 
-   ```bash
-   docker build --no-cache --target all-devops -t all-devops:local .
-   ```
+    ```bash
+    docker run --rm -v ~/.cache/trivy:/root/.cache/trivy -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest trivy fs .
+    ```
 
-4. **Check if behind corporate proxy:**
+    If the cache is corrupt, reset it with `trivy clean --all`. Behind a proxy, pass `HTTPS_PROXY` into the container.
 
-   ```bash
-   docker build \
-     --build-arg HTTP_PROXY=http://proxy:8080 \
-     --build-arg HTTPS_PROXY=http://proxy:8080 \
-     --target all-devops -t all-devops:local .
-   ```
+??? question "pip installs a package but Python can't import it"
 
-### Custom build-arg version fails
+    A bare `pip` may belong to the distribution's Python rather than the default Python 3.14. Always use:
 
-**Symptoms:**
-Build fails when overriding tool versions with `--build-arg`.
+    ```bash
+    python3 -m pip install <package>
+    ```
 
-**Solutions:**
+??? question "Ansible: `the playbook: playbook.yml could not be found`"
 
-1. **Verify the version exists:**
-   Check the official release pages for the tool you're trying to install.
+    Your project isn't mounted, or the working directory isn't set. Use the standard mount:
 
-2. **Revert to defaults:**
-
-   ```bash
-   docker build --target all-devops -t all-devops:local .
-   ```
-
-3. **Test one build arg at a time:**
-
-   ```bash
-   # Test with single override
-   docker build --build-arg TERRAGRUNT_VERSION=0.68.14 \
-     --target all-devops -t all-devops:test .
-   ```
-
-### Build runs out of memory
-
-**Symptoms:**
-
-```text
-Killed
-```
-
-**Solutions:**
-
-1. **Increase Docker memory limit (Docker Desktop)**
-
-2. **Build stages separately:**
-
-   ```bash
-   # Build base first
-   docker build --target base -t devops-base:local .
-
-   # Then build specific image
-   docker build --target all-devops -t all-devops:local .
-   ```
-
-3. **Use build cache:**
-
-   ```bash
-   # Subsequent builds will be faster
-   docker build --target all-devops -t all-devops:local .
-   ```
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.ssh:/root/.ssh:ro \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      ansible-playbook -i inventory.ini playbook.yml
+    ```
 
 ---
 
-## Tool-Specific Issues
+## AI CLI logins { #ai-clis }
 
-### Terraform state locking errors
+Each CLI keeps its login in a directory under `/root`, so mount it to keep the login between containers:
 
-**Symptoms:**
-
-```text
-Error: Error locking state: Error acquiring the state lock
+```bash
+docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.claude:/root/.claude \
+  -v ~/.codex:/root/.codex \
+  -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
+  ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-**Solutions:**
+??? question ":simple-claude: Claude Code asks you to log in every time"
 
-1. **Ensure proper AWS credentials are mounted:**
+    - **Interactive:** run `claude`, then `/login`. `claude auth status` shows the current state.
+    - **CI or scripts:** set `ANTHROPIC_API_KEY`, or `CLAUDE_CODE_OAUTH_TOKEN` (created with `claude setup-token`, which needs a Claude subscription). There is no `CLAUDE_API_KEY`.
+    - **Persist it:** mount `~/.claude`, and also `~/.claude.json` if you want the global state.
+    - **Script hangs or prints a UI:** add `-p`. Without it, `claude` starts the interactive interface even when output is redirected.
 
-   ```bash
-   docker run --rm -v ~/.aws:/root/.aws -v $PWD:/srv \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     terraform force-unlock LOCK_ID
-   ```
+??? question ":lucide-bot: Codex: not signed in"
 
-2. **Check DynamoDB table exists (for S3 backend)**
+    ```bash
+    codex login                  # ChatGPT sign-in
+    codex login --device-auth    # no browser in the container
+    printenv OPENAI_API_KEY | codex login --with-api-key
+    codex login status
+    ```
 
-3. **Verify network access to backend**
+    In CI, set `CODEX_API_KEY` and run `codex exec "..."`. Credentials live in `~/.codex/auth.json`, so mount `~/.codex` and treat it like a password.
 
-### Kubectl context not found
+??? question ":simple-githubcopilot: Copilot CLI: authentication fails"
 
-**Symptoms:**
+    - **Interactive:** run `copilot`, then `/login` (a device-code flow that works without a browser).
+    - **Token:** set `COPILOT_GITHUB_TOKEN` (or `GH_TOKEN` / `GITHUB_TOKEN`) to a **fine-grained** personal access token with the "Copilot Requests" permission. Classic `ghp_` tokens are rejected.
+    - You need an active Copilot subscription.
+    - Non-interactive runs need `--allow-all-tools`: `copilot -p "..." --allow-all-tools`.
+    - The image has the standalone `copilot` CLI, not the old `gh copilot` extension.
 
-```text
-The connection to the server localhost:8080 was refused
-```
+??? question ":simple-googlegemini: Antigravity CLI (`agy`): can't sign in"
 
-**Solutions:**
+    Antigravity CLI replaced Google's Gemini CLI, and the `gemini` command isn't in the image.
 
-1. **Mount kubeconfig:**
+    - **Interactive:** run `agy`. With no browser it prints a URL; open it on your machine, sign in with Google, and paste the code back. Use `/login` and `/logout` inside `agy`. There's no `agy login` subcommand.
+    - **Persist it:** mount `~/.gemini`. In containers there's no keyring, so tokens are stored in files there.
+    - **Gemini API key (headless):** exporting `GEMINI_API_KEY` alone isn't enough. Also create `~/.gemini/antigravity-cli/settings.json` containing:
 
-   ```bash
-   docker run --rm -v ~/.kube:/root/.kube \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     kubectl get pods
-   ```
+        ```json
+        {"modelProvider": "gemini"}
+        ```
 
-2. **Set KUBECONFIG environment variable:**
+    - **Application Default Credentials:** run `gcloud auth application-default login` (or set `GOOGLE_APPLICATION_CREDENTIALS`), then `export AGY_ADC_AUTH=true`.
+    - Headless failures exit with code 3 and print `AGY_ERROR: {...}` on stderr, which usually names the problem.
 
-   ```bash
-   docker run --rm \
-     -v ~/.kube/custom-config:/kubeconfig \
-     -e KUBECONFIG=/kubeconfig \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     kubectl get pods
-   ```
-
-3. **Get credentials from cloud provider:**
-
-   ```bash
-   # For AWS EKS
-   aws eks update-kubeconfig --name my-cluster
-
-   # For GKE
-   gcloud container clusters get-credentials my-cluster --zone us-central1-a
-   ```
-
-### AI CLI tools not authenticated
-
-**Symptoms:**
-
-```text
-Error: Not authenticated. Please run: claude auth login
-```
-
-**Solutions:**
-
-1. **Authenticate on host first:**
-
-   ```bash
-   # On your host machine
-   claude auth login
-   ```
-
-2. **Mount config directories:**
-
-   ```bash
-   docker run -it \
-     -v ~/.claude:/root/.claude \
-     -v ~/.codex:/root/.codex \
-     -v ~/.copilot:/root/.copilot \
-     -v ~/.gemini:/root/.gemini \
-     ghcr.io/jinalshah/devops/images/all-devops:latest
-   ```
-
-3. **Authenticate inside container:**
-
-   ```bash
-   docker run -it ghcr.io/jinalshah/devops/images/all-devops:latest
-   # Inside container:
-   claude auth login
-   ```
-
-### Ansible inventory or playbook not found
-
-**Symptoms:**
-
-```text
-ERROR! the playbook: playbook.yml could not be found
-```
-
-**Solutions:**
-
-1. **Mount project directory:**
-
-   ```bash
-   docker run --rm -v $PWD:/workspace -w /workspace \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     ansible-playbook playbook.yml
-   ```
-
-2. **Use absolute paths:**
-
-   ```bash
-   docker run --rm -v $PWD:/srv \
-     ghcr.io/jinalshah/devops/images/all-devops:latest \
-     ansible-playbook /srv/playbook.yml
-   ```
+See [AI CLI setup](../tool-basics/ai-cli-setup.md) for full configuration.
 
 ---
 
-## Documentation Issues
+## Building images yourself { #build }
 
-### `zensical` command not found
+??? question "A download step fails during the build"
 
-**Solution:**
+    ```text
+    ERROR: failed to solve: process "/bin/sh -c ..." did not complete successfully
+    ```
 
-```bash
-python3 -m pip install --upgrade zensical
-zensical serve
-```
+    Most failures are transient upstream downloads, so retry first. Then:
 
-### Port 8000 already in use
+    ```bash
+    # Force fresh downloads
+    docker build --no-cache --target all-devops -t all-devops:local .
 
-**Solution:**
+    # Behind a corporate proxy
+    docker build \
+      --build-arg HTTP_PROXY=http://proxy:8080 \
+      --build-arg HTTPS_PROXY=http://proxy:8080 \
+      --target all-devops -t all-devops:local .
+    ```
 
-```bash
-# Use different port
-zensical serve -a 0.0.0.0:8080
+??? question "The build fails after overriding a version with `--build-arg`"
 
-# Or kill process using port 8000
-lsof -ti:8000 | xargs kill -9
-```
+    - Make sure the version exists on the tool's release page, and pass it without a leading `v` (for example `0.68.14`, not `v0.68.14`).
+    - Change one argument at a time:
 
-### Documentation not updating
+        ```bash
+        docker build --build-arg TERRAGRUNT_VERSION=0.68.14 \
+          --target all-devops -t all-devops:test .
+        ```
 
-**Solutions:**
+    - Python needs **both** arguments, a full version and the matching binary name:
 
-1. **Stop and restart Zensical:**
+        ```bash
+        docker build \
+          --build-arg PYTHON_VERSION=3.13.7 \
+          --build-arg PYTHON_VERSION_TO_USE=python3.13 \
+          --target all-devops -t all-devops:py313 .
+        ```
 
-   ```bash
-   # Stop with Ctrl+C, then restart
-   zensical serve
-   ```
+??? question "The build is `Killed` or runs out of memory"
 
-2. **Clear browser cache or use incognito mode**
+    Compiling Python with optimisations is the heaviest step. Give Docker more memory (Docker Desktop: **Settings → Resources**, 8 GB or more is comfortable), and build the shared base once so later targets reuse its cache:
 
-3. **Force rebuild:**
+    ```bash
+    docker build --target base -t devops-base:local .
+    docker build --target aws-devops -t aws-devops:local .
+    ```
 
-   ```bash
-   zensical build --clean
-   zensical serve
-   ```
+??? question "Building for another architecture"
 
----
+    CI builds each architecture natively. Locally, cross-building works through emulation but is slow:
 
-## Platform-Specific Issues
+    ```bash
+    docker buildx create --name multiarch --use
 
-### Apple Silicon (M1/M2/M3) issues
+    # Load a single platform into your local image store
+    docker buildx build --platform linux/arm64 --target all-devops -t all-devops:arm64 --load .
+    ```
 
-**Issue: Wrong architecture pulled**
-
-**Solution:**
-
-```bash
-# Verify you got ARM64 image
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest uname -m
-# Should output: aarch64
-
-# Force ARM64 if needed
-docker pull --platform linux/arm64 ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-**Issue: Rosetta compatibility mode warnings**
-
-**Solution:**
-
-Ensure Docker Desktop is using Apple's virtualization framework, not Rosetta.
-
-### Windows WSL2 issues
-
-**Issue: Volume mount performance is slow**
-
-**Solutions:**
-
-1. **Keep files in WSL2 filesystem:**
-
-   ```bash
-   # Work from within WSL2 home directory
-   cd ~
-   docker run -v $PWD:/workspace ...
-   ```
-
-2. **Avoid mounting from /mnt/c/ if possible**
-
-**Issue: Line ending problems**
-
-**Solution:**
-
-```bash
-# Configure Git to use LF line endings
-git config --global core.autocrlf input
-```
-
-### Linux permission issues with Docker socket
-
-**Symptoms:**
-
-```text
-Got permission denied while trying to connect to the Docker daemon socket
-```
-
-**Solutions:**
-
-1. **Add user to docker group:**
-
-   ```bash
-   sudo usermod -aG docker $USER
-   newgrp docker
-   ```
-
-2. **Or use sudo (not recommended for regular use):**
-
-   ```bash
-   sudo docker run ...
-   ```
+    Multi-platform builds (`--platform linux/amd64,linux/arm64`) can't be loaded into the classic image store, so push them to a registry with `--push` instead.
 
 ---
 
-## Getting Additional Help
+## Docs site preview { #docs }
 
-If you're still experiencing issues:
+??? question "`zensical: command not found`"
 
-### Gather Information
+    ```bash
+    python3 -m pip install --upgrade zensical
+    zensical serve
+    ```
 
-Collect the following information:
+    Zensical is also pre-installed in every image, so you can preview the docs from a container:
+
+    ```bash
+    docker run --rm -it -p 8000:8000 -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      zensical serve -a 0.0.0.0:8000
+    ```
+
+??? question "Port 8000 is already in use"
+
+    ```bash
+    zensical serve -a localhost:8080
+    ```
+
+??? question "Changes don't show up"
+
+    Stop the server with ++ctrl+c++, then rebuild from scratch and serve again:
+
+    ```bash
+    zensical build --clean
+    zensical serve
+    ```
+
+    If the page still looks stale, hard-refresh the browser.
+
+---
+
+## Still stuck?
+
+Collect these details and [open an issue](https://github.com/jinalshah/devops-images/issues/new):
 
 ```bash
-# Docker version
-docker --version
-
-# Host architecture
+docker version
 uname -m
-
-# Host OS
-cat /etc/os-release  # Linux
-sw_vers              # macOS
-
-# Exact error message
-docker run ... 2>&1 | tee error.log
+docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Open an Issue
-
-Open an issue on GitHub with:
-
-- **Title**: Clear, concise description of the problem
-- **Environment**: Docker version, host OS, architecture
-- **Steps to reproduce**: Exact commands you ran
-- **Expected behaviour**: What should happen
-- **Actual behaviour**: What actually happened
-- **Error output**: Full error messages and logs
-- **Image and tag**: Which image and version you're using
-
-[Open an issue →](https://github.com/jinalshah/devops-images/issues/new)
-
-### Community Resources
-
-- [GitHub Discussions](https://github.com/jinalshah/devops-images/discussions)
-- [Tool-specific documentation](../tool-basics/index.md)
-- Individual tool official documentation
+- [x] The image and tag (or digest) you used
+- [x] Your host OS and architecture
+- [x] The exact command you ran
+- [x] The full error output
+- [x] What you expected to happen
