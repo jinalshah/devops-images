@@ -1,643 +1,449 @@
-# GitHub Actions CI/CD Integration
+# GitHub Actions
 
-Complete guide to using DevOps Images in GitHub Actions workflows for automated infrastructure deployment, testing, and validation.
+Run any job inside a DevOps image with the `container:` key. Every `run:` step then executes in the image, with Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs already on `PATH`.
 
-!!! tip "Why GitHub Actions?"
-    - Native GitHub integration
-    - GHCR registry optimised for Actions
-    - Generous free tier (2,000 minutes/month for private repos)
-    - Extensive marketplace of actions
+## The pipeline at a glance
 
----
+```mermaid
+flowchart LR
+  PR["Pull request"] --> V["validate<br/>fmt · tflint · trivy"]
+  PR --> AI["ai-review<br/>claude -p"]
+  V --> P["plan<br/>upload tfplan"]
+  M["Push to main"] --> P
+  P --> G{"production<br/>environment<br/>approval"}
+  G --> A["apply<br/>terraform apply tfplan"]
 
-## Basic Setup
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class PR,M neutral
+  class V,P base
+  class AI ai
+  class G aws
+  class A all
+```
 
-### Simple Terraform Deployment
+## Minimal job
 
-Deploy infrastructure on every push to main:
-
-```yaml
-name: Deploy Infrastructure
+```yaml title=".github/workflows/terraform.yml"
+name: Terraform
 
 on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  id-token: write   # needed for OIDC
+
 jobs:
-  deploy:
+  apply:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234  # (1)!
-
+      image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4  # (2)!
+      - uses: actions/checkout@v7
 
-      - name: Configure AWS Credentials  # (3)!
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::123456789012:role/github-terraform
+          aws-region: eu-west-2
 
-      - name: Terraform Deploy  # (4)!
-        run: |
-          terraform init
-          terraform apply -auto-approve
+      - run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve
 ```
 
-1. Use immutable tag for reproducible builds
-2. Checkout code into the container
-3. Configure cloud credentials using official GitHub Actions
-4. Run Terraform commands directly in the container
+!!! tip "Pinning"
+    `1.0.abc1234` is a per-commit tag. It stays tied to one commit of this repo, but scheduled rebuilds refresh it with newer tool versions. For strict reproducibility, use `image: ghcr.io/jinalshah/devops/images/aws-devops@sha256:<digest>`.
 
----
+??? info "What changes inside a `container:` job"
+    - GitHub mounts the workspace and sets `HOME=/github/home`, so `~` in a step is not `/root`. The tools are still found because the image's `PATH` is kept.
+    - Container jobs need a Linux runner. `ubuntu-latest` and `ubuntu-24.04-arm` both work, because the images are multi-arch.
+    - Hosted runners start clean, so each job pulls the image again (about 1.5 to 1.6 GB). GitHub does **not** cache container layers for you. Fewer, longer jobs pull less; self-hosted runners keep the image between jobs.
 
-## Multi-Stage Pipeline
+## Validate → plan → apply
 
-### Validate → Plan → Apply
+The plan is saved as an artifact, and the `apply` job applies exactly that file after the `production` environment's reviewers approve it.
 
-Comprehensive workflow with validation, planning, and conditional deployment:
-
-```yaml
-name: Terraform Pipeline
+```yaml title=".github/workflows/terraform-pipeline.yml"
+name: Terraform pipeline
 
 on:
   pull_request:
-    paths:
-      - 'terraform/**'
+    paths: ["terraform/**"]
   push:
     branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
+      image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      - name: TFLint
-        run: |
+      - uses: actions/checkout@v7
+      - run: terraform fmt -check -recursive terraform/
+      - run: |
           cd terraform
           tflint --init
-          tflint
-
-      - name: Trivy Scan
-        run: trivy config ./terraform
+          tflint --recursive
+      - run: trivy config --severity HIGH,CRITICAL --exit-code 1 terraform/
 
   plan:
     needs: validate
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
+      image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Terraform Plan
-        run: |
+          role-to-assume: arn:aws:iam::123456789012:role/github-terraform-plan
+          aws-region: eu-west-2
+      - run: |
           cd terraform
-          terraform init
-          terraform plan -out=tfplan
-
-      - name: Upload Plan
-        uses: actions/upload-artifact@v4
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
+      - uses: actions/upload-artifact@v7
         with:
-          name: terraform-plan
+          name: tfplan
           path: terraform/tfplan
 
   apply:
     needs: plan
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production   # add required reviewers in repo settings
     container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    environment: production  # (1)!
-
+      image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Plan
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
-          name: terraform-plan
+          name: tfplan
           path: terraform
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Terraform Apply
-        run: |
+          role-to-assume: arn:aws:iam::123456789012:role/github-terraform-apply
+          aws-region: eu-west-2
+      - run: |
           cd terraform
-          terraform init
-          terraform apply tfplan
+          terraform init -input=false
+          terraform apply -input=false tfplan
 ```
 
-1. Use GitHub Environments for approval gates and protection rules
+!!! note "One image reference per job"
+    The `env` context is not available in `jobs.<id>.container`, so write the image out in each job. To change it in one place, use a repository variable (`image: ${{ vars.DEVOPS_IMAGE }}`) or a reusable workflow input.
 
----
+## Cloud credentials
 
-## Multi-Cloud Deployment
+=== ":fontawesome-brands-aws: AWS (OIDC)"
 
-### Deploy to Both AWS and GCP
-
-```yaml
-name: Multi-Cloud Deploy
-
-on:
-  workflow_dispatch:  # (1)!
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        type: choice
-        options:
-          - dev
-          - staging
-          - production
-
-jobs:
-  deploy-aws:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+    ```yaml
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::123456789012:role/github-deploy
+          aws-region: eu-west-2
+      - run: aws sts get-caller-identity
+    ```
 
-      - name: Deploy AWS Infrastructure
-        run: |
-          cd terraform/aws/${{ inputs.environment }}
-          terraform init
-          terraform apply -auto-approve
+    Works with <span class="di-pill di-pill--aws">aws-devops</span> and <span class="di-pill di-pill--all">all-devops</span>.
 
-  deploy-gcp:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== ":simple-googlecloud: Google Cloud (Workload Identity)"
+
+    ```yaml
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure GCP
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: projects/123456/locations/global/workloadIdentityPools/github/providers/github
+          service_account: deploy@my-project.iam.gserviceaccount.com
+      - run: gcloud config list
+    ```
 
-      - name: Deploy GCP Infrastructure
-        run: |
-          cd terraform/gcp/${{ inputs.environment }}
-          terraform init
-          terraform apply -auto-approve
-```
+    The auth action writes a credentials file and exports the variables that both `gcloud` and Terraform read. Works with <span class="di-pill di-pill--gcp">gcp-devops</span> and <span class="di-pill di-pill--all">all-devops</span>.
 
-1. Manual trigger with environment selection
+=== ":lucide-key-round: Static keys"
 
----
+    Only if OIDC isn't an option:
 
-## Matrix Builds
+    ```yaml
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: eu-west-2
+    ```
 
-### Deploy to Multiple Environments
+## Security scanning with code scanning alerts
 
-Deploy the same code to dev, staging, and production in parallel:
+Trivy writes SARIF, which GitHub shows under **Security → Code scanning**.
 
-```yaml
-name: Multi-Environment Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [dev, staging, production]
-        cloud: [aws, gcp]
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure Credentials
-        run: |
-          # Configure based on matrix.cloud
-          if [ "${{ matrix.cloud }}" == "aws" ]; then
-            echo "Configuring AWS..."
-          else
-            echo "Configuring GCP..."
-          fi
-
-      - name: Deploy
-        run: |
-          cd terraform/${{ matrix.cloud }}/${{ matrix.environment }}
-          terraform init
-          terraform apply -auto-approve
-```
-
----
-
-## Security Scanning Workflow
-
-### Comprehensive Security Checks
-
-```yaml
-name: Security Scan
+```yaml title=".github/workflows/security.yml"
+name: Security scan
 
 on:
   pull_request:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sundays
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  security-scan:
+  scan:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Trivy IaC Scan
-        run: |
-          trivy config ./terraform \
-            --severity HIGH,CRITICAL \
-            --exit-code 1
+      - name: Trivy (vulnerabilities, secrets, misconfigurations)
+        run: trivy fs --scanners vuln,secret,misconfig --format sarif --output trivy.sarif .
 
-      - name: TFLint
-        run: |
-          cd terraform
-          tflint --init
-          tflint --minimum-failure-severity=error
-
-      - name: CloudFormation Lint
-        if: hashFiles('cloudformation/**/*.yaml') != ''
-        run: |
-          cfn-lint cloudformation/**/*.yaml
-
-      - name: Ansible Lint
-        if: hashFiles('ansible/**/*.yml') != ''
-        run: |
-          ansible-lint ansible/
-
-      - name: Container Image Scan
-        if: hashFiles('**/Dockerfile') != ''
-        run: |
-          trivy image --severity HIGH,CRITICAL my-app:latest
-```
-
----
-
-## Kubernetes Deployment
-
-### Deploy to EKS/GKE with Helm
-
-```yaml
-name: Deploy to Kubernetes
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-eks:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: github/codeql-action/upload-sarif@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          sarif_file: trivy.sarif
 
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig \
-            --region us-east-1 \
-            --name my-eks-cluster
+      - name: Fail on HIGH/CRITICAL
+        run: trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
 
-      - name: Deploy with Helm
+      - name: Linters
         run: |
-          helm upgrade --install myapp ./charts/myapp \
-            --namespace production \
-            --create-namespace \
-            --wait \
-            --timeout 5m
-
-      - name: Verify Deployment
-        run: |
-          kubectl rollout status deployment/myapp -n production
-          kubectl get pods -n production
+          tflint --init && tflint --recursive
+          if [ -d ansible ]; then ansible-lint ansible/; fi
+          if [ -d cloudformation ]; then cfn-lint "cloudformation/**/*.yaml"; fi
 ```
 
----
+!!! warning "Scanning container images"
+    There is no `docker` CLI in the image, so `trivy image my-app:latest` cannot see an image you built locally in the same job. Scan a **pushed** image by reference instead; Trivy pulls it from the registry itself:
 
-## Caching Strategies
+    ```bash
+    TRIVY_USERNAME=${{ github.actor }} TRIVY_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
+      trivy image --severity HIGH,CRITICAL --exit-code 1 ghcr.io/my-org/my-app:${{ github.sha }}
+    ```
 
-### Speed Up Pipeline with Caching
+    Build the image itself in a separate job without `container:`, using `docker/build-push-action`.
 
-```yaml
-name: Optimized Pipeline
+`cfn-lint` is only in <span class="di-pill di-pill--aws">aws-devops</span> and <span class="di-pill di-pill--all">all-devops</span>.
 
-on:
-  push:
-    branches: [main]
+## Deploy to Kubernetes with Helm
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== "EKS"
 
-    steps:
-      - uses: actions/checkout@v4
+    ```yaml
+    - uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: arn:aws:iam::123456789012:role/github-deploy
+        aws-region: eu-west-2
+    - run: aws eks update-kubeconfig --region eu-west-2 --name my-cluster
+    - run: |
+        helm upgrade --install myapp ./charts/myapp \
+          --namespace production --create-namespace --wait --timeout 5m
+        kubectl rollout status deployment/myapp -n production
+    ```
 
-      - name: Cache Terraform Plugins
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-          key: terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+=== "GKE"
 
-      - name: Configure Terraform Plugin Cache
-        run: |
-          mkdir -p ~/.terraform.d/plugin-cache
-          cat > ~/.terraformrc <<EOF
-          plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
-          EOF
+    ```yaml
+    - uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+        service_account: ${{ vars.GCP_DEPLOY_SA }}
+    - run: gcloud container clusters get-credentials my-cluster --region europe-west2
+    - run: |
+        helm upgrade --install myapp ./charts/myapp \
+          --namespace production --create-namespace --wait --timeout 5m
+        kubectl rollout status deployment/myapp -n production
+    ```
 
-      - name: Terraform Init
-        run: terraform init
+    `gke-gcloud-auth-plugin` is included, so kubectl authenticates to GKE without extra setup.
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+## Caching Terraform providers
+
+The image doesn't set a provider cache, so set one per job and cache it with `actions/cache`. In a `container:` job, `${{ github.workspace }}` expands to the runner host's path rather than the path inside the container, so build the path from `$GITHUB_WORKSPACE` in a step instead:
+
+```yaml title="Optimised Terraform job"
+steps:
+  - uses: actions/checkout@v7
+  - run: |
+      echo "TF_PLUGIN_CACHE_DIR=$GITHUB_WORKSPACE/.terraform-plugin-cache" >> "$GITHUB_ENV"
+      mkdir -p "$GITHUB_WORKSPACE/.terraform-plugin-cache"
+  - uses: actions/cache@v6
+    with:
+      path: .terraform-plugin-cache
+      key: tf-providers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+  - run: terraform init -input=false
 ```
 
----
+## AI review on pull requests
 
-## AI-Assisted Code Review
+Pipe the diff into `claude -p` and post the result with `gh`, which is in the image.
 
-### Automated Review with Claude CLI
-
-```yaml
-name: AI Code Review
+```yaml title=".github/workflows/ai-review.yml"
+name: AI review
 
 on:
   pull_request:
-    paths:
-      - 'terraform/**'
-      - 'ansible/**'
+    paths: ["terraform/**", "ansible/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  ai-review:
+  review:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Claude CLI
-        run: |
-          echo "${{ secrets.CLAUDE_API_KEY }}" > ~/.claude/config.json
-
-      - name: Review Terraform Changes
-        run: |
-          git diff origin/main...HEAD -- terraform/ > changes.diff
-          claude "Review this Terraform code for security issues and best practices" \
-            --file changes.diff \
-            > review-output.md
-
-      - name: Post Review Comment
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v7
         with:
-          script: |
-            const fs = require('fs');
-            const review = fs.readFileSync('review-output.md', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🤖 AI Code Review\n\n${review}`
-            });
+          fetch-depth: 0
+
+      - name: Review the diff
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git diff "origin/${{ github.base_ref }}...HEAD" -- terraform/ ansible/ \
+            | claude -p "Review this infrastructure diff for security issues, risky changes and best-practice problems. Reply in Markdown." \
+            > review.md
+
+      - name: Comment on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --body-file review.md
 ```
 
----
+=== "Claude Code"
 
-## Reusable Workflows
+    ```bash
+    # env: ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN)
+    git diff ... | claude -p "Review this diff"
+    ```
 
-### Create Reusable Workflow
+=== "Codex"
 
-**`.github/workflows/terraform-deploy.yml`**:
+    ```bash
+    # env: CODEX_API_KEY
+    git diff ... | codex exec "Review this diff"
+    ```
 
-```yaml
-name: Reusable Terraform Deploy
+=== "Copilot"
+
+    ```bash
+    # env: COPILOT_GITHUB_TOKEN (fine-grained PAT with "Copilot Requests")
+    git diff ... | copilot -p "Review this diff" --allow-all-tools
+    ```
+
+!!! warning "Forks and secrets"
+    Secrets are not passed to workflows triggered by pull requests from forks, so the review step will fail to authenticate there. Guard it with `if: github.event.pull_request.head.repo.full_name == github.repository`.
+
+More prompts and patterns are in [AI-assisted DevOps](ai-assisted-devops.md).
+
+## Reusable workflows
+
+Reusable workflows must sit **directly** in `.github/workflows/`. Subdirectories are not supported.
+
+```yaml title=".github/workflows/terraform-deploy.yml"
+name: Reusable Terraform deploy
 
 on:
   workflow_call:
     inputs:
-      environment:
-        required: true
-        type: string
-      terraform_dir:
-        required: true
-        type: string
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
+      environment: { required: true, type: string }
+      working-directory: { required: true, type: string }
+      role-arn: { required: true, type: string }
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     environment: ${{ inputs.environment }}
-
+    container:
+      image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Terraform Deploy
-        run: |
-          cd ${{ inputs.terraform_dir }}
-          terraform init
-          terraform apply -auto-approve
+          role-to-assume: ${{ inputs.role-arn }}
+          aws-region: eu-west-2
+      - run: terraform init -input=false
+      - run: terraform apply -input=false -auto-approve
 ```
 
-**Use the reusable workflow**:
-
-```yaml
-name: Deploy All Environments
+```yaml title=".github/workflows/deploy-all.yml"
+name: Deploy all environments
 
 on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
-  deploy-dev:
+  dev:
     uses: ./.github/workflows/terraform-deploy.yml
-    with:
-      environment: dev
-      terraform_dir: terraform/dev
-    secrets: inherit
-
-  deploy-staging:
-    needs: deploy-dev
+    with: { environment: dev, working-directory: terraform/dev, role-arn: "arn:aws:iam::111111111111:role/deploy" }
+  staging:
+    needs: dev
     uses: ./.github/workflows/terraform-deploy.yml
-    with:
-      environment: staging
-      terraform_dir: terraform/staging
-    secrets: inherit
-
-  deploy-prod:
-    needs: deploy-staging
+    with: { environment: staging, working-directory: terraform/staging, role-arn: "arn:aws:iam::222222222222:role/deploy" }
+  production:
+    needs: staging
     uses: ./.github/workflows/terraform-deploy.yml
-    with:
-      environment: production
-      terraform_dir: terraform/production
-    secrets: inherit
+    with: { environment: production, working-directory: terraform/production, role-arn: "arn:aws:iam::333333333333:role/deploy" }
 ```
-
----
-
-## Best Practices
-
-!!! tip "Performance Optimisation"
-
-    1. **Pin image versions**: Use immutable tags like `1.0.abc1234`
-    2. **Cache layers**: GitHub automatically caches container layers
-    3. **Use GHCR**: Fastest registry for GitHub Actions
-    4. **Cache Terraform plugins**: Use `actions/cache` for `.terraform` directory
-    5. **Parallel jobs**: Run independent steps in parallel
-
-!!! tip "Security Best Practices"
-
-    1. **Use GitHub Secrets**: Store credentials in repository or organization secrets
-    2. **Use Environments**: Add approval gates for production deployments
-    3. **Limit permissions**: Use `permissions:` to grant minimal access
-    4. **Scan before deploy**: Run Trivy/TFLint in validation job
-    5. **Use OIDC**: Consider AWS/GCP OIDC instead of static credentials
-
-!!! warning "Common Pitfalls"
-
-    - ❌ **Using `latest` tag**: Leads to non-reproducible builds
-    - ❌ **Hardcoding credentials**: Always use GitHub Secrets
-    - ❌ **No approval gates**: Use Environments for production
-    - ❌ **Ignoring scan results**: Make security checks blocking
-
----
 
 ## Troubleshooting
 
-??? question "Container fails to start"
+??? question "The container image won't pull"
+    Check the image name and tag, and that the tag exists: tags are `latest` and `1.0.<7-char sha>`, and there is no `1.0` tag. For an image in a private registry, add credentials:
 
-    **Problem**: GitHub Actions can't pull or run the container
-
-    **Solutions**:
     ```yaml
-    # 1. Verify image name and tag
     container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-    # 2. For private images, authenticate
-    container:
-      image: ghcr.io/private/image:latest
+      image: ghcr.io/my-org/private-image:tag
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     ```
 
-??? question "Terraform state locking issues"
+??? question "`fatal: detected dubious ownership in repository`"
+    Add `git config --global --add safe.directory "$GITHUB_WORKSPACE"` before your own `git` commands.
 
-    **Problem**: Multiple jobs try to access Terraform state simultaneously
+??? question "Two runs fight over the Terraform state lock"
+    Add a `concurrency:` group per state (as in the pipeline above) with `cancel-in-progress: false`, so runs queue rather than collide.
 
-    **Solution**: Use job dependencies or concurrency groups
-    ```yaml
-    concurrency:
-      group: terraform-${{ github.ref }}
-      cancel-in-progress: false
-    ```
+## Next steps
 
-??? question "AWS credentials not working"
-
-    **Problem**: AWS CLI can't find credentials in container
-
-    **Solution**: Ensure `aws-actions/configure-aws-credentials` runs before AWS commands
-    ```yaml
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-    ```
-
----
-
-## Example Repository Structure
-
-```
-.
-├── .github/
-│   └── workflows/
-│       ├── terraform-pipeline.yml
-│       ├── security-scan.yml
-│       ├── k8s-deploy.yml
-│       └── reusable/
-│           └── terraform-deploy.yml
-├── terraform/
-│   ├── dev/
-│   ├── staging/
-│   └── production/
-├── ansible/
-│   └── playbooks/
-└── charts/
-    └── myapp/
-```
-
----
-
-## Next Steps
-
-- [GitLab CI Integration](ci-cd-gitlab.md) - GitLab CI examples
-- [Jenkins Integration](ci-cd-jenkins.md) - Jenkins pipeline examples
-- [CircleCI Integration](ci-cd-circleci.md) - CircleCI config examples
-- [AI-Assisted DevOps](ai-assisted-devops.md) - AI workflow automation
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining multiple tools
+- [GitLab CI](ci-cd-gitlab.md) · [Jenkins](ci-cd-jenkins.md) · [CircleCI](ci-cd-circleci.md)
+- [Terraform workflows](terraform-workflows.md)
+- [Multi-tool patterns](multi-tool-patterns.md)
+- [AI-assisted DevOps](ai-assisted-devops.md)

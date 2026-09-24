@@ -6,6 +6,9 @@ site_url = "https://jinalshah.github.io/devops-images/"
 repo_name = "jinalshah/devops-images"
 repo_url = "https://github.com/jinalshah/devops-images"
 
+extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/extra.js"]
+
 nav = [
   { "Getting Started" = [
     "index.md",
@@ -35,6 +38,7 @@ nav = [
   { "Build Images" = [
     "build-images/index.md",
     "build-images/optimization.md",
+    "build-images/customization.md",
     "build-images/all-devops.md",
     "build-images/aws-devops.md",
     "build-images/gcp-devops.md",
@@ -76,26 +80,29 @@ features = [
   "content.code.copy",
   "content.code.annotate",
   "content.tabs.link",
+  "content.tooltips",
+  "navigation.instant.progress",
 ]
 
 [[project.theme.palette]]
 scheme = "default"
-primary = "blue-grey"
-accent = "amber"
-toggle.icon = "material/weather-sunny"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
 [[project.theme.palette]]
 scheme = "slate"
-primary = "blue-grey"
-accent = "amber"
-toggle.icon = "material/weather-night"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
 
 [project.extra]
 generator = false
 
 [project.markdown_extensions]
+abbr = {}
 admonition = {}
 attr_list = {}
 def_list = {}
@@ -112,6 +119,7 @@ pymdownx.highlight.line_spans = "__span"
 pymdownx.highlight.pygments_lang_class = true
 pymdownx.inlinehilite = {}
 pymdownx.keys = {}
+pymdownx.mark = {}
 pymdownx.snippets = {}
 pymdownx.superfences.custom_fences = [
   { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },

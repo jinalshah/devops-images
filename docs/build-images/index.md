@@ -1,631 +1,284 @@
-# Building Images
-
-Complete guide to building DevOps Images locally, including benchmarks, optimisation strategies, and troubleshooting.
-
+---
+title: Building Images
 ---
 
-## When to Build vs Pull
+# Building the images
 
-### Pull from Registry (Recommended)
+Most people should just pull the published images. Build them yourself when you want to change tool versions, add or remove tools, or produce images for your own registry.
 
-!!! success "Pull if you need"
+<div class="grid cards" markdown>
 
-    - ✅ **Standard tooling**: Official builds have everything most teams need
-    - ✅ **Fast setup**: Pull in seconds vs build in minutes
-    - ✅ **Tested builds**: CI/CD tested and scanned for vulnerabilities
-    - ✅ **Multi-arch support**: Automatic architecture selection
-    - ✅ **Regular updates**: Weekly rebuilds with latest security patches
+-   :lucide-download:{ .lg .middle } __Pull if…__
 
-**Quick pull**:
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+    ---
+
+    - the standard toolset is enough
+    - you want multi-arch images that are rebuilt automatically
+    - you don't want a long compile on every machine
+
+    ```bash
+    docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
+
+-   :lucide-hammer:{ .lg .middle } __Build if…__
+
+    ---
+
+    - you need different tool or Python versions
+    - you want to add internal tools or remove some
+    - you publish to your own registry
+
+    [:octicons-arrow-right-24: Or extend the published image](customization.md)
+
+</div>
+
+## How the Dockerfile is organised
+
+One `Dockerfile` with a shared `base` stage and three targets. Each target is a single stage on top of `base`; there's no separate builder stage.
+
+```mermaid
+flowchart TB
+  R["rockylinux/rockylinux:10"] --> S1["base: RUN 1<br/>dnf packages, gh, DB clients, Trivy,<br/>Python compiled from source, pip tools, Oh My Zsh"]
+  S1 --> S2["base: RUN 2<br/>kubectl, Terraform (tfswitch), Terragrunt,<br/>TFLint, Packer, Helm, ghorg, k9s, Task"]
+  S2 --> S3["base: RUN 3<br/>Node.js LTS, Claude Code, Codex,<br/>Copilot CLI, Antigravity CLI"]
+  S3 --> A["all-devops<br/>+ AWS + gcloud"]
+  S3 --> W["aws-devops<br/>+ AWS"]
+  S3 --> G["gcp-devops<br/>+ gcloud"]
+
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  class R neutral
+  class S1,S2,S3 base
+  class A all
+  class W aws
+  class G gcp
 ```
 
-### Build Locally
-
-!!! example "Build if you need"
-
-    - 🔧 **Custom tools**: Add proprietary or internal tools
-    - 🔧 **Specific versions**: Pin tool versions for compliance
-    - 🔧 **Size optimisation**: Remove unused tools
-    - 🔧 **Custom base**: Different Linux distro or base image
-    - 🔧 **Air-gapped**: No internet access for pulls
-
----
+Because the three targets share `base`, building a second target after the first reuses the cached base layers and only runs the small cloud layer.
 
 ## Prerequisites
 
-### System Requirements
+- Docker with **BuildKit**, the default builder since Docker Engine 23 and in Docker Desktop. `docker buildx version` confirms it.
+- Plenty of disk space: the finished image is about 5 GB unpacked, and the build cache adds more on top.
+- A clone of the repository: `git clone https://github.com/jinalshah/devops-images && cd devops-images`
 
-| Requirement | Minimum | Recommended | Notes |
-|-------------|---------|-------------|-------|
-| **Docker** | 20.10+ | 24.0+ | BuildKit required |
-| **Disk Space** | 10 GB free | 20 GB free | Build cache + layers |
-| **RAM** | 4 GB | 8 GB | Parallel builds benefit |
-| **CPU** | 2 cores | 4+ cores | Faster builds |
-| **Network** | 10 Mbps | 100 Mbps | Package downloads |
+!!! info "Cold builds are slow"
+    Python is compiled from source with `--enable-optimizations`, which dominates a cold build. Expect a cold build to take tens of minutes; later builds are much faster once the base layers are cached.
 
-### Enable BuildKit
+## Build a target
 
-=== "Docker CLI"
+=== ":lucide-layers: all-devops"
 
     ```bash
-    # Enable for single build
-    DOCKER_BUILDKIT=1 docker build .
-
-    # Enable permanently
-    echo 'export DOCKER_BUILDKIT=1' >> ~/.bashrc
-    source ~/.bashrc
+    docker build --target all-devops -t all-devops:local .
     ```
 
-=== "Docker Desktop"
-
-    1. Open Docker Desktop settings
-    2. Go to "Docker Engine"
-    3. Add to configuration:
-       ```json
-       {
-         "features": {
-           "buildkit": true
-         }
-       }
-       ```
-    4. Click "Apply & Restart"
-
-=== "Verify"
+=== ":fontawesome-brands-aws: aws-devops"
 
     ```bash
-    docker version | grep BuildKit
-    # Should show: BuildKit: true
+    docker build --target aws-devops -t aws-devops:local .
     ```
 
----
-
-## Quick Start
-
-### Build Single Image
-
-=== "all-devops"
+=== ":simple-googlecloud: gcp-devops"
 
     ```bash
-    docker build \
-      --target all-devops \
-      --tag all-devops:local \
-      .
+    docker build --target gcp-devops -t gcp-devops:local .
     ```
 
-    **Build time**: ~21 minutes (cold), ~3 minutes (warm)
-
-=== "aws-devops"
+=== ":lucide-box: base only"
 
     ```bash
-    docker build \
-      --target aws-devops \
-      --tag aws-devops:local \
-      .
+    docker build --target base -t devops-base:local .
     ```
 
-    **Build time**: ~18 minutes (cold), ~2 minutes (warm)
+    `base` isn't published, but it's handy for testing shared tooling.
 
-=== "gcp-devops"
-
-    ```bash
-    docker build \
-      --target gcp-devops \
-      --tag gcp-devops:local \
-      .
-    ```
-
-    **Build time**: ~19 minutes (cold), ~2.5 minutes (warm)
-
-### Build All Images
+To build every target in turn (the base is built once and reused):
 
 ```bash
-#!/bin/bash
-# build-all.sh
-
 for target in all-devops aws-devops gcp-devops; do
-  echo "Building $target..."
-  docker build \
-    --target "$target" \
-    --tag "$target:local" \
-    .
+  docker build --target "$target" -t "$target:local" .
 done
 ```
 
-**Total build time**: ~60 minutes (cold), ~8 minutes (warm with cache)
+Docker builds for your machine's architecture by default. On Apple Silicon or an ARM host you get a native `linux/arm64` image. For both architectures, see [Multi-platform images](multi-platform-images.md).
 
----
+## Build arguments
 
-## Build Time Benchmarks
+These are exactly the `ARG`s declared at the top of the `Dockerfile`. CI overrides the first eight from repository variables, which a daily workflow bumps to the latest releases.
 
-### Cold Build (No Cache)
+| Arg | Default | Used for |
+|-----|---------|----------|
+| `GCLOUD_VERSION` | `501.0.0` | Google Cloud SDK tarball (all-devops, gcp-devops) |
+| `PACKER_VERSION` | `1.11.2` | Packer |
+| `TERRAGRUNT_VERSION` | `0.68.14` | Terragrunt |
+| `TFLINT_VERSION` | `0.50.3` | TFLint |
+| `GHORG_VERSION` | `1.9.10` | ghorg |
+| `K9S_VERSION` | `0.32.7` | k9s |
+| `PYTHON_VERSION` | `3.14.7` | Full Python version compiled from source |
+| `PYTHON_VERSION_TO_USE` | `python3.14` | Interpreter registered as the default `python3`; must match `PYTHON_VERSION` |
+| `MONGODB_VERSION` | `8.0` | MongoDB repository series for `mongosh` |
+| `MONGODB_REPO_PATH` | `/etc/yum.repos.d/mongodb-org-${MONGODB_VERSION}.repo` | Where the MongoDB repo file is written |
+| `MYSQL_RELEASE_RPM_URL` | `https://repo.mysql.com/mysql84-community-release-el10-3.noarch.rpm` | MySQL 8.4 community repository for the `mysql` client |
+| `MYSQL_GPG_KEY_URL` | `https://repo.mysql.com/RPM-GPG-KEY-mysql-2025` | Current MySQL signing key |
 
-| Image | amd64 | arm64 | Notes |
-|-------|-------|-------|-------|
-| **Base layer** | 15 min | 17 min | Rocky Linux + tools |
-| **aws-devops** | 18 min | 20 min | +AWS CLI installation |
-| **gcp-devops** | 19 min | 21 min | +gcloud SDK (larger) |
-| **all-devops** | 21 min | 23 min | +both cloud CLIs |
+Terraform, kubectl, Helm, Task, Node.js and the AI CLIs have no build arg; they always install the latest release at build time.
 
-### Warm Build (Cached Layers)
+=== ":lucide-sliders-horizontal: Override a few"
 
-| Image | Build Time | Layers Rebuilt | Layers Cached |
-|-------|-----------|----------------|---------------|
-| **aws-devops** | 2-3 min | AWS layer only | Base layer (15 min saved) |
-| **gcp-devops** | 2.5-3.5 min | GCP layer only | Base layer (15 min saved) |
-| **all-devops** | 3-4 min | Cloud layers only | Base layer (15 min saved) |
+    ```bash
+    docker build --target all-devops \
+      --build-arg TERRAGRUNT_VERSION=0.68.14 \
+      --build-arg K9S_VERSION=0.32.7 \
+      -t all-devops:custom .
+    ```
 
-### CI/CD Build Times
+=== ":simple-python: Change Python"
 
-| Platform | Cold Build | Warm Build | Cache Strategy |
-|----------|-----------|------------|----------------|
-| **GitHub Actions** | 20-25 min | 4-6 min | Layer caching enabled |
-| **GitLab CI** | 22-27 min | 5-7 min | Registry cache |
-| **Jenkins** | 18-23 min | 3-5 min | Persistent volumes |
-| **Local (M2 Mac)** | 15-20 min | 2-4 min | BuildKit cache |
+    You need **both** the full version (for the source download) and the matching binary name. `PYTHON_VERSION=3.13` on its own breaks the build.
 
----
+    ```bash
+    docker build --target all-devops \
+      --build-arg PYTHON_VERSION=3.13.7 \
+      --build-arg PYTHON_VERSION_TO_USE=python3.13 \
+      -t all-devops:py313 .
+    ```
 
-## Build Cache Strategies
+=== ":lucide-file-cog: Pin from a file"
 
-### Strategy 1: Layer Caching (Default)
+    Keep versions in one file and pass them through. `--build-arg NAME` with no value takes the value from your environment.
 
-Docker automatically caches unchanged layers:
+    ```bash title="versions.env"
+    GCLOUD_VERSION=501.0.0
+    PACKER_VERSION=1.11.2
+    TERRAGRUNT_VERSION=0.68.14
+    TFLINT_VERSION=0.50.3
+    GHORG_VERSION=1.9.10
+    K9S_VERSION=0.32.7
+    ```
 
-```dockerfile
-# Layer 1: Base (rarely changes) - CACHED
-FROM rockylinux/rockylinux:10
+    ```bash
+    set -a; . ./versions.env; set +a
+    docker build --target all-devops \
+      --build-arg GCLOUD_VERSION --build-arg PACKER_VERSION \
+      --build-arg TERRAGRUNT_VERSION --build-arg TFLINT_VERSION \
+      --build-arg GHORG_VERSION --build-arg K9S_VERSION \
+      -t all-devops:pinned .
+    ```
 
-# Layer 2: System packages (monthly) - CACHED
-RUN dnf install -y python3 nodejs
+## Validate the result
 
-# Layer 3: IaC tools (weekly) - REBUILT
-RUN install-terraform.sh
+```bash title="validate-build.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+IMAGE="$1"
 
-# Layer 4: Cloud CLIs (monthly) - REBUILT
-RUN install-aws-cli.sh
+docker run --rm "$IMAGE" bash -c '
+  set -e
+  terraform version
+  terragrunt --version
+  kubectl version --client
+  helm version --short
+  ansible --version | head -1
+  trivy --version | head -1
+  python3 --version
+  node --version
+  command -v claude codex copilot agy
+'
+
+# Cloud CLIs depend on the target
+docker run --rm "$IMAGE" aws --version 2>/dev/null && echo "AWS CLI: present"
+docker run --rm "$IMAGE" gcloud --version 2>/dev/null | head -1 || true
 ```
 
-!!! tip "Optimise Layer Order"
-    Place frequently changing layers at the end to maximise cache hits.
-
-### Strategy 2: BuildKit Cache Mount
-
-```bash
-# Use cache mount for package managers
-docker build \
-  --target all-devops \
-  --cache-from type=local,src=/tmp/buildkit-cache \
-  --cache-to type=local,dest=/tmp/buildkit-cache \
-  -t all-devops:local .
-```
-
-**Benefits**:
-- Persistent cache across builds
-- Shared cache between projects
-- Faster package manager operations
-
-### Strategy 3: Registry Cache
-
-```bash
-# Pull previous build as cache
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Build using registry cache
-docker build \
-  --target all-devops \
-  --cache-from ghcr.io/jinalshah/devops/images/all-devops:latest \
-  -t all-devops:local .
-```
-
-**Benefits**:
-- Works in CI/CD without local cache
-- Team shares cache via registry
-- Consistent across environments
-
----
-
-## Build Args Reference
-
-### Common Build Args
-
-| Arg | Default | Purpose | Example |
-|-----|---------|---------|---------|
-| `GCLOUD_VERSION` | `501.0.0` | Google Cloud SDK version | `501.0.0` |
-| `PACKER_VERSION` | `1.11.2` | Packer version | `1.11.2` |
-| `TERRAGRUNT_VERSION` | `0.68.14` | Terragrunt version | `0.68.14` |
-| `TFLINT_VERSION` | `0.50.3` | TFLint version | `0.50.3` |
-| `K9S_VERSION` | `0.32.7` | k9s version | `0.32.7` |
-| `PYTHON_VERSION` | `3.14.7` | Python source version to compile | `3.13.12`, `3.14.7` |
-| `PYTHON_VERSION_TO_USE` | `python3.14` | Python binary registered as `/usr/local/bin/python3` via alternatives | `python3.13`, `python3.14` |
-| `GHORG_VERSION` | `1.9.10` | ghorg version | `1.9.10` |
-| `MONGODB_VERSION` | `8.0` | MongoDB shell repository major version | `8.0`, `8.2` |
-| `MYSQL_RELEASE_RPM_URL` | MySQL community release RPM (EL10) | Repository definition for the MySQL client | any `repo.mysql.com` release RPM |
-| `MYSQL_GPG_KEY_URL` | `https://repo.mysql.com/RPM-GPG-KEY-mysql-2025` | Signing key for the MySQL repository | current MySQL key URL |
-
-### Using Build Args
-
-```bash
-docker build \
-  --target all-devops \
-  --build-arg GCLOUD_VERSION=500.0.0 \
-  --build-arg PACKER_VERSION=1.11.2 \
-  --build-arg PYTHON_VERSION=3.11 \
-  -t all-devops:custom .
-```
-
-### Pin All Versions
-
-```bash
-# versions.env
-GCLOUD_VERSION=501.0.0
-PACKER_VERSION=1.11.2
-TERRAGRUNT_VERSION=0.68.14
-TFLINT_VERSION=0.50.3
-K9S_VERSION=0.32.7
-
-# Build with pinned versions
-docker build \
-  --target all-devops \
-  --build-arg GCLOUD_VERSION=501.0.0 \
-  --build-arg PACKER_VERSION=1.10.0 \
-  --build-arg TERRAGRUNT_VERSION=0.68.14 \
-  --build-arg TFLINT_VERSION=0.50.0 \
-  --build-arg K9S_VERSION=0.32.0 \
-  -t all-devops:pinned .
-```
-
----
-
-## Validate Builds
-
-### Quick Validation
-
-```bash
-# Verify all-devops
-docker run --rm all-devops:local terraform version
-docker run --rm all-devops:local aws --version
-docker run --rm all-devops:local gcloud --version
-
-# Verify aws-devops
-docker run --rm aws-devops:local terraform version
-docker run --rm aws-devops:local aws --version
-
-# Verify gcp-devops
-docker run --rm gcp-devops:local terraform version
-docker run --rm gcp-devops:local gcloud --version
-```
-
-### Comprehensive Validation
-
-```bash
-#!/bin/bash
-# validate-build.sh
-
-IMAGE=$1
-
-echo "Validating $IMAGE..."
-
-# Check base tools
-docker run --rm $IMAGE terraform version || exit 1
-docker run --rm $IMAGE kubectl version --client || exit 1
-docker run --rm $IMAGE helm version || exit 1
-docker run --rm $IMAGE ansible --version || exit 1
-docker run --rm $IMAGE trivy --version || exit 1
-docker run --rm $IMAGE python3 --version || exit 1
-docker run --rm $IMAGE node --version || exit 1
-
-# Check cloud tools (if present)
-docker run --rm $IMAGE aws --version 2>/dev/null && echo "AWS CLI: OK"
-docker run --rm $IMAGE gcloud --version 2>/dev/null && echo "gcloud: OK"
-
-echo "✅ Validation complete!"
-```
-
-**Usage**:
 ```bash
 ./validate-build.sh all-devops:local
 ```
 
-### Repository Test Scripts
-
-If building from the repository, additional test scripts are available:
+The repository also has test scripts for the network tools. Each takes the image as its first argument:
 
 ```bash
-# Test network tools
 ./test_network_tools.sh all-devops:local
-
-# Test DNS resolution
 ./test_dns_tools.sh all-devops:local
-
-# Test ncat (network cat)
 ./test_ncat_tool.sh all-devops:local
 ```
 
----
+## Speed up rebuilds
 
-## Optimisation Techniques
+=== ":lucide-layers-3: Reuse the base"
 
-### Reduce Build Time
+    Build targets one after another on the same builder. BuildKit reuses the cached `base` layers, so only the cloud layer runs for the second and third targets.
 
-=== "Parallel Builds"
+=== ":lucide-hard-drive: Local cache directory"
 
-    ```bash
-    # Build multiple images in parallel
-    docker build --target aws-devops -t aws-devops:local . &
-    docker build --target gcp-devops -t gcp-devops:local . &
-    wait
-    ```
-
-=== "BuildKit Parallelism"
+    With a `docker-container` buildx builder you can export the cache and reuse it later, or on another machine:
 
     ```bash
-    # Enable parallel layer builds
-    BUILDKIT_STEP_LOG_MAX_SIZE=10000000 \
-    BUILDKIT_STEP_LOG_MAX_SPEED=10000000 \
-    docker build --target all-devops -t all-devops:local .
+    docker buildx create --name devops --driver docker-container --use
+    docker buildx build --target all-devops \
+      --cache-from type=local,src=.buildx-cache \
+      --cache-to type=local,dest=.buildx-cache,mode=max \
+      -t all-devops:local --load .
     ```
 
-=== "Fast Package Manager"
+=== ":simple-githubactions: CI cache"
 
-    ```dockerfile
-    # Use faster mirrors
-    RUN sed -i 's|^mirrorlist=|#mirrorlist=|g' /etc/yum.repos.d/Rocky-*.repo && \
-        sed -i 's|^#baseurl=http://dl.rockylinux.org|baseurl=https://mirror.example.com|g' /etc/yum.repos.d/Rocky-*.repo
+    The project's own workflow uses the GitHub Actions cache backend per target and architecture:
+
+    ```yaml
+    cache-from: type=gha,scope=all-devops-amd64
+    cache-to: type=gha,mode=max,scope=all-devops-amd64
     ```
 
-### Reduce Image Size
+!!! note "The published images can't seed your cache"
+    The published images are built with the GitHub Actions cache backend and carry no inline cache metadata, so `--cache-from ghcr.io/jinalshah/devops/images/all-devops:latest` won't speed up your build.
 
-See [Optimisation Guide](optimization.md) for detailed size reduction techniques.
-
----
+To shrink an image, see the [Optimisation guide](optimization.md).
 
 ## Troubleshooting
 
-??? question "Build fails with 'No space left on device'"
+??? question "`No space left on device`"
+    Free up space with `docker builder prune` (build cache) and `docker image prune -a`. On Docker Desktop, raise the disk limit under **Settings → Resources**.
 
-    **Problem**: Insufficient disk space for build layers
+??? question "The Python step fails"
+    Check that `PYTHON_VERSION` is a full release that exists on python.org (for example `3.13.7`, not `3.13`), and that `PYTHON_VERSION_TO_USE` names the same minor version (`python3.13`).
 
-    **Solutions**:
+??? question "A download returns 404"
+    A pinned version probably doesn't exist, or doesn't publish a build for your architecture. Check the release page for the tool, then pass a different `--build-arg`, for example `--build-arg GCLOUD_VERSION=<a version from the SDK release notes>`.
 
-    1. Clean up Docker system:
-       ```bash
-       docker system prune -a --volumes
-       ```
+??? question "Repository mirrors are slow or unreachable"
+    Rocky Linux 10's repo definitions are `/etc/yum.repos.d/rocky*.repo`. To use an internal mirror in a fork of the Dockerfile:
 
-    2. Check available space:
-       ```bash
-       df -h /var/lib/docker
-       ```
+    ```dockerfile
+    RUN sed -i -e 's|^mirrorlist=|#mirrorlist=|' \
+               -e 's|^#baseurl=http://dl.rockylinux.org|baseurl=https://mirror.example.com|' \
+               /etc/yum.repos.d/rocky*.repo
+    ```
 
-    3. Increase Docker Desktop disk size:
-       - Settings → Resources → Disk image size → 60 GB
+??? question "Building amd64 on Apple Silicon is very slow"
+    Cross-architecture builds run under emulation. Build `linux/arm64` locally, or build each architecture on a native machine as CI does. See [Multi-platform images](multi-platform-images.md).
 
-??? question "Build takes extremely long (>1 hour)"
+## Next steps
 
-    **Problem**: Network issues or no layer caching
+<div class="grid cards" markdown>
 
-    **Solutions**:
+-   :lucide-gauge: [__Optimisation__](optimization.md)
 
-    1. Check network speed:
-       ```bash
-       curl -o /dev/null https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
-       ```
+    Where the size comes from and how to trim it.
 
-    2. Enable BuildKit (faster):
-       ```bash
-       export DOCKER_BUILDKIT=1
-       ```
+-   :lucide-puzzle: [__Customisation__](customization.md)
 
-    3. Use cache from registry:
-       ```bash
-       docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-       docker build --cache-from ghcr.io/jinalshah/devops/images/all-devops:latest -t all-devops:local .
-       ```
+    Extend the published images with your own tools.
 
-??? question "Cannot download packages (404 errors)"
+-   :lucide-cpu: [__Multi-platform__](multi-platform-images.md)
 
-    **Problem**: Package repositories unreachable or versions unavailable
+    Build and publish amd64 + arm64.
 
-    **Solutions**:
+-   :lucide-hammer: __Per-image notes__
 
-    1. Check internet connectivity:
-       ```bash
-       ping -c 3 dl.k8s.io
-       ```
+    [all-devops](all-devops.md) · [aws-devops](aws-devops.md) · [gcp-devops](gcp-devops.md)
 
-    2. Use build arg to pin working version:
-       ```bash
-       docker build --build-arg TERRAGRUNT_VERSION=0.67.0 -t all-devops:local .
-       ```
-
-    3. Check Rocky Linux mirrors:
-       ```bash
-       docker run --rm rockylinux/rockylinux:10 dnf repolist
-       ```
-
-??? question "Build fails on M1/M2 Mac"
-
-    **Problem**: Architecture mismatch or emulation issues
-
-    **Solutions**:
-
-    1. Build for native architecture:
-       ```bash
-       docker build --platform linux/arm64 --target all-devops -t all-devops:local .
-       ```
-
-    2. Disable Rosetta emulation in Docker Desktop:
-       - Settings → Features in development → Uncheck "Use Rosetta"
-
-    3. Use native arm64 builders:
-       ```bash
-       docker buildx create --name arm-builder --platform linux/arm64
-       docker buildx use arm-builder
-       ```
-
-??? question "Python or Node.js version errors"
-
-    **Problem**: Incompatible Python/Node.js version
-
-    **Solutions**:
-
-    1. Specify version with build arg:
-       ```bash
-       docker build --build-arg PYTHON_VERSION=3.11 -t all-devops:local .
-       ```
-
-    2. Check available versions in Dockerfile:
-       ```bash
-       grep "PYTHON_VERSION" Dockerfile
-       ```
-
-??? question "gcloud SDK installation fails"
-
-    **Problem**: Large download, network timeout
-
-    **Solutions**:
-
-    1. Increase build timeout (CI/CD):
-       ```yaml
-       # GitHub Actions
-       timeout-minutes: 60
-       ```
-
-    2. Use cached layer:
-       ```bash
-       docker build --cache-from ghcr.io/jinalshah/devops/images/gcp-devops:latest .
-       ```
-
-    3. Download manually and add to build context:
-       ```bash
-       curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-501.0.0-linux-x86_64.tar.gz
-       ```
-
----
-
-## Platform-Specific Builds
-
-### macOS (Apple Silicon)
-
-```bash
-# Build for native arm64
-docker build \
-  --platform linux/arm64 \
-  --target all-devops \
-  -t all-devops:local .
-```
-
-**Notes**:
-- Faster than emulated amd64
-- All tools have native arm64 support
-- No compatibility issues
-
-### Windows (WSL2)
-
-```bash
-# From WSL2 terminal
-export DOCKER_BUILDKIT=1
-docker build --target all-devops -t all-devops:local .
-```
-
-**Notes**:
-- Use WSL2 for best performance
-- Avoid Docker Desktop with Hyper-V (slower)
-- Ensure WSL2 has enough memory (Settings → WSL)
-
-### Linux
-
-```bash
-# Standard build
-docker build --target all-devops -t all-devops:local .
-```
-
-**Notes**:
-- Best performance (native)
-- No emulation overhead
-- Fastest build times
-
----
-
-## Advanced Build Topics
-
-### Multi-Platform Builds
-
-Build for both amd64 and arm64:
-
-```bash
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  --target all-devops \
-  -t all-devops:multiarch \
-  --load .
-```
-
-See [Multi-Platform Images](multi-platform-images.md) for complete guide.
-
-### Custom Builds
-
-Extend images with custom tools:
-
-```bash
-# Create custom Dockerfile
-FROM ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Add custom tools
-RUN pip3 install custom-package
-RUN curl -o /usr/local/bin/custom-tool https://example.com/tool
-
-# Build
-docker build -f Dockerfile.custom -t all-devops:custom .
-```
-
-See [Customisation Guide](customization.md) for detailed examples.
-
-### Automated Builds
-
-Set up CI/CD to build automatically:
-
-- [GitHub Actions build workflow](https://github.com/jinalshah/devops-images/blob/main/.github/workflows/image-builder.yml) - Example in repository
-- [GitLab CI](../workflows/ci-cd-gitlab.md) - Build pipeline
-- [Jenkins](../workflows/ci-cd-jenkins.md) - Declarative pipeline
-
----
-
-## Cloud-Specific Build Guides
-
-Detailed build instructions for each variant:
-
-- [Building all-devops](all-devops.md) - Multi-cloud image
-- [Building aws-devops](aws-devops.md) - AWS-optimised image
-- [Building gcp-devops](gcp-devops.md) - GCP-optimised image
-
----
-
-## Best Practices
-
-!!! tip "Build Recommendations"
-
-    1. **Use cache**: Always enable `--cache-from` in CI/CD
-    2. **Pin versions**: Use build args to lock versions for reproducibility
-    3. **Test locally first**: Validate builds before CI/CD
-    4. **Monitor build times**: Track and optimise slow stages
-    5. **Clean regularly**: Run `docker system prune` weekly
-
-!!! warning "Common Mistakes"
-
-    - ❌ Building without BuildKit (slower)
-    - ❌ No layer caching (rebuilds everything)
-    - ❌ Not pinning versions (non-reproducible)
-    - ❌ Building on low-spec machines (slow)
-    - ❌ Not validating after build (broken images)
-
----
-
-## Next Steps
-
-- [Optimisation Guide](optimization.md) - Reduce size and build time
-- [Customisation Guide](customization.md) - Extend with custom tools
-- [Multi-Platform Guide](multi-platform-images.md) - Build for amd64 and arm64
-- [Architecture Overview](../architecture/index.md) - Understand image layers
+</div>

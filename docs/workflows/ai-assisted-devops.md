@@ -1,630 +1,327 @@
 # AI-Assisted DevOps Workflows
 
-Leverage AI CLI tools (Claude, Codex, Copilot, Gemini) for code generation, review, and troubleshooting in your DevOps workflows.
+Put the four AI assistants in the images (Claude Code, Codex CLI, Copilot CLI and Antigravity CLI) to work on real infrastructure tasks: reviewing changes, writing modules, explaining failures and reviewing pull requests in CI.
 
-!!! info "AI CLI Tools Included"
-    All DevOps Images include four AI CLI assistants. See the [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for authentication details.
+!!! info "Sign in first"
+    Every example assumes you've signed in, or are passing a CI token. See the [AI CLI setup guide](../tool-basics/ai-cli-setup.md) for each assistant's login, environment variables and config directory. Google's Gemini CLI has been [replaced by Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) (`agy`), and the examples use `agy`.
 
-## Overview
+## The golden rule: AI suggests, tools verify
 
-The DevOps Images include four powerful AI CLI tools that can accelerate your infrastructure and automation workflows:
-
-| AI Tool | Provider | Strengths | Best For |
-|---------|----------|-----------|----------|
-| **Claude CLI** | Anthropic | Long context (200K tokens), reasoning, analysis | Code review, architecture decisions, documentation |
-| **Codex CLI** | OpenAI | Fast code generation | Quick scripts, Terraform modules, one-off tasks |
-| **Copilot CLI** | GitHub | GitHub integration | PR reviews, GitHub Actions, repository operations |
-| **Antigravity CLI** | Google | Agentic workflows, GCP knowledge | GCP-specific tasks, multi-step changes, diverse inputs |
-
-## Common AI-Assisted Workflows
-
-### Workflow 1: AI Code Review Before Deployment
-
-Use AI to review infrastructure code before applying changes:
+AI output is a first draft. Every workflow here runs the image's deterministic tools on it before anything reaches a cloud account.
 
 ```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant Claude as Claude CLI
-    participant TFLint as TFLint
-    participant Trivy as Trivy
-    participant TF as Terraform
+flowchart LR
+  A["AI review or<br/>generate"] --> V["terraform validate<br/>tflint · ansible-lint"]
+  V --> S["trivy config"]
+  S --> P["terraform plan"]
+  P --> H{"Human<br/>review"}
+  H -->|approve| D["terraform apply"]
+  H -->|changes| A
 
-    Dev->>Claude: Review Terraform code
-    Claude-->>Dev: Suggestions + issues found
-
-    Dev->>Dev: Fix issues
-
-    Dev->>TFLint: Lint code
-    TFLint-->>Dev: Validation passed
-
-    Dev->>Trivy: Security scan
-    Trivy-->>Dev: No vulnerabilities
-
-    Dev->>TF: terraform apply
-    TF-->>Dev: Deployment successful
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class A ai
+  class V,S,P base
+  class H neutral
+  class D all
 ```
 
-**Implementation**:
+All the snippets below run **inside** the container, from a shell started like this (mount only the logins you use):
 
 ```bash
-#!/bin/bash
-# AI-powered review pipeline
-
-echo "🤖 Running AI code review..."
-
-# Step 1: AI review with Claude
-docker run --rm \
-  -v $PWD:/workspace \
+docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
   -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this Terraform code for security issues, best practices, and potential bugs. Focus on: 1) Security groups and IAM policies, 2) Resource naming and tagging, 3) State management, 4) Cost optimization" \
-  --file terraform/main.tf \
-  > ai-review.md
-
-# Step 2: Validate with TFLint
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "cd terraform && tflint"
-
-# Step 3: Security scan with Trivy
-docker run --rm \
-  -v $PWD:/workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy config workspace/terraform
-
-# Step 4: Review AI suggestions
-cat ai-review.md
-
-echo "✅ Review complete! Check ai-review.md for AI suggestions."
-```
-
-### Workflow 2: Generate Infrastructure Code with AI
-
-Generate Terraform modules or Ansible playbooks from natural language:
-
-```bash
-# Generate a Terraform module for AWS VPC
-docker run --rm \
-  -v $PWD:/workspace \
+  -v ~/.claude.json:/root/.claude.json \
   -v ~/.codex:/root/.codex \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "Create a Terraform module for an AWS VPC with:
-  - 3 public subnets across 3 AZs
-  - 3 private subnets across 3 AZs
-  - NAT gateways in each public subnet
-  - Internet gateway
-  - Proper route tables
-  - VPC Flow Logs to CloudWatch
-  - Tags for environment and project
-  Output as main.tf, variables.tf, and outputs.tf" \
-  > modules/vpc/main.tf
-
-# Validate generated code
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace/modules/vpc \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform validate
-```
-
-### Workflow 3: AI-Powered Troubleshooting
-
-Use AI to diagnose and fix errors:
-
-```bash
-# Capture error
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  terraform apply 2>&1 | tee error.log
-
-# AI diagnosis
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Analyze this Terraform error and provide:
-  1. Root cause explanation
-  2. Step-by-step fix
-  3. Prevention tips for the future" \
-  --stdin < error.log
-```
-
-### Workflow 4: Documentation Generation
-
-Auto-generate documentation from code:
-
-```bash
-# Generate README for Terraform module
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Generate comprehensive documentation for this Terraform module including:
-  - Purpose and use cases
-  - Input variables with descriptions and defaults
-  - Outputs with descriptions
-  - Usage examples
-  - Prerequisites
-  - Architecture diagram in Mermaid format
-  Output in README.md format" \
-  --file modules/eks/main.tf \
-  > modules/eks/README.md
-```
-
-## Real-World Examples
-
-### Example 1: AI-Reviewed Terraform Module
-
-**Scenario**: Create and review an AWS EKS cluster module
-
-```bash
-# Step 1: Generate module with Codex
-docker run --rm \
-  -v $PWD:/workspace \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "Create a production-ready Terraform module for AWS EKS cluster with:
-  - EKS cluster version 1.28
-  - Node groups with auto-scaling
-  - IRSA (IAM Roles for Service Accounts)
-  - CloudWatch logging
-  - Encryption at rest
-  - Private endpoint access
-  Include variables.tf and outputs.tf" \
-  > modules/eks/main.tf
-
-# Step 2: Review with Claude
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this EKS module for:
-  1. Security best practices (encryption, IAM, network policies)
-  2. High availability configuration
-  3. Cost optimization opportunities
-  4. Missing critical configurations
-  Provide specific recommendations" \
-  --file modules/eks/main.tf \
-  > modules/eks/review.md
-
-# Step 3: Validate
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace/modules/eks \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "terraform init && terraform validate && tflint"
-
-# Step 4: Security scan
-docker run --rm \
-  -v $PWD:/workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy config workspace/modules/eks
-
-echo "✅ Module generated, reviewed, and validated!"
-echo "📄 See modules/eks/review.md for AI recommendations"
-```
-
-### Example 2: Ansible Playbook Generation and Optimisation
-
-```bash
-# Generate playbook
-docker run --rm \
-  -v $PWD:/workspace \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "Create an Ansible playbook to:
-  - Install Docker on Ubuntu 22.04
-  - Configure Docker daemon with custom settings
-  - Set up Docker log rotation
-  - Add user to docker group
-  - Enable and start Docker service
-  Use best practices and idempotent tasks" \
-  > playbooks/docker-setup.yml
-
-# Review and optimize with Claude
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this Ansible playbook for:
-  - Idempotency
-  - Error handling
-  - Security considerations
-  - Performance optimization
-  - Best practices
-  Suggest improvements" \
-  --file playbooks/docker-setup.yml
-
-# Lint
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ansible-lint playbooks/docker-setup.yml
-```
-
-### Example 3: Multi-Cloud Migration Planning
-
-Use AI to plan and execute cloud migrations:
-
-```bash
-# Analyze existing AWS infrastructure
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Analyze this AWS infrastructure and create a migration plan to GCP. Include:
-  1. Service mapping (AWS → GCP equivalents)
-  2. Migration strategy (lift-and-shift vs re-architect)
-  3. Estimated effort and timeline
-  4. Risks and mitigation strategies
-  5. Cost comparison
-  Output as a detailed migration plan" \
-  --file terraform/aws/main.tf \
-  > migration-plan.md
-
-# Generate GCP equivalent
-docker run --rm \
-  -v $PWD:/workspace \
+  -v ~/.copilot:/root/.copilot \
   -v ~/.gemini:/root/.gemini \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-  agy "Convert this AWS Terraform configuration to GCP equivalent using Google Cloud Platform best practices" \
-  --file terraform/aws/main.tf \
-  > terraform/gcp/main.tf
+  -v ~/.aws:/root/.aws \
+  ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Example 4: CI/CD Pipeline Enhancement
+!!! tip "Feeding files to an assistant"
+    None of the CLIs has a `--file` flag. Either **pipe** content in (`git diff | claude -p "..."`), or **name the files in the prompt**, since each agent can read the working directory itself.
 
-Get AI suggestions for improving your pipelines:
+## Workflow 1: Review changes before you apply
+
+The same review, done with whichever assistant you have. Piping `git diff` keeps the model focused on what changed.
+
+=== ":simple-claude: Claude"
+
+    ```bash
+    git diff main -- terraform/ | claude -p "Review this Terraform diff. Check for:
+    1. IAM policies with * actions or resources
+    2. Security groups open to 0.0.0.0/0
+    3. Unencrypted storage
+    4. Missing environment/project/owner tags
+    Rate each finding high, medium or low." > ai-review.md
+    ```
+
+=== ":lucide-sparkles: Codex"
+
+    ```bash
+    git diff main -- terraform/ | codex exec "Review this Terraform diff for
+    over-permissive IAM, open security groups, unencrypted storage and missing tags.
+    Rate each finding high, medium or low." > ai-review.md
+    ```
+
+=== ":simple-githubcopilot: Copilot"
+
+    ```bash
+    git diff main -- terraform/ > /tmp/tf.diff
+    copilot -s --allow-all-tools -p "Review the Terraform diff in /tmp/tf.diff for
+    over-permissive IAM, open security groups, unencrypted storage and missing tags.
+    Rate each finding high, medium or low." > ai-review.md
+    ```
+
+=== ":simple-googlegemini: Antigravity"
+
+    ```bash
+    git diff main -- terraform/ | agy -p "Review this Terraform diff for
+    over-permissive IAM, open security groups, unencrypted storage and missing tags.
+    Rate each finding high, medium or low." > ai-review.md
+    ```
+
+Then let the deterministic tools have their say:
 
 ```bash
-# Review GitHub Actions workflow
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.copilot:/root/.copilot \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot "Review this GitHub Actions workflow and suggest:
-  - Performance optimizations (caching, parallelization)
-  - Security improvements
-  - Better error handling
-  - Cost reduction strategies
-  - Additional quality gates" \
-  --file .github/workflows/deploy.yml
-
-# Generate GitLab CI equivalent
-docker run --rm \
-  -v $PWD:/workspace \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "Convert this GitHub Actions workflow to GitLab CI format with equivalent functionality" \
-  --file .github/workflows/deploy.yml \
-  > .gitlab-ci.yml
+cd terraform
+terraform init -backend=false && terraform validate
+tflint
+trivy config .
 ```
 
-## Advanced AI Workflows
+## Workflow 2: Generate a module, then prove it
 
-### Workflow: AI-Powered Security Audit
+Let an agent write files directly rather than redirecting its chat output into a `.tf` file. You get clean HCL across several files.
 
-Comprehensive security review using multiple AI tools:
+=== ":lucide-sparkles: Codex"
+
+    ```bash
+    codex exec --sandbox workspace-write "Create a Terraform module in modules/vpc with
+    main.tf, variables.tf and outputs.tf: a VPC with 3 public and 3 private subnets
+    across 3 AZs, one NAT gateway per AZ, VPC Flow Logs to CloudWatch, and
+    environment/project tags on everything."
+    ```
+
+=== ":simple-claude: Claude"
+
+    ```bash
+    claude --permission-mode acceptEdits -p "Create a Terraform module in modules/vpc with
+    main.tf, variables.tf and outputs.tf: a VPC with 3 public and 3 private subnets
+    across 3 AZs, one NAT gateway per AZ, VPC Flow Logs to CloudWatch, and
+    environment/project tags on everything."
+    ```
+
+=== ":simple-googlegemini: Antigravity"
+
+    ```bash
+    agy --mode accept-edits -p "Create a Terraform module in modules/vpc with
+    main.tf, variables.tf and outputs.tf: a VPC with 3 public and 3 private subnets
+    across 3 AZs, one NAT gateway per AZ, VPC Flow Logs to CloudWatch, and
+    environment/project tags on everything."
+    ```
+
+Prove it before trusting it:
 
 ```bash
-#!/bin/bash
-# ai-security-audit.sh
-
-WORKSPACE=$PWD
-
-echo "🔒 Starting AI-powered security audit..."
-
-# Audit 1: Terraform security with Claude
-echo "1️⃣ Terraform security review..."
-docker run --rm \
-  -v $WORKSPACE:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Perform a comprehensive security audit of this Terraform code. Check for:
-  - Overly permissive IAM policies
-  - Public-facing resources
-  - Unencrypted data stores
-  - Missing security groups
-  - Hardcoded secrets
-  - Compliance issues (CIS benchmarks)
-  Rate each finding by severity" \
-  --file terraform/ \
-  > reports/terraform-security.md
-
-# Audit 2: Ansible security with Claude
-echo "2️⃣ Ansible security review..."
-docker run --rm \
-  -v $WORKSPACE:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Audit these Ansible playbooks for security issues:
-  - Privilege escalation risks
-  - Insecure file permissions
-  - Hardcoded credentials
-  - Unsafe module usage
-  - Missing input validation" \
-  --file ansible/ \
-  > reports/ansible-security.md
-
-# Audit 3: Container security with Trivy + Claude interpretation
-echo "3️⃣ Container security scan..."
-docker run --rm \
-  -v $WORKSPACE:/workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy config workspace/ --format json \
-  > reports/trivy-results.json
-
-docker run --rm \
-  -v $WORKSPACE:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Analyze this Trivy scan result and provide:
-  - Executive summary
-  - Critical findings prioritized
-  - Remediation steps
-  - Long-term recommendations" \
-  --file reports/trivy-results.json \
-  > reports/trivy-analysis.md
-
-# Audit 4: CI/CD pipeline security
-echo "4️⃣ CI/CD security review..."
-docker run --rm \
-  -v $WORKSPACE:/workspace \
-  -v ~/.copilot:/root/.copilot \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot "Audit CI/CD workflows for security issues:
-  - Secrets management
-  - Permission scopes
-  - Third-party actions security
-  - Code injection risks
-  - Artifact security" \
-  --file .github/workflows/ \
-  > reports/cicd-security.md
-
-echo "✅ Security audit complete!"
-echo "📊 Reports generated in reports/"
-ls -lh reports/
+cd modules/vpc
+terraform init -backend=false
+terraform fmt -check && terraform validate && tflint
+trivy config .
 ```
 
-### Workflow: Automated Infrastructure Documentation
+!!! example "Second opinion"
+    Generate with one assistant and review with another, for example `codex exec` to write and `git diff | claude -p "review"` to check. Different models tend to catch different mistakes.
 
-Keep documentation in sync with code:
+## Workflow 3: Explain a failure
+
+Pipe the error straight in. `2>&1` makes sure stderr, where most tools write their errors, comes along too.
 
 ```bash
-#!/bin/bash
-# auto-document.sh
+terraform apply 2>&1 | tee apply.log
+claude -p "This terraform apply failed. Explain the root cause, give a step-by-step fix,
+and say how to prevent it. The config is in the current directory." < apply.log
+```
 
-# Generate module documentation
-for module in modules/*; do
-  echo "📝 Documenting $module..."
+It works the same for Kubernetes and Ansible:
 
-  docker run --rm \
-    -v $PWD:/workspace \
-    -v ~/.claude:/root/.claude \
-    -w /workspace \
-    ghcr.io/jinalshah/devops/images/all-devops:latest \
-    claude "Generate complete documentation for this Terraform module:
-    - Overview and purpose
-    - Architecture diagram (Mermaid)
-    - Variables table with descriptions, types, defaults
-    - Outputs table
-    - Usage examples
-    - Dependencies
-    - Version requirements
-    Format as professional README.md" \
-    --file $module/main.tf \
-    > $module/README.md
+```bash
+kubectl describe pod my-app-7d9c -n prod | agy -p "Why is this pod not starting?"
 
-  echo "✅ Generated $module/README.md"
+ansible-playbook site.yml 2>&1 | tail -50 | codex exec "Explain this Ansible failure and suggest a fix"
+```
+
+## Workflow 4: Triage security scan results
+
+Scanners are thorough but noisy. Let an assistant sort the findings and draft the fixes:
+
+```bash
+trivy config --format json . > trivy.json
+agy -p "Summarise trivy.json for an engineer: group findings by severity,
+list the top five to fix first, and show the Terraform change for each." > trivy-triage.md
+```
+
+## Workflow 5: Keep module docs up to date
+
+```bash
+for module in modules/*/; do
+  echo "Documenting $module"
+  claude --permission-mode acceptEdits -p "Write ${module}README.md for the Terraform module in ${module}:
+  purpose, a table of inputs (type, default, description), a table of outputs,
+  and a usage example. Base it only on the .tf files in that directory."
 done
-
-# Generate architecture diagrams
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Analyze all Terraform modules and create a high-level architecture diagram in Mermaid format showing:
-  - Resource relationships
-  - Data flow
-  - Network topology
-  - External dependencies" \
-  --file terraform/ \
-  > docs/architecture.md
-
-echo "📚 Documentation generation complete!"
 ```
 
-## CI/CD Integration with AI Review
+## CI: AI review on every pull request
 
-### GitHub Actions: AI Code Review Bot
+The images already contain `git`, `gh` and all four assistants, so a review job just needs a token.
 
-```yaml
-name: AI Code Review
+=== ":simple-githubactions: GitHub Actions + Claude"
 
-on:
-  pull_request:
-    paths:
-      - 'terraform/**'
-      - 'ansible/**'
+    ```yaml
+    name: AI review
 
-jobs:
-  ai-review:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:latest
+    on:
+      pull_request:
+        paths: ['terraform/**', 'ansible/**']
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    permissions:
+      contents: read
+      pull-requests: write
 
-      - name: Get changed files
-        id: changed-files
-        run: |
-          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+    jobs:
+      ai-review:
+        runs-on: ubuntu-latest
+        container:
+          image: ghcr.io/jinalshah/devops/images/all-devops:latest
+        steps:
+          - uses: actions/checkout@v7
+            with:
+              fetch-depth: 0
 
-      - name: AI Review with Claude
-        env:
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
-        run: |
-          mkdir -p reviews
+          - name: Review the diff
+            env:
+              ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+            run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
+              git diff "origin/${{ github.base_ref }}...HEAD" -- terraform ansible \
+                | claude -p "Review this pull request diff for security issues, bugs and
+                  risky infrastructure changes. Be specific and concise; use Markdown." \
+                > review.md
 
-          # Review each changed file
-          while IFS= read -r file; do
-            if [[ $file == *.tf ]] || [[ $file == *.yml ]]; then
-              echo "Reviewing $file..."
-              claude "Review this file for:
-              - Security issues
-              - Best practices
-              - Potential bugs
-              - Performance concerns
-              Provide specific, actionable feedback" \
-              --file "$file" \
-              > "reviews/$(basename $file).review.md"
-            fi
-          done < changed_files.txt
+          - name: Comment on the PR
+            env:
+              GH_TOKEN: ${{ github.token }}
+            run: gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --body-file review.md
+    ```
 
-      - name: Post Review Comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const reviews = fs.readdirSync('reviews')
-              .map(file => fs.readFileSync(`reviews/${file}`, 'utf8'))
-              .join('\n\n---\n\n');
+=== ":simple-githubactions: GitHub Actions + Copilot"
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🤖 AI Code Review\n\n${reviews}`
-            });
-```
+    ```yaml
+          - name: Review the diff
+            env:
+              COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+            run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
+              git diff "origin/${{ github.base_ref }}...HEAD" -- terraform > /tmp/pr.diff
+              copilot -s --allow-all-tools \
+                -p "Review the diff in /tmp/pr.diff for security issues and risky changes. Use Markdown." \
+                > review.md
+    ```
 
-### GitLab CI: AI-Enhanced Pipeline
+    `COPILOT_PAT` is a fine-grained PAT with the **Copilot Requests** permission. The built-in `github.token` can't call Copilot.
 
-```yaml
-stages:
-  - ai-review
-  - validate
-  - deploy
+=== ":simple-gitlab: GitLab CI + Codex"
 
-ai:review:
-  stage: ai-review
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
-  script:
-    - |
-      claude "Review this merge request's infrastructure changes for:
-      - Security vulnerabilities
-      - Cost implications
-      - Architectural concerns
-      - Breaking changes
-      Provide a summary and recommendations" \
-      --file terraform/ \
-      > ai-review.md
+    ```yaml
+    ai:review:
+      stage: test
+      image: registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+      variables:
+        GIT_DEPTH: "0"
+      rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      script:
+        - >
+          git diff "$CI_MERGE_REQUEST_DIFF_BASE_SHA...HEAD" -- terraform
+          | codex exec "Review this merge request diff for security issues and risky changes. Use Markdown."
+          > ai-review.md
+        - >
+          curl --fail --request POST
+          --header "PRIVATE-TOKEN: $GITLAB_TOKEN"
+          --data-urlencode "body@ai-review.md"
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes"
+      artifacts:
+        paths: [ai-review.md]
+    ```
 
-      # Post to MR discussion
-      curl --request POST \
-        --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-        --data "body=$(cat ai-review.md)" \
-        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes"
-  only:
-    - merge_requests
-```
+    Set `CODEX_API_KEY` and `GITLAB_TOKEN` (a token with `api` scope) as masked CI/CD variables.
 
-## Best Practices
+=== ":simple-googlegemini: Any CI + Antigravity"
 
-!!! tip "AI CLI Best Practices"
+    ```bash
+    mkdir -p ~/.gemini/antigravity-cli
+    echo '{"modelProvider": "gemini"}' > ~/.gemini/antigravity-cli/settings.json
+    # GEMINI_API_KEY comes from your CI secret store
+    git diff origin/main...HEAD | agy -p "Review this diff for risky changes" --print-timeout 5m > review.md
+    ```
 
-    1. **Be Specific**: Provide detailed context and requirements
-    2. **Iterate**: Use AI suggestions as starting point, refine as needed
-    3. **Validate**: Always validate AI-generated code with linters and tests
-    4. **Review**: Manually review AI suggestions, don't blindly accept
-    5. **Combine Tools**: Use multiple AI tools for different perspectives
-    6. **Version Control**: Track AI prompts and responses for reproducibility
+    If `agy` fails headless, it exits with code `3` and writes `AGY_ERROR: {json}` to stderr, so the job fails loudly.
 
-!!! warning "AI Limitations"
+!!! warning "Keep AI review advisory"
+    Post the review as a comment and let humans decide. Don't let an AI job approve or merge, and don't give it cloud credentials it doesn't need.
 
-    - **Not Infallible**: AI can make mistakes or hallucinate
-    - **Context Limits**: Large codebases may exceed context windows
-    - **Outdated Knowledge**: May not know latest tool versions
-    - **Security Sensitive**: Never share production secrets with AI
-    - **Compliance**: Review AI-generated code for compliance requirements
+## Best practices
 
-## Cost Optimisation
+<div class="grid cards" markdown>
 
-AI API calls have costs. Optimise usage:
+-   :lucide-scan-search:{ .lg .middle } __Give it evidence__
 
-1. **Batch operations**: Review multiple files in one prompt
-2. **Cache responses**: Save reviews for similar code patterns
-3. **Use appropriate models**: Smaller models for simple tasks
-4. **Set budgets**: Use API rate limits and spending caps
-5. **Local alternatives**: Consider local LLMs for sensitive work
+    ---
+
+    Pipe in diffs, plan output, logs and scan JSON. Specific context gets specific answers.
+
+-   :lucide-shield-check:{ .lg .middle } __Verify everything__
+
+    ---
+
+    `validate`, `tflint`, `ansible-lint`, `trivy` and a human review, every time.
+
+-   :lucide-lock:{ .lg .middle } __Guard secrets__
+
+    ---
+
+    Never paste credentials or `.tfstate` into a prompt. Mount only the credentials the task needs.
+
+-   :lucide-wand-sparkles:{ .lg .middle } __Save good prompts__
+
+    ---
+
+    Keep prompts that work in scripts or `AGENTS.md` / `GEMINI.md` context files so the team reuses them.
+
+</div>
+
+!!! tip "Keeping costs down"
+    Review the diff, not the whole repository. Pick a smaller or faster model with `--model` for routine checks. Set spending limits in your vendor console. Current pricing: [Claude](https://www.anthropic.com/pricing), [OpenAI API](https://openai.com/api/pricing/), [GitHub Copilot](https://github.com/features/copilot/plans), [Antigravity](https://antigravity.google/docs).
 
 ## Troubleshooting
 
-??? question "AI CLI authentication failing"
+??? question "The command opens an interactive UI or hangs in CI"
+    Use the non-interactive form: `claude -p`, `codex exec`, `copilot -p ... --allow-all-tools` or `agy -p`.
 
-    See [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) for detailed authentication steps for each tool.
+??? question "The input is too large"
+    Narrow it down: `git diff -- path/`, `tail -200 build.log`, or `trivy ... --severity HIGH,CRITICAL`. Or skip piping, name the files in the prompt and let the agent read only what it needs.
 
-??? question "Context window exceeded"
+??? question "The answers are generic"
+    Name what to check for (IAM wildcards, `0.0.0.0/0`, encryption, tags) and what shape you want back (a table, a severity ranking, a patch).
 
-    **Problem**: File too large for AI context
+## Next steps
 
-    **Solution**: Split into smaller chunks or use summary approach
-    ```bash
-    # Summarize large file first
-    head -n 100 large-file.tf > summary.tf
-    claude "Review this excerpt" --file summary.tf
-    ```
-
-??? question "AI responses are generic or unhelpful"
-
-    **Problem**: Prompt lacks specificity
-
-    **Solution**: Provide more context and specific requirements
-    ```bash
-    # ❌ Bad: Generic
-    claude "Review this code" --file main.tf
-
-    # ✅ Good: Specific
-    claude "Review this Terraform code for:
-    1. IAM permission security (check for * wildcards)
-    2. S3 bucket encryption at rest
-    3. VPC security group rules (no 0.0.0.0/0)
-    4. Missing tags (environment, project, owner)
-    5. Cost optimization opportunities" \
-    --file main.tf
-    ```
-
-## Next Steps
-
-- [AI CLI Setup Guide](../tool-basics/ai-cli-setup.md) - Authentication and configuration
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining AI with other DevOps tools
-- [GitHub Actions Examples](ci-cd-github.md) - Complete CI/CD configurations
-- [Authentication Guide](../use-images/authentication.md) - Credential management
+- [AI CLI setup guide](../tool-basics/ai-cli-setup.md): sign-in and flags for each assistant
+- [Multi-tool patterns](multi-tool-patterns.md): chain AI with Terraform, Helm and Ansible
+- [GitHub Actions examples](ci-cd-github.md): complete pipeline configurations
+- [Authentication guide](../use-images/authentication.md): credential management

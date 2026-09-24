@@ -1,264 +1,211 @@
 # Choosing the Right Image
 
-Use this guide to select the best DevOps image for your needs.
+Use this guide to pick the best image for you. Answer three quick questions, or read on for the full comparison.
 
-## Decision Tree
+<div class="di-widget" data-di-picker markdown>
+!!! note "Interactive picker"
+    This picker needs JavaScript. Without it, use the decision tree below.
+</div>
+
+## Decision tree
 
 ```mermaid
 flowchart TD
-    START[Which image<br/>should I use?]
+    START["Which image should I use?"] --> Q1{"Working with<br/>more than one cloud?"}
+    Q1 -->|Yes| ALL["all-devops<br/>AWS + Google Cloud"]
+    Q1 -->|No| Q2{"Which cloud?"}
+    Q2 -->|AWS| AWS["aws-devops<br/>AWS CLI v2 + Session Manager"]
+    Q2 -->|Google Cloud| GCP["gcp-devops<br/>gcloud + GKE auth plugin"]
+    Q2 -->|"Neither / not sure"| ALL
+    ALL --> DONE["Head to Quick Start"]
+    AWS --> DONE
+    GCP --> DONE
 
-    START --> Q1{Working with<br/>multiple clouds?}
-
-    Q1 -->|Yes| ALL[✅ Use all-devops<br/>✓ AWS + GCP tools<br/>✓ All features<br/>⚠️ Larger size ~3.2GB]
-
-    Q1 -->|No| Q2{Which cloud<br/>provider?}
-
-    Q2 -->|AWS| AWS_Q{Need AWS<br/>Session Manager?}
-    Q2 -->|GCP| GCP[✅ Use gcp-devops<br/>✓ gcloud tools<br/>✓ GKE ready<br/>✓ Smaller ~2.9GB]
-    Q2 -->|Neither/Local| BASE_Q{Need cloud<br/>CLI later?}
-
-    AWS_Q -->|Yes| AWS[✅ Use aws-devops<br/>✓ AWS CLI v2<br/>✓ Session Manager<br/>✓ CloudFormation tools<br/>✓ ~2.8GB]
-    AWS_Q -->|No| BASE_Q
-
-    BASE_Q -->|Maybe| ALL
-    BASE_Q -->|No| CONSIDER[Consider building<br/>custom base image<br/>without cloud tools]
-
-    ALL --> SIZE_Q{Concerned about<br/>image size?}
-    AWS --> SIZE_Q
-    GCP --> SIZE_Q
-
-    SIZE_Q -->|Yes| OPT[See Build Images ><br/>Optimization Guide]
-    SIZE_Q -->|No| DONE[🎯 You're all set!<br/>See Use Images guide]
-
-    style START fill:#4A90E2,color:#fff
-    style ALL fill:#FF6B6B,color:#fff
-    style AWS fill:#FF9F43,color:#fff
-    style GCP fill:#5F8D4E,color:#fff
-    style DONE fill:#48C774,color:#fff
+    classDef q fill:#334155,stroke:#1e293b,color:#fff
+    classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+    classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+    classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+    classDef done fill:#0d9488,stroke:#0f766e,color:#fff
+    class START,Q1,Q2 q
+    class ALL all
+    class AWS aws
+    class GCP gcp
+    class DONE done
 ```
 
-## Quick Comparison
+!!! info "Everything else is identical"
+    All three images share the same base: Terraform, Terragrunt, TFLint, Packer, kubectl, Helm, k9s, Ansible, Trivy, Python, Node.js, the four AI coding agents, database clients and network tools. You're only choosing which **cloud CLIs** come on top.
 
-| Feature | all-devops | aws-devops | gcp-devops |
-|---------|:----------:|:----------:|:----------:|
-| **Base Tools** | ✅ | ✅ | ✅ |
-| **Terraform & IaC** | ✅ | ✅ | ✅ |
-| **Kubernetes** | ✅ | ✅ | ✅ |
-| **AI CLI Tools** | ✅ | ✅ | ✅ |
-| **AWS CLI** | ✅ | ✅ | ❌ |
-| **gcloud** | ✅ | ❌ | ✅ |
-| **Session Manager** | ✅ | ✅ | ❌ |
-| **docker-credential-gcr** | ✅ | ❌ | ✅ |
-| **Size (approx)** | ~3.2GB | ~2.8GB | ~2.9GB |
-| **Best For** | Multi-cloud teams | AWS-first teams | GCP-first teams |
+## At a glance
 
-## Use Case Scenarios
+| | <span class="di-pill di-pill--all">all-devops</span> | <span class="di-pill di-pill--aws">aws-devops</span> | <span class="di-pill di-pill--gcp">gcp-devops</span> |
+|---|:---:|:---:|:---:|
+| Shared base toolkit | :material-check: | :material-check: | :material-check: |
+| AWS CLI v2 + Session Manager plugin | :material-check: | :material-check: | — |
+| boto3, cfn-lint, s3cmd, pytest | :material-check: | :material-check: | — |
+| gcloud (+ beta), gsutil, bq | :material-check: | — | :material-check: |
+| GKE auth plugin, docker-credential-gcr | :material-check: | — | :material-check: |
+| Download (compressed, amd64) | ~1.6 GB | ~1.55 GB | ~1.5 GB |
+| On disk (unpacked, amd64) | ~5.0 GB | ~4.6 GB | ~4.6 GB |
+| Best for | Multi-cloud and platform teams | AWS-first teams | Google Cloud-first teams |
 
-### Solo Developer - Local Development
+!!! tip "Size isn't a big differentiator"
+    The shared base is most of each image, so the single-cloud images are only about 0.4 GB smaller on disk than `all-devops`. Choose on the tools you need, not on size. If you do need something slimmer, [build a custom image](build-images/customization.md) from the `base` target.
 
-**Recommendation**: Start with **all-devops**
+## Scenarios
 
-- ✅ Maximum flexibility for experimentation
-- ✅ Try both AWS and GCP without switching images
-- ✅ All AI CLI tools for productivity
-- ⚠️  Slightly larger, but comprehensive
+=== ":lucide-user: Solo developer"
 
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+    **Use <span class="di-pill di-pill--all">all-devops</span>**
 
-### Team - Standardised AWS Environment
-
-**Recommendation**: **aws-devops**
-
-- ✅ Smaller image for faster CI/CD pulls
-- ✅ AWS-specific tools (Session Manager for EC2)
-- ✅ No unnecessary GCP tools
-- ✅ Team consistency
-
-```bash
-docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
-```
-
-### Team - Google Cloud Platform
-
-**Recommendation**: **gcp-devops**
-
-- ✅ GCP-optimised with gcloud
-- ✅ GCR authentication built-in
-- ✅ Smaller than all-devops
-- ✅ GKE-ready
-
-```bash
-docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
-```
-
-### CI/CD Pipeline - Multi-Cloud
-
-**Recommendation**: **all-devops** with version pinning
-
-- ✅ One image for all deployment targets
-- ✅ Consistent tooling across pipelines
-- ✅ Version pinning for reproducibility
-- 🎯 Use immutable tags
-
-```bash
-docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-```
-
-### Security-Conscious Team
-
-**Recommendation**: Start with **aws-devops** or **gcp-devops**, scan with Trivy
-
-- ✅ Smaller attack surface (fewer tools)
-- ✅ Trivy included for vulnerability scanning
-- ✅ Pin specific versions in production
-- 🔒 Regular security updates
-
-```bash
-# Pull and scan
-docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
-docker run --rm \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  trivy image ghcr.io/jinalshah/devops/images/aws-devops:latest
-```
-
-## Size vs Features Trade-off
-
-### What's in Each Image?
-
-```mermaid
-pie title all-devops Size Breakdown (~3.2GB)
-    "Rocky Linux Base" : 500
-    "System Packages" : 800
-    "Python + Packages" : 600
-    "Cloud CLIs (AWS + GCP)" : 900
-    "IaC Tools" : 300
-    "Other Tools" : 100
-```
-
-### Size Optimisation Strategies
-
-!!! tip "Reduce Image Size"
-    If size is a concern:
-
-    1. **Use cloud-specific images** - Save ~300-400MB by using aws-devops or gcp-devops instead of all-devops
-    2. **Pin versions** - Use immutable tags for Docker layer caching in CI/CD
-    3. **Build custom** - Remove tools you don't need (see [Customisation Guide](build-images/customization.md))
-    4. **Multi-stage builds** - Copy only what you need into final stage
-
-## Feature Comparison Matrix
-
-### Infrastructure as Code Tools
-
-| Tool | all-devops | aws-devops | gcp-devops | Notes |
-|------|:----------:|:----------:|:----------:|-------|
-| Terraform | ✅ | ✅ | ✅ | Multi-version via tfswitch |
-| Terragrunt | ✅ | ✅ | ✅ | Latest stable |
-| TFLint | ✅ | ✅ | ✅ | Linting and validation |
-| Packer | ✅ | ✅ | ✅ | Image building |
-
-### Kubernetes Tools
-
-| Tool | all-devops | aws-devops | gcp-devops | Notes |
-|------|:----------:|:----------:|:----------:|-------|
-| kubectl | ✅ | ✅ | ✅ | Latest stable |
-| Helm 3 | ✅ | ✅ | ✅ | Package manager |
-| k9s | ✅ | ✅ | ✅ | Terminal UI |
-
-### Cloud Provider Tools
-
-| Tool | all-devops | aws-devops | gcp-devops | Notes |
-|------|:----------:|:----------:|:----------:|-------|
-| AWS CLI v2 | ✅ | ✅ | ❌ | AWS service management |
-| Session Manager Plugin | ✅ | ✅ | ❌ | EC2 instance access |
-| gcloud | ✅ | ❌ | ✅ | GCP service management |
-| docker-credential-gcr | ✅ | ❌ | ✅ | GCR authentication |
-
-### AI CLI Tools
-
-| Tool | all-devops | aws-devops | gcp-devops | Notes |
-|------|:----------:|:----------:|:----------:|-------|
-| Claude CLI | ✅ | ✅ | ✅ | Code review, architecture |
-| Codex CLI | ✅ | ✅ | ✅ | Code generation |
-| Copilot CLI | ✅ | ✅ | ✅ | GitHub integration |
-| Antigravity CLI (`agy`) | ✅ | ✅ | ✅ | Agentic, GCP-aware |
-
-### Configuration Management
-
-| Tool | all-devops | aws-devops | gcp-devops | Notes |
-|------|:----------:|:----------:|:----------:|-------|
-| Ansible | ✅ | ✅ | ✅ | Latest stable |
-| ansible-lint | ✅ | ✅ | ✅ | Playbook validation |
-| pre-commit | ✅ | ✅ | ✅ | Git hook framework |
-| Task | ✅ | ✅ | ✅ | Modern task runner |
-
-## Still Not Sure?
-
-!!! question "Need Help Deciding?"
-    - **Starting fresh?** → Use **all-devops** for maximum flexibility
-    - **Existing AWS infrastructure?** → Use **aws-devops** for optimal size
-    - **Using GKE/Cloud Run?** → Use **gcp-devops** for GCP integration
-    - **CI/CD with multi-cloud deployments?** → Use **all-devops** with version pinning
-    - **Want to customise?** → Build your own based on any variant ([guide](build-images/customization.md))
-
-## Registry Choice
-
-All images are available in three registries:
-
-=== "GitHub Container Registry (Recommended)"
+    - Try AWS and Google Cloud without switching images
+    - Every tool is there when you need it
 
     ```bash
-    ghcr.io/jinalshah/devops/images/{image-name}:latest
+    docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
     ```
 
-    **Why GHCR?**
+=== ":fontawesome-brands-aws: AWS team"
 
-    - ✅ No rate limits for public images
-    - ✅ Best availability and uptime
-    - ✅ Integrated with GitHub releases
-    - ✅ Fast global CDN
+    **Use <span class="di-pill di-pill--aws">aws-devops</span>**
 
-=== "GitLab Container Registry"
+    - AWS CLI v2, SSO profiles and the Session Manager plugin for EC2 access without SSH
+    - boto3 and cfn-lint for scripting and CloudFormation
+    - No Google Cloud SDK to keep patched
 
     ```bash
-    registry.gitlab.com/jinal-shah/devops/images/{image-name}:latest
+    docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
     ```
 
-    **Why GitLab?**
+=== ":simple-googlecloud: Google Cloud team"
 
-    - ✅ Native GitLab CI integration
-    - ✅ Good for GitLab-first organisations
-    - ✅ Private runner support
+    **Use <span class="di-pill di-pill--gcp">gcp-devops</span>**
 
-=== "Docker Hub"
+    - gcloud with beta components, gsutil and bq
+    - `gke-gcloud-auth-plugin`, so `gcloud container clusters get-credentials` and kubectl work against GKE
+    - `docker-credential-gcr` for Artifact Registry authentication
 
     ```bash
-    js01/{image-name}:latest
+    docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
     ```
 
-    **Why Docker Hub?**
+=== ":lucide-workflow: Multi-cloud CI/CD"
 
-    - ✅ Familiar to most developers
-    - ⚠️  Rate limits apply (100 pulls/6h for anonymous)
-    - 💡 Best for authenticated users with Pro/Team accounts
+    **Use <span class="di-pill di-pill--all">all-devops</span> with a pinned tag**
 
-## Next Steps
+    - One image for every deployment target
+    - Pin a per-commit `1.0.<short-sha>` tag, or a `@sha256:` digest for exact bits (scheduled rebuilds refresh tags with newer tools)
 
-Once you've chosen your image:
+    ```yaml
+    container:
+      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+    ```
 
-1. **Get Started**: Follow the [Quick Start Guide](quick-start.md)
-2. **Pull the Image**: See [Use Images](use-images/index.md) for pull commands
-3. **Set Up Authentication**: Configure [credentials and volume mounts](use-images/authentication.md)
-4. **Explore Workflows**: Check out [real-world examples](workflows/index.md)
-5. **Customise**: Learn how to [build custom images](build-images/customization.md)
+=== ":lucide-shield-check: Security-conscious"
 
----
+    **Use the single-cloud image you need, and scan it**
 
-**Quick Links**:
+    - Fewer tools means a smaller attack surface
+    - Trivy is included, and it can scan any registry image directly (no Docker daemon needed):
 
-- [Architecture Overview](architecture/index.md)
-- [Tool Basics](tool-basics/index.md)
-- [Troubleshooting](troubleshooting/index.md)
+    ```bash
+    docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      trivy image --severity HIGH,CRITICAL ghcr.io/jinalshah/devops/images/aws-devops:latest
+    ```
+
+## Tool matrix
+
+=== "Infrastructure as code"
+
+    | Tool | all | aws | gcp | Notes |
+    |------|:---:|:---:|:---:|-------|
+    | Terraform | :material-check: | :material-check: | :material-check: | Latest at build time; switch versions with tfswitch |
+    | Terragrunt | :material-check: | :material-check: | :material-check: | Pinned per build, bumped automatically |
+    | TFLint | :material-check: | :material-check: | :material-check: | Pinned per build, bumped automatically |
+    | Packer | :material-check: | :material-check: | :material-check: | Pinned per build, bumped automatically |
+
+=== "Kubernetes"
+
+    | Tool | all | aws | gcp | Notes |
+    |------|:---:|:---:|:---:|-------|
+    | kubectl | :material-check: | :material-check: | :material-check: | Latest stable from dl.k8s.io at build time |
+    | Helm 3 | :material-check: | :material-check: | :material-check: | Package manager |
+    | k9s | :material-check: | :material-check: | :material-check: | Terminal UI |
+    | gke-gcloud-auth-plugin | :material-check: | — | :material-check: | Needed for GKE clusters |
+
+=== "Cloud"
+
+    | Tool | all | aws | gcp | Notes |
+    |------|:---:|:---:|:---:|-------|
+    | AWS CLI v2 | :material-check: | :material-check: | — | |
+    | Session Manager plugin | :material-check: | :material-check: | — | `aws ssm start-session` |
+    | gcloud, gsutil, bq | :material-check: | — | :material-check: | With `beta` components |
+    | docker-credential-gcr | :material-check: | — | :material-check: | Registry credential helper |
+
+=== "AI coding agents"
+
+    | Tool | all | aws | gcp | Notes |
+    |------|:---:|:---:|:---:|-------|
+    | Claude Code (`claude`) | :material-check: | :material-check: | :material-check: | Anthropic |
+    | Codex CLI (`codex`) | :material-check: | :material-check: | :material-check: | OpenAI |
+    | Copilot CLI (`copilot`) | :material-check: | :material-check: | :material-check: | GitHub |
+    | Antigravity CLI (`agy`) | :material-check: | :material-check: | :material-check: | Google (replaces Gemini CLI) |
+
+=== "Automation & quality"
+
+    | Tool | all | aws | gcp | Notes |
+    |------|:---:|:---:|:---:|-------|
+    | Ansible + ansible-lint | :material-check: | :material-check: | :material-check: | |
+    | pre-commit | :material-check: | :material-check: | :material-check: | Git hook framework |
+    | Task | :material-check: | :material-check: | :material-check: | Taskfile runner |
+    | Trivy | :material-check: | :material-check: | :material-check: | Vulnerability and IaC scanner |
+
+The [tool explorer](use-images/quick-reference.md#tool-explorer) lets you search all of them.
+
+## Registry choice
+
+=== ":simple-github: GHCR (recommended)"
+
+    ```bash
+    ghcr.io/jinalshah/devops/images/<image>:latest
+    ```
+
+    The recommended registry, and it's where each image's package page lives.
+
+=== ":simple-gitlab: GitLab"
+
+    ```bash
+    registry.gitlab.com/jinal-shah/devops/images/<image>:latest
+    ```
+
+    Handy if your pipelines already run on GitLab CI.
+
+=== ":simple-docker: Docker Hub"
+
+    ```bash
+    js01/<image>:latest
+    ```
+
+    Familiar, but anonymous pulls are rate-limited, so log in with `docker login` in CI.
+
+## Next steps
+
+<div class="grid cards" markdown>
+
+-   :lucide-rocket: [__Quick start__](quick-start.md)
+
+    Pull, run and mount your project.
+
+-   :lucide-key-round: [__Authentication__](use-images/authentication.md)
+
+    Credentials and volume mounts.
+
+-   :lucide-workflow: [__Workflows__](workflows/index.md)
+
+    Real-world CI/CD examples.
+
+-   :lucide-hammer: [__Customise__](build-images/customization.md)
+
+    Build your own variant.
+
+</div>

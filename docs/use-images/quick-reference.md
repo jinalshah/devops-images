@@ -2,428 +2,238 @@
 
 Fast lookup guide for common DevOps Images commands, volume mounts, and usage patterns.
 
----
+## Tool explorer
 
-## Essential Commands
+Search every tool in the images and filter by image or category. Hover over a tool to see the command that checks it's installed.
 
-### Pull Images
+<div class="di-widget" data-di-tools markdown>
+!!! note "Interactive explorer"
+    This explorer needs JavaScript. Without it, see [Tool Basics](../tool-basics/index.md) for the full list.
+</div>
 
-```bash
-# All-devops (multi-cloud)
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+## Images and registries
 
-# AWS-only
-docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
+| Image | GHCR (recommended) | Download |
+|-------|--------------------|----------|
+| <span class="di-pill di-pill--all">all-devops</span> | `ghcr.io/jinalshah/devops/images/all-devops` | ~1.6 GB |
+| <span class="di-pill di-pill--aws">aws-devops</span> | `ghcr.io/jinalshah/devops/images/aws-devops` | ~1.55 GB |
+| <span class="di-pill di-pill--gcp">gcp-devops</span> | `ghcr.io/jinalshah/devops/images/gcp-devops` | ~1.5 GB |
 
-# GCP-only
-docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
-```
+The same images are at `registry.gitlab.com/jinal-shah/devops/images/<image>` and `js01/<image>` (Docker Hub). Tags are `latest`, a per-commit `1.0.<sha>` (refreshed by scheduled rebuilds) and `1.0.<sha>-amd64` / `-arm64`. Pin by `@sha256:` digest for strict reproducibility.
 
-### Run Interactively
+## Run
 
-```bash
-# Basic interactive shell
-docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
+=== ":lucide-terminal: Shell"
 
-# With project mounted
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```bash
+    docker run -it --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
 
-# Full workstation setup
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.ssh:/root/.ssh \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+=== ":lucide-play: One command"
 
-### Run Single Commands
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      terraform plan
+    ```
 
-```bash
-# Terraform
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform plan
+=== ":lucide-briefcase: Full workstation"
 
-# Ansible
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ansible-playbook site.yml
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.ssh:/root/.ssh:ro \
+      -v ~/.aws:/root/.aws \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      -v ~/.kube:/root/.kube \
+      -v ~/.claude:/root/.claude \
+      -v ~/.codex:/root/.codex \
+      -v ~/.copilot:/root/.copilot \
+      -v ~/.gemini:/root/.gemini \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
 
-# kubectl
-docker run --rm -v ~/.kube:/root/.kube \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  kubectl get pods
-```
+## Mounts cheat sheet
 
----
+| Mount | For | Tools |
+|-------|-----|-------|
+| `-v "$PWD":/srv -w /srv` | Your project | Everything |
+| `-v ~/.ssh:/root/.ssh:ro` | SSH keys | `git`, `ssh`, Ansible |
+| `-v ~/.aws:/root/.aws` | AWS profiles and SSO cache | `aws`, Terraform, boto3 |
+| `-v ~/.config/gcloud:/root/.config/gcloud` | gcloud accounts and ADC | `gcloud`, `gsutil`, `bq`, GKE, Terraform |
+| `-v ~/.kube:/root/.kube` | kubeconfig | `kubectl`, `helm`, `k9s` |
+| `-v ~/.claude:/root/.claude` | Claude Code login and settings | `claude` |
+| `-v ~/.codex:/root/.codex` | Codex config and `auth.json` | `codex` |
+| `-v ~/.copilot:/root/.copilot` | Copilot CLI login and config | `copilot` |
+| `-v ~/.gemini:/root/.gemini` | Antigravity CLI settings and login | `agy` |
+| `-v ~/.terraform.d:/root/.terraform.d` | Provider cache (with `-e TF_PLUGIN_CACHE_DIR=/root/.terraform.d/plugin-cache`) | Terraform |
 
-## Volume Mounts Cheat Sheet
+## Everyday commands
 
-| Mount | Purpose | When Needed |
-|-------|---------|-------------|
-| `-v $PWD:/workspace` | Project files | Always (for accessing code) |
-| `-v ~/.aws:/root/.aws` | AWS credentials | AWS operations |
-| `-v ~/.config/gcloud:/root/.config/gcloud` | GCP credentials | GCP operations |
-| `-v ~/.ssh:/root/.ssh` | SSH keys | Git operations, SSH access |
-| `-v ~/.kube:/root/.kube` | Kubernetes config | kubectl operations |
-| `-v ~/.claude:/root/.claude` | Claude AI credentials | Claude CLI |
-| `-v ~/.codex:/root/.codex` | Codex credentials | Codex CLI |
-| `-v ~/.terraform.d:/root/.terraform.d` | Terraform plugins cache | Speed up Terraform |
+=== ":simple-terraform: Terraform"
 
----
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.aws:/root/.aws \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'terraform init && terraform plan -out=tfplan'
+    ```
 
-## Common Workflows
+=== ":simple-trivy: Scan & lint"
 
-### Terraform Deployment
+    ```bash
+    # IaC misconfigurations
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      trivy config .
 
-```bash
-# Plan
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform plan
+    # TFLint and ansible-lint
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'tflint --init && tflint --recursive && ansible-lint'
+    ```
 
-# Apply
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform apply -auto-approve
-```
+    Trivy downloads its vulnerability database on the first `trivy image` or `trivy fs` scan.
 
-### Security Scanning
+=== ":simple-kubernetes: Kubernetes"
 
-```bash
-# Scan Terraform configs
-docker run --rm -v $PWD:/workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy config /workspace/terraform
+    ```bash
+    # kubectl and Helm
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'kubectl get pods -A && helm upgrade --install myapp ./charts/myapp'
 
-# Lint Terraform
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "cd terraform && tflint --init && tflint"
+    # k9s needs a TTY
+    docker run -it --rm -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest k9s
+    ```
 
-# Lint Ansible
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ansible-lint ansible/
-```
+    For EKS or GKE clusters, also mount `~/.aws` or `~/.config/gcloud`, because the kubeconfig calls the cloud CLI to get tokens.
 
-### Kubernetes Operations
+=== ":lucide-bot: AI agents"
 
-```bash
-# Get pods
-docker run --rm -v ~/.kube:/root/.kube \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  kubectl get pods
+    Always use the non-interactive mode in scripts. Pipe content in with `docker run -i`:
 
-# Deploy with Helm
-docker run --rm -v ~/.kube:/root/.kube -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  helm upgrade --install myapp ./charts/myapp
+    ```bash
+    # Claude Code: pipe a diff into -p (there is no --file flag)
+    git diff | docker run --rm -i -v "$PWD":/srv -w /srv -v ~/.claude:/root/.claude \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      claude -p "Review this diff for security issues"
 
-# Interactive k9s
-docker run -it --rm -v ~/.kube:/root/.kube \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  k9s
-```
+    # Claude Code: write the answer to a file on the host (needs -p)
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.claude:/root/.claude \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      claude -p "Write a Terraform module for an AWS VPC. Output only HCL." > vpc.tf
 
-### AI-Assisted Development
+    # Codex, Copilot and Antigravity
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.codex:/root/.codex \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      codex exec "Explain what main.tf provisions"
 
-```bash
-# Code review with Claude
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this code for security issues" --file main.tf
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.copilot:/root/.copilot \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      copilot -p "Summarise the Helm chart in charts/myapp" --allow-all-tools
 
-# Generate code
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Generate Terraform code for AWS VPC" > vpc.tf
-```
+    docker run --rm -v "$PWD":/srv -w /srv -v ~/.gemini:/root/.gemini \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      agy -p "List the Kubernetes resources defined in k8s/"
+    ```
 
----
+    Sign in interactively once inside the container (`claude` then `/login`, `codex login --device-auth`, `copilot` then `/login`, `agy`) and the mounted directories keep you signed in. A login made on a macOS or Windows host may not carry over, because some of these CLIs keep their tokens in the OS keychain rather than in the mounted directory. See the [AI CLI setup guide](../tool-basics/ai-cli-setup.md).
 
-## Useful Aliases
+## Credentials in CI
 
-Add to your `~/.bashrc` or `~/.zshrc`:
+=== ":fontawesome-brands-aws: AWS"
 
-```bash
-# Quick access to all-devops
-alias devops='docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.ssh:/root/.ssh \
-  -v ~/.kube:/root/.kube \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest'
+    ```bash
+    # Pass through variables already set in your shell or CI job
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+      -e AWS_DEFAULT_REGION=eu-west-2 \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      terraform apply -auto-approve
+    ```
 
-# One-off commands
-alias devops-run='docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest'
+=== ":simple-googlecloud: Google Cloud"
 
-# Terraform-specific
-alias tf-plan='devops-run terraform plan'
-alias tf-apply='devops-run terraform apply'
-alias tf-destroy='devops-run terraform destroy'
+    ```bash
+    # GOOGLE_APPLICATION_CREDENTIALS covers Terraform and client libraries;
+    # gcloud itself needs activate-service-account
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -v /path/to/key.json:/secrets/key.json:ro \
+      -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      bash -c 'gcloud auth activate-service-account --key-file=/secrets/key.json && terraform apply -auto-approve'
+    ```
 
-# Security scanning
-alias trivy-scan='devops-run trivy config .'
-alias tflint-scan='devops-run sh -c "tflint --init && tflint"'
+=== ":lucide-bot: AI CLIs"
 
-# Kubernetes
-alias k='docker run --rm -v ~/.kube:/root/.kube ghcr.io/jinalshah/devops/images/all-devops:latest kubectl'
-alias k9s='docker run -it --rm -v ~/.kube:/root/.kube ghcr.io/jinalshah/devops/images/all-devops:latest k9s'
-```
+    ```bash
+    # Claude Code: ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token`)
+    docker run --rm -v "$PWD":/srv -w /srv -e ANTHROPIC_API_KEY \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      claude -p "Review main.tf for security issues"
 
-**Usage examples**:
+    # Codex: CODEX_API_KEY for codex exec
+    docker run --rm -v "$PWD":/srv -w /srv -e CODEX_API_KEY \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      codex exec "Review main.tf for security issues"
+
+    # Copilot: fine-grained PAT with the "Copilot Requests" permission
+    docker run --rm -v "$PWD":/srv -w /srv -e COPILOT_GITHUB_TOKEN \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      copilot -p "Review main.tf for security issues" --allow-all-tools
+    ```
+
+    `agy` needs `{"modelProvider": "gemini"}` in `~/.gemini/antigravity-cli/settings.json` **and** `GEMINI_API_KEY`; the variable alone isn't enough.
+
+## Aliases
+
+Inside the container, zsh and bash already have shortcuts such as `k` (kubectl), `kg`, `kd`, `kl`, `tf`, `tfi`, `tfp`, `tfa` and `aws-ssm`. On your **host**, these save typing:
 
 ```bash
-# Interactive shell
-devops
+alias devops='docker run -it --rm -v "$PWD":/srv -w /srv -v ~/.ssh:/root/.ssh:ro -v ~/.aws:/root/.aws -v ~/.config/gcloud:/root/.config/gcloud -v ~/.kube:/root/.kube ghcr.io/jinalshah/devops/images/all-devops:latest'
 
-# Run Terraform
-tf-plan
-tf-apply
-
-# Get pods
-k get pods
-
-# Scan for vulnerabilities
-trivy-scan
+devops                      # interactive shell
+devops terraform plan       # one-off command
+devops trivy config .
 ```
 
----
-
-## Tool Version Checks
+## Check versions
 
 ```bash
-# Check all versions
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest sh -c "\
-  echo '=== Terraform ===' && terraform version && \
-  echo '=== kubectl ===' && kubectl version --client && \
-  echo '=== Helm ===' && helm version && \
-  echo '=== Ansible ===' && ansible --version && \
-  echo '=== AWS CLI ===' && aws --version && \
-  echo '=== gcloud ===' && gcloud --version && \
-  echo '=== Trivy ===' && trivy --version && \
-  echo '=== Python ===' && python3 --version && \
-  echo '=== Node.js ===' && node --version"
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest bash -c '
+  terraform version; kubectl version --client; helm version --short
+  ansible --version | head -1; aws --version; gcloud --version | head -1
+  trivy --version | head -1; python3 --version; node --version'
 ```
 
----
-
-## Environment Variables
-
-### AWS
-
-```bash
-docker run --rm \
-  -e AWS_ACCESS_KEY_ID=... \
-  -e AWS_SECRET_ACCESS_KEY=... \
-  -e AWS_DEFAULT_REGION=us-east-1 \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform apply
-```
-
-### GCP
-
-```bash
-docker run --rm \
-  -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/key.json \
-  -v $PWD:/workspace -w /workspace \
-  -v /path/to/key.json:/tmp/key.json \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform apply
-```
-
-### AI CLIs
-
-```bash
-docker run --rm \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  -e OPENAI_API_KEY=sk-... \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this code" --file main.tf
-```
-
----
-
-## Image Sizes
-
-| Image | Size | Use Case |
-|-------|------|----------|
-| **all-devops** | ~3.2 GB | Multi-cloud (AWS + GCP) |
-| **aws-devops** | ~2.8 GB | AWS only (-400 MB) |
-| **gcp-devops** | ~2.9 GB | GCP only (-300 MB) |
-
----
-
-## Registry URLs
-
-### GHCR (Recommended)
-
-```bash
-# All-devops
-ghcr.io/jinalshah/devops/images/all-devops:latest
-ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-# AWS-devops
-ghcr.io/jinalshah/devops/images/aws-devops:latest
-
-# GCP-devops
-ghcr.io/jinalshah/devops/images/gcp-devops:latest
-```
-
-### GitLab Registry
-
-```bash
-registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
-registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
-registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
-```
-
-### Docker Hub
-
-```bash
-js01/all-devops:latest
-js01/aws-devops:latest
-js01/gcp-devops:latest
-```
-
----
-
-## Keyboard Shortcuts
-
-### Inside k9s
+## k9s keys
 
 | Key | Action |
 |-----|--------|
-| `0` | Show all pods |
-| `d` | Describe resource |
-| `l` | Show logs |
-| `s` | Open shell |
+| `:` then `pods`, `deploy`, `svc` … | Jump to a resource type |
+| `0` | All namespaces |
 | `/` | Filter |
-| `:q` | Quit |
+| `d` | Describe |
+| `l` | Logs |
+| `s` | Shell into the container |
+| ++ctrl+c++ or `:q` | Quit |
 
-### Inside vim
+## Quick fixes
 
-| Key | Action |
-|-----|--------|
-| `:w` | Save |
-| `:q` | Quit |
-| `:wq` | Save and quit |
-| `/` | Search |
-| `dd` | Delete line |
-| `u` | Undo |
+??? question "A pull fails or is slow"
+    Try another registry: `registry.gitlab.com/jinal-shah/devops/images/all-devops:latest` or `js01/all-devops:latest`. Docker Hub rate-limits anonymous pulls.
 
----
+??? question "Files in my project are owned by root"
+    The container runs as root. Run `sudo chown -R "$(id -u):$(id -g)" .` afterwards, or chown inside the container as the last step. `--user` isn't a good fix because Terraform, `claude` and `HOME` live under `/root`, which only root can read. See [Root-owned files](index.md#recommended-workstation-setup).
 
-## Quick Troubleshooting
+??? question "Credentials aren't picked up"
+    Check that the mount landed: `docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/all-devops:latest ls -la /root/.aws`. Then test with `aws sts get-caller-identity` or `gcloud auth list`.
 
-### Image won't pull
+## Next steps
 
-```bash
-# Try different registry
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest  # GHCR
-docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest  # GitLab
-docker pull js01/all-devops:latest  # Docker Hub
-```
-
-### Permissions issues
-
-```bash
-# Run with your user ID
-docker run --rm \
-  --user "$(id -u):$(id -g)" \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt
-
-# Or fix ownership after
-sudo chown -R $(id -u):$(id -g) .
-```
-
-### Credentials not working
-
-```bash
-# Verify mount
-docker run --rm -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ls -la /root/.aws
-
-# Test authentication
-docker run --rm -v ~/.aws:/root/.aws \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  aws sts get-caller-identity
-```
-
----
-
-## Performance Tips
-
-### Cache Docker Layers
-
-```bash
-# Pull once
-docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-# Reuse for all commands (layers cached)
-docker run --rm ... ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-```
-
-### Cache Terraform Plugins
-
-```bash
-# Cache plugins directory
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.terraform.d:/root/.terraform.d \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform init
-```
-
-### Use Named Containers
-
-```bash
-# Create named container
-docker run -it --name devops-work \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Restart later
-docker start -i devops-work
-```
-
----
-
-## Next Steps
-
-- [Authentication Setup](authentication.md) - Configure cloud credentials
-- [Docker Compose Examples](docker-compose.md) - Multi-container setups
-- [Tool Basics](../tool-basics/index.md) - Detailed tool documentation
-- [Workflows](../workflows/index.md) - Real-world examples
+- [Authentication guide](authentication.md)
+- [Docker Compose examples](docker-compose.md)
+- [Tool basics](../tool-basics/index.md)
+- [Workflows & patterns](../workflows/index.md)

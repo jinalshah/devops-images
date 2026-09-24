@@ -1,6 +1,9 @@
 # DevOps Images
 
 [![Build and Push](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml/badge.svg)](https://github.com/jinalshah/devops-images/actions/workflows/image-builder.yml)
+[![Docs](https://github.com/jinalshah/devops-images/actions/workflows/docs.yml/badge.svg)](https://devops.jin.al/)
+
+📖 **Documentation: [devops.jin.al](https://devops.jin.al/)**, with an interactive image picker, a `docker run` builder and a searchable tool explorer.
 
 Multi-architecture container images with a comprehensive DevOps toolchain for AWS, GCP, and platform engineering workflows. Built on Rocky Linux 10 with support for both `linux/amd64` and `linux/arm64` architectures.
 
@@ -10,7 +13,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 |-------|-------------|-------------|----------|
 | **all-devops** | Full toolkit with AWS + GCP | AWS CLI, gcloud, Session Manager | Multi-cloud teams, platform engineering |
 | **aws-devops** | AWS-optimised image | AWS CLI, Session Manager | AWS-focused operations |
-| **gcp-devops** | GCP-optimised image | gcloud, GKE tools | GCP-focused operations |
+| **gcp-devops** | GCP-optimised image | gcloud, GKE auth plugin, docker-credential-gcr | GCP-focused operations |
 
 ### Base Tools (All Images)
 
@@ -21,7 +24,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Packer
 
 **Kubernetes & Containers:**
-- kubectl (latest stable)
+- kubectl
 - Helm 3
 - k9s (terminal UI)
 
@@ -37,21 +40,22 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Node.js LTS (with npm)
 - Git & GitHub CLI (gh)
 - Task (go-task)
-- ghorg (GitHub organization cloner)
+- ghorg (GitHub organisation cloner)
+- Zensical (docs site generator)
 
 **AI Code Assistants:**
-- Claude CLI
+- Claude Code
 - OpenAI Codex CLI
 - GitHub Copilot CLI
-- Google Antigravity CLI (`agy`)
+- Google Antigravity CLI (`agy`), which replaces Gemini CLI
 
 **Database Clients:**
 - MongoDB Shell (mongosh) - v8.0
 - PostgreSQL client (psql) - v17
-- MySQL client
+- MySQL client (8.4)
 
 **Network & Diagnostic Tools:**
-- dig, nslookup, ncat, telnet
+- dig, nslookup, nmap, ncat, telnet
 - curl, wget, lftp
 - jq (JSON processor)
 
@@ -82,7 +86,7 @@ Replace `<image>` with `all-devops`, `aws-devops`, or `gcp-devops`.
 
 ### Tagging Strategy
 
-- **Version tags**: `1.0.<sha7>` (immutable, recommended for CI/CD)
+- **Version tags**: `1.0.<sha7>`, one per commit and recommended for CI/CD. Scheduled rebuilds refresh a tag with newer tools, so pin a `@sha256:` digest if you need exact bits.
 - **Architecture-specific**: `1.0.<sha7>-amd64`, `1.0.<sha7>-arm64`
 - **latest**: Only updated on `main` branch (use for development)
 
@@ -113,8 +117,8 @@ docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
 
 ```bash
 docker run -it --name devops-container \
-  -v $PWD:/srv \
-  -v ~/.ssh:/root/.ssh \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.ssh:/root/.ssh:ro \
   -v ~/.aws:/root/.aws \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v ~/.claude:/root/.claude \
@@ -189,12 +193,13 @@ done
 # Create buildx builder
 docker buildx create --name multiarch --use
 
-# Build for both AMD64 and ARM64
+# Build for both AMD64 and ARM64 and push to your registry
+# (--load only works for a single platform unless Docker uses the containerd image store)
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --target all-devops \
-  -t all-devops:multi \
-  --load .
+  -t <your-registry>/all-devops:multi \
+  --push .
 ```
 
 ### Customise Build
@@ -226,7 +231,7 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Terraform Init
         run: terraform init
@@ -242,8 +247,6 @@ jobs:
 ### Using with Docker Compose
 
 ```yaml
-version: '3.8'
-
 services:
   devops:
     image: ghcr.io/jinalshah/devops/images/all-devops:latest
@@ -276,18 +279,21 @@ docker start -ai my-devops
 For CI/CD and production use, always pin to specific version tags:
 
 ```bash
-# Good - immutable version tag
+# Good - per-commit version tag
 docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
 
-# Avoid in production - mutable tag
+# Best - exact bits, pinned by digest
+docker pull ghcr.io/jinalshah/devops/images/all-devops@sha256:<digest>
+
+# Avoid in production - moves with every build
 docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-Version tags follow the pattern `1.0.<sha7>` where `sha7` is the short Git commit hash.
+Version tags follow the pattern `1.0.<sha7>`, where `sha7` is the short Git commit hash. Images are rebuilt weekly and whenever tool versions are bumped, and a rebuild of the same commit refreshes its tag. Find a digest with `docker buildx imagetools inspect <image>:<tag>`.
 
 ## Platform-Specific Notes
 
-### Apple Silicon (M1/M2/M3)
+### Apple Silicon
 
 Images automatically use the ARM64 variant on Apple Silicon Macs:
 
@@ -310,14 +316,16 @@ docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest uname -m
 
 ### Files Created as Root
 
-When running commands that create files, they're owned by root. Use `--user` to match host permissions:
+When running commands that create files, they're owned by root. Hand them back to your user afterwards:
 
 ```bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  -v $PWD:/srv \
+docker run --rm -v "$PWD":/srv -w /srv \
+  -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt -recursive /srv
+  bash -c 'terraform fmt -recursive && chown -R "$HOST_UID:$HOST_GID" /srv'
 ```
+
+Running with `--user "$(id -u):$(id -g)"` is not a drop-in fix: `/root` is only readable by root, and `terraform` (a tfswitch symlink into `/root/.terraform.versions`) and `claude` (in `/root/.local/bin`) live under it.
 
 ### Authentication Issues
 
@@ -337,35 +345,38 @@ docker run --rm -v ~/.config/gcloud:/root/.config/gcloud \
 
 ### AI CLI Authentication
 
-AI tools require separate authentication setup. Mount the config directories:
+Mount each CLI's config directory so a login survives the container, then sign in once from inside it:
 
 ```bash
-# First, authenticate on your host machine
-claude auth login
-codex auth login
-gh copilot auth
-
-# Then mount configs when running container
 docker run -it \
   -v ~/.claude:/root/.claude \
   -v ~/.codex:/root/.codex \
   -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
   ghcr.io/jinalshah/devops/images/all-devops:latest
+
+# Inside the container:
+claude            # then /login
+codex login       # add --device-auth on a headless machine
+copilot           # then /login
+agy               # sign in with Google (paste the code shown)
 ```
+
+In CI, use API keys or tokens instead: `ANTHROPIC_API_KEY` (Claude), `CODEX_API_KEY` (Codex), `COPILOT_GITHUB_TOKEN` (Copilot) and `GEMINI_API_KEY` (Antigravity, with `"modelProvider": "gemini"` in `~/.gemini/antigravity-cli/settings.json`). See the [AI CLI setup guide](https://devops.jin.al/tool-basics/ai-cli-setup/).
 
 ## Documentation
 
 ### Published Documentation
 
-Complete documentation is available at: **[https://jinalshah.github.io/devops-images/](https://jinalshah.github.io/devops-images/)**
+Complete documentation is available at **[devops.jin.al](https://devops.jin.al/)**.
 
 Documentation includes:
 
-- **[Getting Started Guide](https://jinalshah.github.io/devops-images/)** - Quick start and overview
-- **[Using Images](https://jinalshah.github.io/devops-images/use-images/)** - Pull, run, and automation patterns
-- **[Building Images](https://jinalshah.github.io/devops-images/build-images/)** - Local builds and customisation
-- **[Tool Basics](https://jinalshah.github.io/devops-images/tool-basics/)** - Comprehensive tool reference with examples
-- **[Troubleshooting](https://jinalshah.github.io/devops-images/troubleshooting/)** - Common issues and solutions
+- **[Getting Started Guide](https://devops.jin.al/)** - Quick start and overview
+- **[Using Images](https://devops.jin.al/use-images/)** - Pull, run, and automation patterns
+- **[Building Images](https://devops.jin.al/build-images/)** - Local builds and customisation
+- **[Tool Basics](https://devops.jin.al/tool-basics/)** - Comprehensive tool reference with examples
+- **[Troubleshooting](https://devops.jin.al/troubleshooting/)** - Common issues and solutions
 
 ### Preview Documentation Locally
 
@@ -383,9 +394,9 @@ Or preview using the container itself:
 
 ```bash
 docker run --rm -it -p 8000:8000 \
-  -v $PWD:/workspace \
+  -v "$PWD":/srv -w /srv \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "cd /workspace && zensical serve -a 0.0.0.0:8000"
+  zensical serve -a 0.0.0.0:8000
 ```
 
 ## Contributing
@@ -399,7 +410,7 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is open source. See repository for licence details.
+MIT. See [LICENSE](LICENSE).
 
 ## Related Projects
 

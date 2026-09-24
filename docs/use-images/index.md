@@ -1,345 +1,241 @@
+---
+title: Using the Images
+---
+
 # Using the Images
 
-This section covers pull, run, and automation patterns from beginner to advanced usage.
+Everything you need for day-to-day use: pulling, running, mounting your project and credentials, and pinning versions in CI.
 
-!!! tip "New to DevOps Images?"
-    Start with the [Quick Start Guide](../quick-start.md) for a 5-minute introduction, or use the [Decision Framework](../choosing-an-image.md) to pick the right image for your needs.
+!!! tip "New here?"
+    The [Quick start](../quick-start.md) gets you running in five minutes, and the [image picker](../choosing-an-image.md) tells you which variant to use.
 
-## Pull an Image
+<div class="grid cards di-images" markdown>
 
-Choose your preferred registry and image variant:
+-   :lucide-layers:{ .lg .middle } __all-devops__
 
-=== "all-devops (Multi-Cloud)"
+    ---
 
-    **Best for**: Teams using both AWS and GCP, or those who want maximum flexibility
+    AWS **and** Google Cloud tooling on top of the shared base. Best for multi-cloud and platform teams.
 
-    === "GHCR (Recommended)"
+    [:octicons-arrow-right-24: all-devops guide](all-devops.md)
 
-        ```bash
-        docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-        ```
+-   :fontawesome-brands-aws:{ .lg .middle } __aws-devops__
 
-        ✅ No rate limits | ✅ Fast global CDN | ✅ Best uptime
+    ---
 
-    === "GitLab Registry"
+    AWS CLI v2, Session Manager plugin, boto3, cfn-lint and s3cmd. No Google Cloud SDK.
 
-        ```bash
-        docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
-        ```
+    [:octicons-arrow-right-24: aws-devops guide](aws-devops.md)
 
-        ✅ GitLab CI native | ✅ Private runner support
+-   :simple-googlecloud:{ .lg .middle } __gcp-devops__
 
-    === "Docker Hub"
+    ---
 
-        ```bash
-        docker pull js01/all-devops:latest
-        ```
+    Google Cloud CLI with `gsutil`, `bq`, beta components and the GKE auth plugin. No AWS tooling.
 
-        ⚠️  Rate limits: 100 pulls/6h (anonymous)
+    [:octicons-arrow-right-24: gcp-devops guide](gcp-devops.md)
 
-=== "aws-devops (AWS-Focused)"
+</div>
 
-    **Best for**: AWS-only teams who want a smaller image
+## How a typical session fits together
 
-    === "GHCR (Recommended)"
+```mermaid
+flowchart LR
+  H["Your machine<br/>project + credentials"] -- "-v mounts" --> C["DevOps container<br/>zsh at /srv"]
+  R["Registry<br/>GHCR / GitLab / Docker Hub"] -- "docker pull" --> C
+  C -- "terraform / kubectl / aws / gcloud" --> Cloud["Your cloud accounts<br/>and clusters"]
 
-        ```bash
-        docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
-        ```
-
-    === "GitLab Registry"
-
-        ```bash
-        docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
-        ```
-
-    === "Docker Hub"
-
-        ```bash
-        docker pull js01/aws-devops:latest
-        ```
-
-=== "gcp-devops (GCP-Focused)"
-
-    **Best for**: GCP-only teams who want a smaller image
-
-    === "GHCR (Recommended)"
-
-        ```bash
-        docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
-        ```
-
-    === "GitLab Registry"
-
-        ```bash
-        docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
-        ```
-
-    === "Docker Hub"
-
-        ```bash
-        docker pull js01/gcp-devops:latest
-        ```
-
-!!! warning "Docker Hub Rate Limits"
-    Docker Hub enforces rate limits for anonymous users (100 pulls per 6 hours). We recommend using **GHCR** to avoid these limits.
-
-## Run Interactively
-
-Basic interactive run:
-
-```bash
-docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  class H,R neutral
+  class C all
+  class Cloud base
 ```
 
-The default shell is `zsh` with Oh My Zsh pre-configured.
+## Pull an image
 
-!!! tip "Shell Options"
-    The image includes three shells:
+Every image is published to three registries under the same tags.
 
-    - **zsh** (default) - Modern shell with autocomplete and plugins
-    - **bash** - Traditional Bourne Again Shell
-    - **fish** - Friendly interactive shell
+=== ":simple-github: GHCR (recommended)"
 
-    Switch shells with: `bash`, `fish`, or `zsh`
+    ```bash
+    docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+    docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
+    docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
+    ```
 
-## Recommended Workstation Setup
+=== ":simple-gitlab: GitLab"
 
-For real work, mount your credentials and project directory:
+    ```bash
+    docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+    docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
+    docker pull registry.gitlab.com/jinal-shah/devops/images/gcp-devops:latest
+    ```
+
+=== ":simple-docker: Docker Hub"
+
+    ```bash
+    docker pull js01/all-devops:latest
+    docker pull js01/aws-devops:latest
+    docker pull js01/gcp-devops:latest
+    ```
+
+    Docker Hub applies pull rate limits, especially to anonymous users. Prefer GHCR in CI.
+
+The download is about 1.5 to 1.6 GB compressed (about 4.6 to 5.0 GB once unpacked). Both `linux/amd64` and `linux/arm64` are published under the same tag, so Apple Silicon and ARM runners get a native image automatically.
+
+## Run it
+
+=== ":lucide-terminal: Interactive shell"
+
+    ```bash
+    docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
+
+    You land in **zsh** (Oh My Zsh, `candy` theme) as `root`. `bash` and `fish` are installed too.
+
+=== ":lucide-folder-open: With your project"
+
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
+
+=== ":lucide-play: One command"
+
+    ```bash
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      terraform fmt -check -recursive
+    ```
+
+    Anything after the image name replaces the default `zsh` command.
+
+## Recommended workstation setup
+
+Mount your project plus whichever credentials you use. Drop the lines you don't need.
 
 ```bash
-docker run -it --name devops-work \  # (1)!
-  -v $PWD:/workspace \  # (2)!
-  -v ~/.ssh:/root/.ssh \  # (3)!
-  -v ~/.aws:/root/.aws \  # (4)!
-  -v ~/.config/gcloud:/root/.config/gcloud \  # (5)!
-  -v ~/.claude:/root/.claude \  # (6)!
-  -v ~/.codex:/root/.codex \  # (7)!
-  -v ~/.copilot:/root/.copilot \  # (8)!
-  -v ~/.gemini:/root/.gemini \  # (9)!
-  -w /workspace \  # (10)!
+# Project, SSH keys, cloud credentials and kubeconfig
+# AI agent state: Claude Code, Codex, Copilot and Antigravity (agy)
+docker run -it --name devops-work \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.aws:/root/.aws \
+  -v ~/.config/gcloud:/root/.config/gcloud \
+  -v ~/.kube:/root/.kube \
+  -v ~/.claude:/root/.claude \
+  -v ~/.codex:/root/.codex \
+  -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
   ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-1.  Named container for easy restart with `docker start -i devops-work`
-2.  Mount current directory as `/workspace` for accessing your project files
-3.  Mount SSH keys for Git operations and remote server access
-4.  Mount AWS credentials for `aws` CLI (omit if not using AWS)
-5.  Mount GCP credentials for `gcloud` (omit if not using GCP)
-6.  Mount Claude AI credentials for `claude` CLI
-7.  Mount Codex credentials for `codex` CLI (OpenAI)
-8.  Mount Copilot credentials for `copilot` CLI (GitHub)
-9.  Mount Antigravity CLI credentials/session state for `agy` (Google)
-10. Set working directory to `/workspace`
+| Mount | What it gives you |
+|-------|-------------------|
+| `-v "$PWD":/srv -w /srv` | Your project, as the working directory |
+| `~/.ssh` (read-only) | Git over SSH and remote hosts |
+| `~/.aws` | `aws`, Terraform AWS provider, boto3 |
+| `~/.config/gcloud` | `gcloud`, `gsutil`, `bq`, GKE credentials, ADC for Terraform |
+| `~/.kube` | `kubectl`, `helm`, `k9s` |
+| `~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini` | Logins and settings for `claude`, `codex`, `copilot` and `agy` |
 
-!!! info "Authentication Details"
-    For comprehensive authentication setup including AI CLI configuration, see the [Authentication Guide](authentication.md).
+Because the container is named (no `--rm`), you can come back to it with `docker start -i devops-work`.
 
-## Run Tools Without an Interactive Shell
+The [`docker run` builder](../quick-start.md#build-your-command) generates this command for you, and the [Authentication guide](authentication.md) covers every credential option in depth.
 
-Execute single commands without entering a shell:
+!!! tip "Root-owned files on Linux"
+    The container runs as `root`, so files it creates in your project are owned by root on a Linux host. Running with `--user "$(id -u):$(id -g)"` doesn't work well: `/root` is readable only by root (mode 550), and Terraform (a symlink into `/root/.terraform.versions/`), `claude` (in `/root/.local/bin`) and `HOME` all live there. Run as root and hand the files back to yourself at the end instead:
 
-```bash
-# Check tool versions
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
-docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest aws --version
-docker run --rm ghcr.io/jinalshah/devops/images/gcp-devops:latest gcloud --version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest trivy --version
-```
-
-!!! example "One-Liner Examples"
     ```bash
-    # Run Terraform plan
-    docker run --rm -v $PWD:/workspace -w /workspace \
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      terraform plan
-
-    # Scan with Trivy
-    docker run --rm -v $PWD:/workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      trivy fs /workspace
-
-    # Run Ansible playbook
-    docker run --rm -v $PWD:/workspace -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      ansible-playbook site.yml
+      sh -c 'terraform fmt -recursive && chown -R "$HOST_UID:$HOST_GID" .'
     ```
 
-## Work With Local Files
+    Or fix ownership afterwards on the host with `sudo chown -R "$(id -u):$(id -g)" .`
 
-Mount your project directory to access files:
+## Tags and version pinning
 
-```bash
-docker run --rm \
-  -v "$PWD:/workspace" \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ansible-playbook playbook.yml
-```
+| Tag | Example | What it is |
+|-----|---------|------------|
+| `latest` | `all-devops:latest` | Newest build from `main`. Good for local work |
+| `1.0.<sha>` | `all-devops:1.0.abc1234` | Per-commit multi-arch tag, stable for a given commit but refreshed by scheduled rebuilds |
+| `1.0.<sha>-amd64` / `-arm64` | `all-devops:1.0.abc1234-arm64` | A single architecture, useful for debugging |
 
-### Avoid Root-Owned Files
+There is no `1.0` or semver tag.
 
-To prevent Docker from creating root-owned files on your host:
-
-```bash
-docker run --rm \
-  --user "$(id -u):$(id -g)" \
-  -v "$PWD:/workspace" \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt -recursive
-```
-
-!!! warning "User Flag Limitations"
-    The `--user` flag may cause permission issues with some tools that expect to run as root. If you encounter errors, run without `--user` and manually fix permissions afterward:
+!!! warning "Per-commit tags get refreshed"
+    The weekly schedule and the daily tool-version update rebuild the same commit and push fresh tool versions under the same `1.0.<sha>` tag. For strictly reproducible pipelines, pin by digest:
 
     ```bash
-    sudo chown -R $(id -u):$(id -g) .
+    # Look up the digest of a tag (the "Digest:" line)
+    docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     ```
 
-## Quick Authentication Examples
+    Then reference `ghcr.io/jinalshah/devops/images/all-devops@sha256:<digest>`.
 
-Basic credential mounting for cloud providers and Git:
+Browse the available tags on [GHCR](https://github.com/jinalshah/devops-images/pkgs/container/devops%2Fimages%2Fall-devops), [GitLab](https://gitlab.com/jinal-shah/devops/container_registry) or [Docker Hub](https://hub.docker.com/r/js01/all-devops/tags).
 
-=== "AWS Authentication"
+## Use it in CI
 
-    ```bash
-    docker run --rm \
-      -v ~/.aws:/root/.aws \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      aws sts get-caller-identity
+=== ":simple-githubactions: GitHub Actions"
+
+    ```yaml
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        container:
+          image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+        steps:
+          - uses: actions/checkout@v7
+          - uses: aws-actions/configure-aws-credentials@v6
+            with:
+              role-to-assume: arn:aws:iam::123456789012:role/ci-deploy
+              aws-region: eu-west-2
+          - run: terraform init
+          - run: terraform apply -auto-approve
     ```
 
-=== "GCP Authentication"
+    OIDC role assumption also needs `permissions: id-token: write` on the job.
 
-    ```bash
-    docker run --rm \
-      -v ~/.config/gcloud:/root/.config/gcloud \
-      ghcr.io/jinalshah/devops/images/gcp-devops:latest \
-      gcloud auth list
+=== ":simple-gitlab: GitLab CI"
+
+    ```yaml
+    deploy:
+      image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
+      script:
+        - terraform init
+        - terraform apply -auto-approve
+      rules:
+        - if: $CI_COMMIT_BRANCH == "main"
     ```
 
-=== "SSH for Git"
+    Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_DEFAULT_REGION` as masked CI/CD variables; GitLab exposes them to the job automatically.
 
-    ```bash
-    docker run --rm \
-      -v ~/.ssh:/root/.ssh \
-      -v $PWD:/workspace \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      git pull
-    ```
+More complete pipelines: [GitHub Actions](../workflows/ci-cd-github.md), [GitLab CI](../workflows/ci-cd-gitlab.md), [Jenkins](../workflows/ci-cd-jenkins.md) and [CircleCI](../workflows/ci-cd-circleci.md).
 
-!!! info "Comprehensive Authentication Guide"
-    For detailed setup including AI CLI authentication, multiple cloud accounts, and troubleshooting, see the [Authentication Guide](authentication.md).
+## Where next?
 
-## Version Pinning for CI/CD
+<div class="grid cards" markdown>
 
-!!! tip "Use Immutable Tags in Production"
-    Always pin specific image versions in CI/CD pipelines for reproducible builds:
+-   :lucide-zap: [__Quick reference__](quick-reference.md)
 
-    **✅ Good** - Immutable, predictable:
-    ```bash
-    docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    ```
+    Tool explorer, mounts cheat sheet and copy-paste commands.
 
-    **⚠️  Avoid** - Mutable, can change:
-    ```bash
-    docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-    ```
+-   :lucide-key-round: [__Authentication__](authentication.md)
 
-### Version Tag Format
+    AWS, Google Cloud, Git and AI CLI credentials.
 
-- **`latest`** - Most recent build (for local development)
-- **`1.0.abc1234`** - Semantic version + git commit SHA (for CI/CD)
-- **`1.0`** - Semantic version only (semi-stable)
+-   :simple-docker: [__Docker Compose__](docker-compose.md)
 
-!!! example "Finding Available Tags"
-    Check available tags on registries:
+    Local stacks with databases and S3-compatible storage.
 
-    - [GHCR Tags](https://github.com/jinalshah/devops-images/pkgs/container/devops%2Fimages%2Fall-devops)
-    - [GitLab Tags](https://gitlab.com/jinal-shah/devops/container_registry)
-    - [Docker Hub Tags](https://hub.docker.com/r/js01/all-devops/tags)
+-   :lucide-life-buoy: [__Troubleshooting__](../troubleshooting/index.md)
 
-## CI/CD Integration Examples
+    Fixes for the most common problems.
 
-### GitHub Actions
-
-```yaml
-name: Deploy Infrastructure
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234  # (1)!
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Deploy with Terraform
-        run: |
-          terraform init
-          terraform apply -auto-approve
-```
-
-1.  Pin to specific version for reproducible builds
-
-### GitLab CI
-
-```yaml
-stages:
-  - deploy
-
-deploy:production:
-  stage: deploy
-  image: registry.gitlab.com/jinal-shah/devops/images/all-devops:1.0.abc1234
-  script:
-    - terraform init
-    - terraform apply -auto-approve
-  variables:
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_DEFAULT_REGION: us-east-1
-  only:
-    - main
-```
-
-!!! info "More CI/CD Examples"
-    For comprehensive CI/CD integration guides, see:
-
-    - [GitHub Actions Examples](../workflows/ci-cd-github.md)
-    - [GitLab CI Examples](../workflows/ci-cd-gitlab.md)
-    - [Jenkins Examples](../workflows/ci-cd-jenkins.md)
-    - [CircleCI Examples](../workflows/ci-cd-circleci.md)
-
-## Next Steps
-
-**Getting Started**:
-
-- [Quick Start Guide](../quick-start.md) - 5-minute introduction
-- [Authentication Setup](authentication.md) - Configure credentials
-- [Quick Reference](quick-reference.md) - Common command patterns
-
-**Cloud-Specific Guides**:
-
-- [Using all-devops](all-devops.md) - Multi-cloud image
-- [Using aws-devops](aws-devops.md) - AWS-focused image
-- [Using gcp-devops](gcp-devops.md) - GCP-focused image
-
-**Advanced Topics**:
-
-- [Docker Compose Examples](docker-compose.md) - Multi-container setups
-- [Workflows & Patterns](../workflows/index.md) - Real-world examples
-- [Troubleshooting](../troubleshooting/index.md) - Common issues
+</div>

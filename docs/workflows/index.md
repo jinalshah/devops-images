@@ -1,416 +1,212 @@
 # Workflows & Patterns
 
-Real-world examples of using DevOps Images in CI/CD pipelines and development workflows.
+Every DevOps image works as a CI job container. Your pipeline gets Terraform, Terragrunt, kubectl, Helm, Ansible, Trivy, the cloud CLIs and four AI coding agents without an install step. These pages show how to wire the images into the common CI systems, and how to chain the tools together.
 
-## Overview
-
-The DevOps Images integrate seamlessly with popular CI/CD platforms, providing a consistent toolset across your entire deployment pipeline.
-
-## CI/CD Integration Flow
+## How it fits together
 
 ```mermaid
-graph LR
-    subgraph "CI Systems"
-        GHA[GitHub Actions]
-        GLC[GitLab CI]
-        JNK[Jenkins]
-        CCI[CircleCI]
-    end
+flowchart TB
+  subgraph CI["Your CI system"]
+    direction LR
+    GHA["GitHub Actions"]
+    GLC["GitLab CI"]
+    JNK["Jenkins"]
+    CCI["CircleCI"]
+  end
+  REG["ghcr.io · registry.gitlab.com<br/>Docker Hub"]
+  subgraph IMG["Job container"]
+    direction LR
+    ALL["all-devops"]
+    AWS["aws-devops"]
+    GCP["gcp-devops"]
+  end
+  JOBS["What every job can run<br/>Terraform · Terragrunt · Helm · kubectl · Ansible<br/>Trivy · TFLint · ansible-lint<br/>AI review: claude · codex · copilot · agy"]
+  GHA & GLC & JNK & CCI --> REG
+  REG --> ALL & AWS & GCP
+  IMG --> JOBS
 
-    subgraph "Image Registry"
-        GHCR[ghcr.io/jinalshah/devops]
-        GLREG[registry.gitlab.com]
-        DH[Docker Hub]
-    end
-
-    subgraph "DevOps Images"
-        ALL[all-devops]
-        AWS[aws-devops]
-        GCP[gcp-devops]
-    end
-
-    subgraph "Your Workflows"
-        TF[Terraform Apply]
-        AN[Ansible Playbook]
-        HL[Helm Deploy]
-        SC[Security Scan]
-        AI[AI Code Review]
-    end
-
-    GHA --> GHCR
-    GLC --> GLREG
-    JNK --> DH
-    CCI --> GHCR
-
-    GHCR --> ALL & AWS & GCP
-    GLREG --> ALL & AWS & GCP
-    DH --> ALL & AWS & GCP
-
-    ALL --> TF & AN & HL & SC & AI
-    AWS --> TF & AN & HL & SC
-    GCP --> TF & AN & HL & SC
-
-    style GHA fill:#2088FF,color:#fff
-    style GLC fill:#FC6D26,color:#fff
-    style ALL fill:#FF6B6B,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  class GHA,GLC,JNK,CCI,REG neutral
+  class ALL all
+  class AWS aws
+  class GCP gcp
+  class JOBS base
+  style CI fill:#1e293b,stroke:#6366f1,color:#fff
+  style IMG fill:#1e293b,stroke:#6366f1,color:#fff
 ```
 
-## Available CI/CD Guides
+All three images share the same base, so every job can run the same Terraform, Kubernetes, Ansible, security and AI tools. The only difference is the cloud CLI: <span class="di-pill di-pill--all">all-devops</span> has AWS and Google Cloud, <span class="di-pill di-pill--aws">aws-devops</span> has AWS only and <span class="di-pill di-pill--gcp">gcp-devops</span> has Google Cloud only.
 
-### Platform-Specific Examples
+## CI system guides
 
-| Platform | Guide | Key Features |
-|----------|-------|--------------|
-| **GitHub Actions** | [ci-cd-github.md](ci-cd-github.md) | Matrix builds, caching, secrets management |
-| **GitLab CI** | [ci-cd-gitlab.md](ci-cd-gitlab.md) | Multi-stage pipelines, artifacts, environments |
-| **Jenkins** | [ci-cd-jenkins.md](ci-cd-jenkins.md) | Declarative & scripted pipelines, credentials |
-| **CircleCI** | [ci-cd-circleci.md](ci-cd-circleci.md) | Executors, workflows, caching optimisation |
+<div class="grid cards" markdown>
 
-### Workflow Patterns
+-   :simple-githubactions:{ .lg .middle } __GitHub Actions__
 
-| Pattern | Guide | Description |
-|---------|-------|-------------|
-| **Terraform Workflows** | [terraform-workflows.md](terraform-workflows.md) | Terragrunt, state management, module testing |
-| **Multi-Tool Patterns** | [multi-tool-patterns.md](multi-tool-patterns.md) | Terraform+Helm+Ansible, security scanning |
-| **AI-Assisted DevOps** | [ai-assisted-devops.md](ai-assisted-devops.md) | Code review, generation, troubleshooting with AI CLIs |
+    ---
 
-## Common Workflow Scenarios
+    `container:` jobs, OIDC to AWS and GCP, SARIF upload to code scanning, reusable workflows and AI review comments with `gh`.
 
-### Scenario 1: Infrastructure Deployment
+    [:octicons-arrow-right-24: GitHub Actions guide](ci-cd-github.md)
 
-**Typical Flow**: Plan → Review → Apply → Configure
+-   :simple-gitlab:{ .lg .middle } __GitLab CI__
 
-```bash
-# 1. Plan infrastructure changes
-terraform init && terraform plan -out=plan.tfplan
+    ---
 
-# 2. Apply infrastructure
-terraform apply plan.tfplan
+    `image:` per job, validate → plan → apply stages, OIDC with `id_tokens`, manual gates and merge request notes.
 
-# 3. Configure instances with Ansible
-ansible-playbook -i inventory.yml site.yml
+    [:octicons-arrow-right-24: GitLab CI guide](ci-cd-gitlab.md)
 
-# 4. Deploy application with Helm
-helm upgrade --install myapp ./charts/myapp
-```
+-   :simple-jenkins:{ .lg .middle } __Jenkins__
 
-**Best Image**: `all-devops` or cloud-specific variant
+    ---
 
-**See**: [Terraform Workflows](terraform-workflows.md), [Multi-Tool Patterns](multi-tool-patterns.md)
+    Docker and Kubernetes agents, credentials bindings, `input` approval gates and multibranch pipelines.
 
-### Scenario 2: Security-First Pipeline
+    [:octicons-arrow-right-24: Jenkins guide](ci-cd-jenkins.md)
 
-**Typical Flow**: Scan → Lint → Validate → Deploy
+-   :simple-circleci:{ .lg .middle } __CircleCI__
 
-```bash
-# 1. Scan for vulnerabilities
-trivy fs .
-trivy config .
+    ---
 
-# 2. Lint infrastructure code
-tflint --recursive
-ansible-lint
+    Parameterised executors, workspaces for plan files, approval jobs, contexts and OIDC.
 
-# 3. Validate configurations
-terraform validate
+    [:octicons-arrow-right-24: CircleCI guide](ci-cd-circleci.md)
 
-# 4. Deploy if all checks pass
-terraform apply -auto-approve
-```
+</div>
 
-**Best Image**: Any variant (all include Trivy, TFLint, ansible-lint)
+## Pattern guides
 
-**See**: [Multi-Tool Patterns > Security Workflows](multi-tool-patterns.md#pattern-2-security-first-workflow)
+<div class="grid cards" markdown>
 
-### Scenario 3: AI-Assisted Code Review
+-   :simple-terraform:{ .lg .middle } __Terraform workflows__
 
-**Typical Flow**: Generate → Review → Fix → Deploy
+    ---
 
-```bash
-# 1. Generate Terraform module with AI
-codex "create terraform module for AWS ECS cluster"
+    Plan and apply, S3 state with native locking, Terragrunt `run --all`, drift detection and plan summaries.
 
-# 2. Review with Claude CLI
-claude "review this terraform code for security issues" --file main.tf
+    [:octicons-arrow-right-24: Terraform workflows](terraform-workflows.md)
 
-# 3. Lint and validate
-tflint
-terraform validate
+-   :lucide-workflow:{ .lg .middle } __Multi-tool patterns__
 
-# 4. Apply infrastructure
-terraform apply
-```
+    ---
 
-**Best Image**: Any variant (all include AI CLI tools)
+    Terraform → Helm → Ansible, a security-first gate, pre-commit and Kubernetes validation, all in one container.
 
-**See**: [AI-Assisted DevOps](ai-assisted-devops.md)
+    [:octicons-arrow-right-24: Multi-tool patterns](multi-tool-patterns.md)
 
-### Scenario 4: Kubernetes Deployment
+-   :simple-claude:{ .lg .middle } __AI-assisted DevOps__
 
-**Typical Flow**: Build → Push → Deploy → Verify
+    ---
 
-```bash
-# 1. Package Helm chart
-helm package ./charts/myapp
+    Using Claude Code, Codex, Copilot and Antigravity to review diffs, explain plans and troubleshoot.
 
-# 2. Deploy to cluster
-helm upgrade --install myapp ./myapp-1.0.0.tgz \
-  --namespace production \
-  --values values-prod.yaml
+    [:octicons-arrow-right-24: AI-assisted DevOps](ai-assisted-devops.md)
 
-# 3. Verify deployment
-kubectl rollout status deployment/myapp -n production
+</div>
 
-# 4. Monitor with k9s
-k9s -n production
-```
+## Common scenarios
 
-**Best Image**: Any variant (all include kubectl, Helm, k9s)
+=== ":simple-terraform: Infrastructure"
 
-**See**: [Multi-Tool Patterns](multi-tool-patterns.md)
-
-## Workflow Best Practices
-
-### 1. Version Pinning in CI/CD
-
-!!! tip "Use Immutable Tags"
-    Always pin specific image versions in CI/CD pipelines:
-
-    ```yaml
-    # Good - immutable tag
-    image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-    # Avoid - mutable tag (can change)
-    image: ghcr.io/jinalshah/devops/images/all-devops:latest
-    ```
-
-### 2. Credential Management
-
-!!! warning "Never Commit Credentials"
-    Use volume mounts (local) or CI secrets (pipelines):
-
-    === "Local Development"
-
-        ```bash
-        docker run --rm \
-          -v ~/.aws:/root/.aws \
-          -v ~/.config/gcloud:/root/.config/gcloud \
-          ghcr.io/jinalshah/devops/images/all-devops:latest
-        ```
-
-    === "GitHub Actions"
-
-        ```yaml
-        - name: Deploy Infrastructure
-          run: terraform apply -auto-approve
-          env:
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        ```
-
-    === "GitLab CI"
-
-        ```yaml
-        deploy:
-          image: registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
-          script:
-            - terraform apply -auto-approve
-          variables:
-            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-        ```
-
-### 3. Caching for Performance
-
-!!! tip "Leverage Docker Layer Caching"
-    Use the same image version across pipeline jobs:
-
-    ```yaml
-    # GitHub Actions example
-    jobs:
-      plan:
-        container:
-          image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-      apply:
-        container:
-          image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-        # Both jobs use the same cached image
-    ```
-
-### 4. Parallel Execution
-
-Run independent tasks in parallel for faster pipelines:
-
-```yaml
-# GitLab CI example
-stages:
-  - validate
-
-tflint:
-  stage: validate
-  script: [tflint]
-
-ansible-lint:
-  stage: validate
-  script: [ansible-lint]
-
-trivy-scan:
-  stage: validate
-  script: [trivy fs .]
-
-# All run in parallel
-```
-
-### 5. Artifact Management
-
-Share state files, plans, and reports between jobs:
-
-```yaml
-# Example: Share Terraform plan
-plan:
-  script:
-    - terraform plan -out=plan.tfplan
-  artifacts:
-    paths:
-      - plan.tfplan
-
-apply:
-  script:
-    - terraform apply plan.tfplan
-  dependencies:
-    - plan
-```
-
-## Integration Examples
-
-### Docker Compose for Local Development
-
-```yaml
-version: '3.8'
-
-services:
-  devops:
-    image: ghcr.io/jinalshah/devops/images/all-devops:latest
-    volumes:
-      - .:/workspace
-      - ~/.aws:/root/.aws
-      - ~/.config/gcloud:/root/.config/gcloud
-      - ~/.ssh:/root/.ssh
-      - ~/.claude:/root/.claude
-    working_dir: /workspace
-    command: zsh
-    stdin_open: true
-    tty: true
-
-  postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_PASSWORD: devpassword
-    ports:
-      - "5432:5432"
-```
-
-Run with:
-```bash
-docker-compose run --rm devops
-```
-
-### VS Code Dev Container
-
-```json
-{
-  "name": "DevOps Environment",
-  "image": "ghcr.io/jinalshah/devops/images/all-devops:latest",
-  "mounts": [
-    "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind",
-    "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind",
-    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind"
-  ],
-  "extensions": [
-    "hashicorp.terraform",
-    "redhat.ansible",
-    "ms-kubernetes-tools.vscode-kubernetes-tools"
-  ]
-}
-```
-
-## Monitoring and Debugging
-
-### Common Troubleshooting Commands
-
-```bash
-# Check tool versions
-terraform version
-kubectl version
-helm version
-aws --version
-gcloud version
-
-# Test cloud authentication
-aws sts get-caller-identity
-gcloud auth list
-
-# Verify Kubernetes connectivity
-kubectl cluster-info
-kubectl get nodes
-
-# Test Ansible connectivity
-ansible all -i inventory.yml -m ping
-```
-
-### Debugging CI/CD Issues
-
-!!! tip "Debug Container Locally"
-    Reproduce CI failures locally using the same image:
+    Plan → apply → configure → deploy.
 
     ```bash
-    # Pull the exact version from CI
-    docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-
-    # Run interactively
-    docker run -it --rm \
-      -v $PWD:/workspace \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234 \
-      zsh
-
-    # Run the failing command
-    terraform apply -auto-approve
+    terraform init && terraform plan -out=tfplan
+    terraform apply tfplan
+    ansible-playbook -i inventory.yml site.yml
+    helm upgrade --install myapp ./charts/myapp
     ```
 
-## Performance Optimisation
+    More in [Terraform workflows](terraform-workflows.md) and [Multi-tool patterns](multi-tool-patterns.md).
 
-### Image Pull Optimisation
+=== ":lucide-shield-check: Security gate"
 
-1. **Use GHCR** - Fastest global CDN, no rate limits
-2. **Pin versions** - Enable Docker layer caching
-3. **Pre-pull images** - In CI, pull during setup phase
-4. **Use smaller images** - aws-devops/gcp-devops vs all-devops
+    Scan → lint → validate, and stop the pipeline on anything serious.
 
-### Pipeline Optimisation
+    ```bash
+    trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
+    tflint --recursive
+    ansible-lint
+    terraform validate
+    ```
 
-1. **Parallel jobs** - Run independent tasks concurrently
-2. **Cache dependencies** - Terraform plugins, Helm charts
-3. **Skip unchanged** - Use `git diff` to skip unchanged infrastructure
-4. **Workspace cleanup** - Remove old workspaces and plans
+    More in [the security-first pattern](multi-tool-patterns.md#pattern-2-security-first-workflow).
 
-## Next Steps
+=== ":lucide-sparkles: AI review"
 
-**By Platform**:
+    Pipe a diff or a plan into an AI CLI in non-interactive mode.
 
-- [GitHub Actions Examples](ci-cd-github.md)
-- [GitLab CI Examples](ci-cd-gitlab.md)
-- [Jenkins Examples](ci-cd-jenkins.md)
-- [CircleCI Examples](ci-cd-circleci.md)
+    ```bash
+    git diff origin/main...HEAD -- terraform/ \
+      | claude -p "Review this Terraform diff for security issues and risky changes"
 
-**By Pattern**:
+    terraform show -no-color tfplan \
+      | codex exec "Summarise this Terraform plan and flag anything destructive"
+    ```
 
-- [Terraform Workflows](terraform-workflows.md)
-- [Multi-Tool Patterns](multi-tool-patterns.md)
-- [AI-Assisted DevOps](ai-assisted-devops.md)
+    Always use `claude -p`, `codex exec`, `copilot -p ... --allow-all-tools` or `agy -p` in scripts. Without them, the CLIs start their interactive UI. See [AI-assisted DevOps](ai-assisted-devops.md).
 
-**Other Resources**:
+=== ":simple-kubernetes: Kubernetes"
 
-- [Authentication Setup](../use-images/authentication.md)
-- [Tool Basics](../tool-basics/index.md)
+    Render → deploy → verify.
+
+    ```bash
+    helm lint ./charts/myapp
+    helm upgrade --install myapp ./charts/myapp \
+      --namespace production --create-namespace \
+      --values values-prod.yaml --wait
+    kubectl rollout status deployment/myapp -n production
+    ```
+
+## Best practices
+
+!!! tip "Pin the image, and know what the pin means"
+    `latest` moves with every build of `main`. A `1.0.<sha>` tag is a **per-commit tag**: it stays tied to one commit of this repo, but the weekly and daily scheduled rebuilds refresh it with newer tool versions. For strictly reproducible pipelines, pin by digest.
+
+    ```yaml
+    # Good: per-commit tag, refreshed by scheduled rebuilds
+    image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+
+    # Strict: exact image bytes, never changes
+    image: ghcr.io/jinalshah/devops/images/all-devops@sha256:<digest>
+    ```
+
+    Find the digest with `docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234`.
+
+!!! warning "No Docker inside the image"
+    The images have no `docker` CLI and no Docker daemon, so you cannot `docker build` or `docker run` from inside a job. Build container images in a separate job that uses your CI system's own Docker support. Trivy can still scan a pushed image by reference (`trivy image ghcr.io/org/app:tag`) because it pulls from the registry itself.
+
+!!! info "Credentials come from the CI system"
+    Prefer short-lived OIDC credentials over static keys, and keep any secrets in the CI system's secret store. Each CI guide shows the pattern for that platform, and [Authentication](../use-images/authentication.md) covers the cloud CLIs in detail.
+
+Other habits that pay off:
+
+- **Save the plan and apply that exact file.** Pass `tfplan` between jobs as an artifact, so what was reviewed is what gets applied.
+- **Run independent checks in parallel.** Linting, scanning and `terraform validate` don't depend on each other.
+- **Cache Terraform providers.** Set `TF_PLUGIN_CACHE_DIR` and cache that directory; the image doesn't set it for you.
+- **Expect a large pull.** The images are about 1.5 to 1.6 GB compressed. Hosted runners start clean, so each job pulls the image again; self-hosted runners keep it between jobs.
+
+## Reproduce a CI failure locally
+
+Run the same image your pipeline used, with your project mounted:
+
+```bash
+docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.aws:/root/.aws:ro \
+  ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+```
+
+Then run the failing command. For a longer-lived local setup, see [Docker Compose](../use-images/docker-compose.md).
+
+## Next steps
+
+- [Authentication setup](../use-images/authentication.md)
+- [Tool basics](../tool-basics/index.md)
 - [Troubleshooting](../troubleshooting/index.md)

@@ -1,675 +1,336 @@
-# Jenkins CI/CD Integration
+# Jenkins
 
-Complete guide to using DevOps Images in Jenkins pipelines for automated infrastructure deployment, testing, and validation.
+Jenkins runs the DevOps image as the build agent: a Docker agent on a node that has Docker, or a pod on Kubernetes. Every `sh` step then runs with Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs on `PATH`.
 
-!!! tip "Why Jenkins?"
-    - Self-hosted control and customisation
-    - Extensive plugin ecosystem
-    - Docker pipeline support
-    - Works with any container registry
+## The pipeline at a glance
 
----
+```mermaid
+flowchart LR
+  SCM["Checkout"] --> V["Validate<br/>fmt · tflint · trivy"]
+  V --> P["Plan<br/>stash tfplan"]
+  P --> I{"input<br/>Apply?"}
+  I --> A["Apply<br/>unstash + apply"]
+  SCM --> AI["AI review<br/>PR builds only"]
 
-## Basic Setup
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class SCM neutral
+  class V,P base
+  class AI ai
+  class I aws
+  class A all
+```
 
-### Prerequisites
+## Choose an agent
 
-Ensure Jenkins has Docker pipeline plugin installed:
+=== ":simple-docker: Docker agent"
 
-- **Docker Pipeline Plugin**
-- **Docker Plugin**
-- **Kubernetes Plugin** (optional, for Kubernetes agents)
+    Needs the Docker Pipeline plugin, and Docker on the Jenkins node (not in the image).
 
----
-
-## Declarative Pipeline
-
-### Simple Terraform Deployment
-
-```groovy
-pipeline {
+    ```groovy
     agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'  // (1)!
-            args '-v $HOME/.aws:/root/.aws'  // (2)!
+      docker {
+        image 'ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234'
+        args  '-u 0:0'
+      }
+    }
+    ```
+
+=== ":simple-kubernetes: Kubernetes agent"
+
+    Needs the Kubernetes plugin.
+
+    ```groovy
+    agent {
+      kubernetes {
+        defaultContainer 'devops'
+        yaml '''
+    apiVersion: v1
+    kind: Pod
+    spec:
+      containers:
+        - name: devops
+          image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
+          command: ["sleep"]
+          args: ["infinity"]
+    '''
+      }
+    }
+    ```
+
+!!! warning "Run the Docker agent as root"
+    By default the Docker Pipeline plugin runs the container as the Jenkins user's UID. The image is built for root: `HOME` is `/root`, and some tools, such as `claude` in `/root/.local/bin`, live under it. Pass `args '-u 0:0'`. Files the build creates in the workspace are then owned by root, so add `cleanWs()` in `post { always { ... } }` if later builds on the node run as another user.
+
+!!! tip "Pinning"
+    `1.0.abc1234` is a per-commit tag: stable for that commit, but refreshed by the scheduled rebuilds with newer tool versions. For strict reproducibility, use `image 'ghcr.io/jinalshah/devops/images/aws-devops@sha256:<digest>'`.
+
+## Validate → plan → approve → apply
+
+```groovy title="Jenkinsfile"
+pipeline {
+  agent {
+    docker {
+      image 'ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234'
+      args  '-u 0:0'
+    }
+  }
+
+  options {
+    disableConcurrentBuilds()
+    timeout(time: 1, unit: 'HOURS')
+  }
+
+  environment {
+    AWS_REGION = 'eu-west-2'
+    TF_IN_AUTOMATION = 'true'
+  }
+
+  stages {
+    stage('Validate') {
+      parallel {
+        stage('fmt') {
+          steps { sh 'terraform fmt -check -recursive terraform/' }
         }
+        stage('tflint') {
+          steps { sh 'cd terraform && tflint --init && tflint --recursive' }
+        }
+        stage('trivy') {
+          steps { sh 'trivy config --severity HIGH,CRITICAL --exit-code 1 terraform/' }
+        }
+      }
     }
 
-    environment {  // (3)!
-        AWS_REGION = 'us-east-1'
+    stage('Plan') {
+      steps {
+        withCredentials([aws(credentialsId: 'aws-terraform',
+                             accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh '''
+            cd terraform
+            terraform init -input=false
+            terraform plan -input=false -out=tfplan
+          '''
+        }
+        stash name: 'tfplan', includes: 'terraform/tfplan'
+      }
     }
 
-    stages {
-        stage('Terraform Init') {
-            steps {
-                sh 'terraform init'
-            }
+    stage('Apply') {
+      when {
+        beforeInput true
+        branch 'main'
+      }
+      input {
+        message 'Apply this plan to production?'
+        ok 'Apply'
+      }
+      steps {
+        unstash 'tfplan'
+        withCredentials([aws(credentialsId: 'aws-terraform',
+                             accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh '''
+            cd terraform
+            terraform init -input=false
+            terraform apply -input=false tfplan
+          '''
         }
-
-        stage('Terraform Plan') {
-            steps {
-                sh 'terraform plan -out=tfplan'
-            }
-        }
-
-        stage('Terraform Apply') {
-            when {
-                branch 'main'  // (4)!
-            }
-            steps {
-                input message: 'Deploy to production?', ok: 'Deploy'  // (5)!
-                sh 'terraform apply tfplan'
-            }
-        }
+      }
     }
+  }
 
-    post {  // (6)!
-        always {
-            cleanWs()
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Deployment failed!'
-        }
-    }
+  post {
+    always { cleanWs() }
+  }
 }
 ```
 
-1. Use DevOps Image as agent container
-2. Mount AWS credentials from Jenkins host
-3. Define environment variables
-4. Only deploy from main branch
-5. Manual approval gate
-6. Post-build actions
+## Credentials
 
----
+The `aws(...)` binding comes from the AWS Credentials plugin and sets the two variables the AWS CLI and Terraform expect.
 
-## Multi-Stage Pipeline
+=== ":fontawesome-brands-aws: AWS"
 
-### Validate → Plan → Apply
+    ```groovy
+    withCredentials([aws(credentialsId: 'aws-terraform',
+                         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+      sh 'aws sts get-caller-identity'
+    }
+    ```
 
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
+    !!! danger "`credentials()` on AWS keys doesn't do this"
+        `environment { AWS = credentials('aws-terraform') }` on a username/password credential gives you `AWS_USR` and `AWS_PSW`. The AWS CLI ignores those. Use the `aws(...)` binding, or two **Secret text** credentials mapped explicitly:
+
+        ```groovy
+        environment {
+          AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
+          AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         }
-    }
+        ```
 
-    parameters {  // (1)!
-        choice(
-            name: 'ENVIRONMENT',
-            choices: ['dev', 'staging', 'production'],
-            description: 'Target environment'
-        )
-        booleanParam(
-            name: 'AUTO_APPROVE',
-            defaultValue: false,
-            description: 'Auto-approve Terraform apply'
-        )
-    }
+=== ":simple-googlecloud: Google Cloud"
 
+    Store the service-account key as a **Secret file** credential.
+
+    ```groovy
+    withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+      sh '''
+        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+        gcloud config set project my-project
+        terraform -chdir=terraform/gcp apply -input=false -auto-approve
+      '''
+    }
+    ```
+
+    `gcloud` ignores `GOOGLE_APPLICATION_CREDENTIALS` for its own auth, so activate the service account explicitly; Terraform reads the variable directly. Use <span class="di-pill di-pill--gcp">gcp-devops</span> or <span class="di-pill di-pill--all">all-devops</span>.
+
+=== ":lucide-sparkles: AI CLIs"
+
+    Store API keys as **Secret text** credentials.
+
+    ```groovy
     environment {
-        TF_DIR = "${WORKSPACE}/terraform/${params.ENVIRONMENT}"
-        AWS_CREDENTIALS = credentials('aws-credentials')  // (2)!
+      ANTHROPIC_API_KEY = credentials('anthropic-api-key')
+      CODEX_API_KEY     = credentials('codex-api-key')
     }
+    ```
 
+!!! info "Each `sh` step is a new shell"
+    `sh 'export FOO=bar'` followed by `sh 'echo $FOO'` prints nothing, because the export dies with the first shell. Either put the commands in one `sh '''...'''` block, or set the value for several steps with `withEnv(["FOO=bar"]) { ... }` or the `environment {}` directive.
+
+## Multi-cloud and multi-environment
+
+Use a `matrix` to fan out across environments with <span class="di-pill di-pill--all">all-devops</span>:
+
+```groovy
+stage('Plan all') {
+  matrix {
+    axes {
+      axis { name 'CLOUD'; values 'aws', 'gcp' }
+      axis { name 'ENV';   values 'dev', 'staging', 'production' }
+    }
     stages {
-        stage('Validate') {
-            parallel {  // (3)!
-                stage('Terraform Format') {
-                    steps {
-                        dir("${TF_DIR}") {
-                            sh 'terraform fmt -check -recursive'
-                        }
-                    }
-                }
-                stage('TFLint') {
-                    steps {
-                        dir("${TF_DIR}") {
-                            sh 'tflint --init'
-                            sh 'tflint'
-                        }
-                    }
-                }
-                stage('Trivy Scan') {
-                    steps {
-                        sh 'trivy config ${TF_DIR} --severity HIGH,CRITICAL'
-                    }
-                }
-            }
+      stage('plan') {
+        steps {
+          sh '''
+            cd "terraform/${CLOUD}/${ENV}"
+            terraform init -input=false
+            terraform plan -input=false -out=tfplan
+          '''
         }
-
-        stage('Terraform Plan') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
-                }
-            }
-        }
-
-        stage('Approval') {
-            when {
-                expression { !params.AUTO_APPROVE }
-            }
-            steps {
-                input message: "Deploy to ${params.ENVIRONMENT}?", ok: 'Deploy'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform apply tfplan'
-                }
-            }
-        }
+      }
     }
-
-    post {
-        always {
-            archiveArtifacts artifacts: '**/tfplan', allowEmptyArchive: true
-            cleanWs()
-        }
-        success {
-            emailext (
-                subject: "SUCCESS: Terraform deployment to ${params.ENVIRONMENT}",
-                body: "Terraform deployment completed successfully.",
-                to: '$DEFAULT_RECIPIENTS'
-            )
-        }
-        failure {
-            emailext (
-                subject: "FAILED: Terraform deployment to ${params.ENVIRONMENT}",
-                body: "Terraform deployment failed. Check console output.",
-                to: '$DEFAULT_RECIPIENTS'
-            )
-        }
-    }
+  }
 }
 ```
 
-1. Pipeline parameters for user input
-2. Jenkins credentials binding
-3. Run validation stages in parallel
+Wrap the steps in the matching `withCredentials` block for each cloud, as shown under [Credentials](#credentials).
 
----
-
-## Scripted Pipeline
-
-### Advanced Multi-Cloud Deployment
+## Deploy to Kubernetes
 
 ```groovy
-node {
-    def dockerImage = 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-
-    stage('Checkout') {
-        checkout scm
+stage('Deploy') {
+  steps {
+    withCredentials([aws(credentialsId: 'aws-deploy',
+                         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+      sh '''
+        aws eks update-kubeconfig --region "$AWS_REGION" --name my-cluster
+        helm upgrade --install myapp ./charts/myapp \
+          --namespace production --create-namespace --wait --timeout 5m
+        kubectl rollout status deployment/myapp -n production
+      '''
     }
-
-    docker.image(dockerImage).inside('-v $HOME/.aws:/root/.aws -v $HOME/.config/gcloud:/root/.config/gcloud') {
-        try {
-            stage('AWS Deployment') {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
-                    dir('terraform/aws') {
-                        sh 'terraform init'
-                        sh 'terraform plan -out=aws-tfplan'
-                        sh 'terraform apply aws-tfplan'
-                    }
-                }
-            }
-
-            stage('GCP Deployment') {
-                withCredentials([file(credentialsId: 'gcp-sa-key', variable: 'GCP_KEY_FILE')]) {
-                    sh 'export GOOGLE_APPLICATION_CREDENTIALS=${GCP_KEY_FILE}'
-                    dir('terraform/gcp') {
-                        sh 'terraform init'
-                        sh 'terraform plan -out=gcp-tfplan'
-                        sh 'terraform apply gcp-tfplan'
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            currentBuild.result = 'FAILURE'
-            throw e
-        } finally {
-            cleanWs()
-        }
-    }
+  }
 }
 ```
 
----
+For GKE, replace the kubeconfig line with `gcloud container clusters get-credentials my-cluster --region europe-west2`. `gke-gcloud-auth-plugin` is included in the image.
 
-## Shared Library Integration
-
-### Reusable Pipeline Functions
-
-**`vars/terraformDeploy.groovy`**:
+## Security scanning
 
 ```groovy
-def call(Map config) {
-    pipeline {
-        agent {
-            docker {
-                image config.image ?: 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-            }
-        }
-
-        stages {
-            stage('Terraform Deploy') {
-                steps {
-                    script {
-                        withCredentials([
-                            string(credentialsId: config.awsKeyId, variable: 'AWS_ACCESS_KEY_ID'),
-                            string(credentialsId: config.awsSecretKey, variable: 'AWS_SECRET_ACCESS_KEY')
-                        ]) {
-                            dir(config.terraformDir) {
-                                sh 'terraform init'
-                                sh "terraform plan -out=tfplan"
-                                if (config.autoApprove) {
-                                    sh 'terraform apply tfplan'
-                                } else {
-                                    input message: 'Deploy?', ok: 'Deploy'
-                                    sh 'terraform apply tfplan'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+stage('Security') {
+  steps {
+    sh '''
+      trivy fs --scanners vuln,secret,misconfig --format json --output trivy.json .
+      trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .
+      if [ -d ansible ]; then ansible-lint ansible/; fi
+    '''
+  }
+  post {
+    always { archiveArtifacts artifacts: 'trivy.json', allowEmptyArchive: true }
+  }
 }
 ```
 
-**Using the shared library**:
+!!! warning "No Docker inside the image"
+    The image has no `docker` CLI, so `docker build` and `trivy image <local-image>` won't work in these stages. Build images in a stage that runs on the node itself (`agent any` with the Docker Pipeline `docker.build(...)` step), push them, then scan the pushed reference with `trivy image registry.example.com/app:tag`. Trivy pulls it from the registry without Docker.
+
+## AI review on pull requests
+
+In a multibranch pipeline, PR builds set `CHANGE_ID` and `CHANGE_TARGET`. This stage reviews the diff with Claude Code and comments on the GitHub PR with `gh`.
 
 ```groovy
-@Library('devops-pipeline') _
-
-terraformDeploy(
-    terraformDir: 'terraform/production',
-    awsKeyId: 'aws-access-key',
-    awsSecretKey: 'aws-secret-key',
-    autoApprove: false
-)
-```
-
----
-
-## Kubernetes Deployment
-
-### Deploy to EKS/GKE with Helm
-
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-            args '-v $HOME/.kube:/root/.kube'
-        }
-    }
-
-    environment {
-        AWS_REGION = 'us-east-1'
-        CLUSTER_NAME = 'my-eks-cluster'
-        NAMESPACE = 'production'
-    }
-
-    stages {
-        stage('Configure kubectl') {
-            steps {
-                withAWS(credentials: 'aws-credentials', region: env.AWS_REGION) {
-                    sh """
-                        aws eks update-kubeconfig \
-                            --region ${AWS_REGION} \
-                            --name ${CLUSTER_NAME}
-                    """
-                }
-            }
-        }
-
-        stage('Deploy with Helm') {
-            steps {
-                sh """
-                    helm upgrade --install myapp ./charts/myapp \
-                        --namespace ${NAMESPACE} \
-                        --create-namespace \
-                        --set image.tag=${env.BUILD_NUMBER} \
-                        --wait \
-                        --timeout 5m
-                """
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                sh "kubectl rollout status deployment/myapp -n ${NAMESPACE}"
-                sh "kubectl get pods -n ${NAMESPACE}"
-            }
-        }
-    }
+stage('AI review') {
+  when { changeRequest() }
+  environment {
+    ANTHROPIC_API_KEY = credentials('anthropic-api-key')
+    GH_TOKEN          = credentials('github-token')
+  }
+  steps {
+    sh '''
+      git config --global --add safe.directory "$WORKSPACE"
+      git fetch origin "$CHANGE_TARGET"
+      git diff "origin/$CHANGE_TARGET...HEAD" -- terraform/ ansible/ \
+        | claude -p "Review this infrastructure diff for security issues and risky changes. Reply in Markdown." \
+        > review.md
+      gh pr comment "$CHANGE_ID" --repo my-org/my-repo --body-file review.md
+    '''
+  }
 }
 ```
 
----
+Swap in `codex exec "..."` or `agy -p "..."` for a different agent; see [AI-assisted DevOps](ai-assisted-devops.md).
 
-## Security Scanning Pipeline
+## Shared library step
 
-### Comprehensive Security Checks
+Keep the Terraform boilerplate in one place:
 
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-        }
-    }
-
-    stages {
-        stage('Security Scans') {
-            parallel {
-                stage('Trivy IaC Scan') {
-                    steps {
-                        sh '''
-                            trivy config ./terraform \
-                                --format json \
-                                --output trivy-report.json
-                            trivy config ./terraform \
-                                --severity HIGH,CRITICAL \
-                                --exit-code 1
-                        '''
-                    }
-                }
-
-                stage('TFLint') {
-                    steps {
-                        dir('terraform') {
-                            sh 'tflint --init'
-                            sh 'tflint --minimum-failure-severity=error'
-                        }
-                    }
-                }
-
-                stage('CloudFormation Lint') {
-                    when {
-                        expression {
-                            fileExists('cloudformation')
-                        }
-                    }
-                    steps {
-                        sh 'cfn-lint cloudformation/**/*.yaml'
-                    }
-                }
-
-                stage('Ansible Lint') {
-                    when {
-                        expression {
-                            fileExists('ansible')
-                        }
-                    }
-                    steps {
-                        sh 'ansible-lint ansible/'
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            publishHTML([
-                reportDir: '.',
-                reportFiles: 'trivy-report.json',
-                reportName: 'Trivy Security Report'
-            ])
-        }
-    }
+```groovy title="vars/terraformPlan.groovy"
+def call(String dir) {
+  sh """
+    cd '${dir}'
+    terraform init -input=false
+    terraform plan -input=false -out=tfplan
+  """
+  stash name: "tfplan-${dir.replace('/', '-')}", includes: "${dir}/tfplan"
 }
 ```
 
----
-
-## Multi-Branch Pipeline
-
-### Automatic Branch Detection
-
-**Jenkinsfile**:
-
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-        }
-    }
-
-    stages {
-        stage('Determine Environment') {
-            steps {
-                script {
-                    if (env.BRANCH_NAME == 'main') {
-                        env.DEPLOY_ENV = 'production'
-                    } else if (env.BRANCH_NAME == 'staging') {
-                        env.DEPLOY_ENV = 'staging'
-                    } else {
-                        env.DEPLOY_ENV = 'dev'
-                    }
-                    echo "Deploying to: ${env.DEPLOY_ENV}"
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                dir("terraform/${env.DEPLOY_ENV}") {
-                    sh 'terraform init'
-                    sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-    }
-}
+```groovy title="Jenkinsfile"
+@Library('platform-lib') _
+// ...
+steps { terraformPlan('terraform/production') }
 ```
-
-**Jenkins Configuration**:
-
-1. Create a Multibranch Pipeline job
-2. Configure branch sources (Git)
-3. Set scan triggers
-4. Jenkins automatically creates jobs for each branch
-
----
-
-## AI-Assisted Code Review
-
-### Automated Review with Claude CLI
-
-```groovy
-pipeline {
-    agent {
-        docker {
-            image 'ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234'
-        }
-    }
-
-    environment {
-        CLAUDE_API_KEY = credentials('claude-api-key')
-    }
-
-    stages {
-        stage('AI Code Review') {
-            when {
-                changeRequest()  // Only on pull requests
-            }
-            steps {
-                script {
-                    // Get changed files
-                    sh 'git diff origin/main...HEAD -- terraform/ > changes.diff'
-
-                    // Setup Claude CLI
-                    sh '''
-                        mkdir -p ~/.claude
-                        echo "${CLAUDE_API_KEY}" > ~/.claude/config.json
-                    '''
-
-                    // Review with Claude
-                    sh '''
-                        claude "Review this Terraform code for security issues and best practices" \
-                            --file changes.diff \
-                            > review-output.md
-                    '''
-
-                    // Archive review
-                    archiveArtifacts artifacts: 'review-output.md'
-
-                    // Post as comment (if using GitHub)
-                    sh '''
-                        curl -X POST \
-                            -H "Authorization: token ${GITHUB_TOKEN}" \
-                            -d "{\\"body\\": \\"$(cat review-output.md)\\"}" \
-                            https://api.github.com/repos/owner/repo/issues/${CHANGE_ID}/comments
-                    '''
-                }
-            }
-        }
-    }
-}
-```
-
----
-
-## Best Practices
-
-!!! tip "Performance Optimisation"
-
-    1. **Reuse Docker agents**: Use `reuseNode true` to avoid creating new containers
-    2. **Cache Docker images**: Configure Docker to cache pulled images
-    3. **Use shared libraries**: Avoid duplicating pipeline code
-    4. **Parallel stages**: Run independent stages in parallel
-    5. **Workspace cleanup**: Use `cleanWs()` to free disk space
-
-!!! tip "Security Best Practices"
-
-    1. **Use Jenkins Credentials**: Store secrets in Jenkins credential store
-    2. **Limit credential scope**: Use folder-level credentials when possible
-    3. **Audit credential usage**: Review credential access logs regularly
-    4. **Use approval gates**: Add `input` steps for production deployments
-    5. **Mask sensitive output**: Use `wrap([$class: 'MaskPasswordsBuildWrapper'])`
-
-!!! warning "Common Pitfalls"
-
-    - ❌ **Hardcoding credentials**: Always use Jenkins credentials
-    - ❌ **No workspace cleanup**: Can fill up disk space
-    - ❌ **Using `latest` tag**: Non-reproducible builds
-    - ❌ **No error handling**: Use try/catch in scripted pipelines
-
----
-
-## Credentials Management
-
-### Storing Credentials
-
-**Via Jenkins UI**:
-
-1. Navigate to: `Manage Jenkins → Manage Credentials`
-2. Add credential:
-   - **Secret text**: For API keys, tokens
-   - **Secret file**: For service account keys
-   - **Username with password**: For cloud credentials
-
-**Using credentials in pipeline**:
-
-```groovy
-withCredentials([
-    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
-]) {
-    sh 'terraform apply'
-}
-```
-
----
 
 ## Troubleshooting
 
-??? question "Docker agent fails to start"
+??? question "`permission denied` or `command not found` for tools under `/root`"
+    The Docker agent is running as a non-root UID. Add `args '-u 0:0'` to the `docker` agent.
 
-    **Problem**: Jenkins can't start Docker agent
+??? question "The build hangs at the `input` step and holds an executor"
+    A top-level `agent` keeps the container and executor while waiting. Add a `timeout` option, or give the pipeline `agent none` and set an agent per stage, so the approval stage doesn't hold one.
 
-    **Solutions**:
-    1. Verify Jenkins has Docker permissions:
-       ```bash
-       sudo usermod -aG docker jenkins
-       sudo systemctl restart jenkins
-       ```
-    2. Check Docker daemon is running:
-       ```bash
-       sudo systemctl status docker
-       ```
+??? question "`fatal: detected dubious ownership in repository`"
+    Add `git config --global --add safe.directory "$WORKSPACE"` before your own `git` commands.
 
-??? question "Credentials not available in container"
+## Next steps
 
-    **Problem**: Environment variables not accessible inside Docker container
-
-    **Solution**: Use `withCredentials` block inside Docker agent:
-    ```groovy
-    docker.image('...').inside() {
-        withCredentials([...]) {
-            sh 'terraform apply'
-        }
-    }
-    ```
-
-??? question "Workspace permissions issues"
-
-    **Problem**: Permission denied errors in workspace
-
-    **Solution**: Run container with correct user:
-    ```groovy
-    agent {
-        docker {
-            image '...'
-            args '-u root'  // Run as root if needed
-        }
-    }
-    ```
-
----
-
-## Example Repository Structure
-
-```
-.
-├── Jenkinsfile                    # Main pipeline
-├── Jenkinsfile.security           # Security scan pipeline
-├── vars/
-│   ├── terraformDeploy.groovy     # Shared library
-│   └── helmDeploy.groovy          # Shared library
-├── terraform/
-│   ├── dev/
-│   ├── staging/
-│   └── production/
-├── ansible/
-│   └── playbooks/
-└── charts/
-    └── myapp/
-```
-
----
-
-## Next Steps
-
-- [GitHub Actions Integration](ci-cd-github.md) - GitHub Actions examples
-- [GitLab CI Integration](ci-cd-gitlab.md) - GitLab CI examples
-- [CircleCI Integration](ci-cd-circleci.md) - CircleCI config examples
-- [AI-Assisted DevOps](ai-assisted-devops.md) - AI workflow automation
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining multiple tools
+- [GitHub Actions](ci-cd-github.md) · [GitLab CI](ci-cd-gitlab.md) · [CircleCI](ci-cd-circleci.md)
+- [Terraform workflows](terraform-workflows.md)
+- [Multi-tool patterns](multi-tool-patterns.md)

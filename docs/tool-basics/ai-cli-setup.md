@@ -1,578 +1,363 @@
 # AI CLI Setup & Usage
 
-Comprehensive guide to setting up and using the AI CLI tools (Claude, Codex, Copilot, Gemini) included in DevOps Images for AI-assisted infrastructure development.
+Every DevOps image ships four agentic AI coding assistants. Each one can read your project, edit files and run commands, and each has an interactive mode for you and a non-interactive mode for scripts and CI. This page shows how to sign in to each one inside the container and how to call it from a script.
 
-!!! tip "Why AI CLI Tools?"
-    - **Code generation**: Generate Infrastructure as Code from natural language
-    - **Code review**: Automated security and best practice reviews
-    - **Troubleshooting**: Debug errors and get solutions
-    - **Documentation**: Auto-generate documentation from code
-    - **Learning**: Get explanations of complex configurations
+<div class="grid cards" markdown>
 
----
+-   :simple-claude:{ .lg .middle } __Claude Code__ · `claude`
 
-## Available AI CLIs
+    ---
 
-| Tool | Provider | Best For | API Required |
-|------|----------|----------|--------------|
-| **claude** | Anthropic | Code review, architecture design, complex reasoning | ✅ Anthropic API Key |
-| **codex** | OpenAI | Code generation, completion | ✅ OpenAI API Key |
-| **copilot** | GitHub | IDE integration, inline suggestions | ✅ GitHub Copilot subscription |
-| **agy** | Google | Agentic tasks, GCP integration | ✅ Google Antigravity auth/session |
+    Anthropic's coding agent. Sign in with a Claude subscription or an Anthropic API key.
 
----
+    [:octicons-arrow-right-24: Set up Claude Code](#claude-code)
 
-## Claude CLI Setup
+-   :lucide-sparkles:{ .lg .middle } __OpenAI Codex CLI__ · `codex`
 
-### Get API Key
+    ---
 
-1. Visit [Anthropic Console](https://console.anthropic.com/)
-2. Sign up or log in
-3. Navigate to API Keys
-4. Create new API key
-5. Copy the key (starts with `sk-ant-`)
+    OpenAI's coding agent. Sign in with ChatGPT or an OpenAI API key.
 
-### Configure Claude CLI
+    [:octicons-arrow-right-24: Set up Codex](#openai-codex-cli)
 
-=== "Interactive Setup"
+-   :simple-githubcopilot:{ .lg .middle } __GitHub Copilot CLI__ · `copilot`
 
-    ```bash
-    docker run -it --rm \
-      -v ~/.claude:/root/.claude \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      claude auth login
-    ```
+    ---
 
-    Follow the prompts to enter your API key.
+    GitHub's standalone agentic terminal assistant (not the old `gh copilot` extension). Needs a Copilot subscription.
 
-=== "Environment Variable"
+    [:octicons-arrow-right-24: Set up Copilot](#github-copilot-cli)
 
-    ```bash
-    docker run -it --rm \
-      -v $PWD:/workspace \
-      -e ANTHROPIC_API_KEY=sk-ant-... \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      claude "Review this code" --file main.tf
-    ```
+-   :simple-googlegemini:{ .lg .middle } __Google Antigravity CLI__ · `agy`
 
-=== "Config File"
+    ---
 
-    Create `~/.claude/config.json`:
-    ```json
-    {
-      "api_key": "sk-ant-..."
-    }
-    ```
+    Google's coding agent, and the successor to Gemini CLI. Sign in with a Google account, a Gemini API key or ADC.
 
-    Then mount it:
-    ```bash
-    docker run -it --rm \
-      -v $PWD:/workspace \
-      -v ~/.claude:/root/.claude \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest
-    ```
+    [:octicons-arrow-right-24: Set up Antigravity](#google-antigravity-cli)
 
-### Usage Examples
+</div>
 
-#### Code Review
+!!! info "Gemini CLI has been replaced by Antigravity CLI"
+    On 19 May 2026 Google [announced that Gemini CLI is being replaced by Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/). From 18 June 2026 Gemini CLI stopped serving free and Google AI Pro/Ultra individual users, so the images now ship `agy` instead of `gemini`.
 
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this Terraform code for security issues and best practices" \
-    --file terraform/main.tf
+    Antigravity CLI shares its agent harness with the Antigravity 2.0 desktop app. It still keeps its state under `~/.gemini` and still reads `GEMINI.md` context files, but the commands and the API-key setup are different (see [below](#google-antigravity-cli)). Full docs: [antigravity.google/docs](https://antigravity.google/docs).
+
+## At a glance
+
+| | :simple-claude: Claude Code | :lucide-sparkles: Codex CLI | :simple-githubcopilot: Copilot CLI | :simple-googlegemini: Antigravity CLI |
+|---|---|---|---|---|
+| **Command** | `claude` | `codex` | `copilot` | `agy` |
+| **Installed from** | Native installer | npm `@openai/codex` | npm `@github/copilot` | Google installer (`/usr/local/bin/agy`) |
+| **Interactive sign-in** | `claude`, then `/login` | `codex login` (add `--device-auth` when headless) | `copilot`, then `/login` | `agy`, then sign in with Google |
+| **CI / headless auth** | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | `CODEX_API_KEY` | `COPILOT_GITHUB_TOKEN` (fine-grained PAT) | `GEMINI_API_KEY` + `settings.json`, or ADC + `AGY_ADC_AUTH=true` |
+| **Non-interactive** | `claude -p "..."` | `codex exec "..."` | `copilot -p "..." --allow-all-tools` | `agy -p "..."` |
+| **Config to mount** | `~/.claude` (+ `~/.claude.json`) | `~/.codex` | `~/.copilot` | `~/.gemini` |
+| **You need** | Claude plan or Anthropic API key | ChatGPT plan or OpenAI API key | GitHub Copilot subscription | Google account or Gemini API key |
+
+Plans and prices change often, so check each vendor directly: [Claude](https://claude.com/pricing), [OpenAI API](https://openai.com/api/pricing/), [GitHub Copilot](https://github.com/features/copilot/plans) and [Antigravity](https://antigravity.google/docs).
+
+## How sign-in works in a container
+
+The CLIs keep their login in a config directory under `/root`. Mount that directory from your host and you sign in once, then every new container reuses the login. In CI, where nothing is mounted, you pass a token as an environment variable instead.
+
+```mermaid
+sequenceDiagram
+  participant H as Host config dir<br/>~/.claude, ~/.codex,<br/>~/.copilot, ~/.gemini
+  participant C as CLI in container
+  participant V as Vendor API
+  H->>C: mounted at /root/...
+  alt no saved login yet
+    C->>V: start sign-in
+    V-->>C: login URL
+    Note over C: open the URL on your host,<br/>paste the code back
+    C->>H: token saved to mounted dir
+  end
+  C->>V: prompt + token
+  V-->>C: response, edits, commands
 ```
 
-#### Generate Infrastructure Code
+Start a container with all four logins mounted (you only need the ones you use):
 
 ```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Generate Terraform code to create an AWS VPC with 3 public and 3 private subnets" \
-    > vpc.tf
-```
+[ -s ~/.claude.json ] || echo '{}' > ~/.claude.json
+mkdir -p ~/.claude ~/.codex ~/.copilot ~/.gemini
 
-#### Explain Complex Configuration
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Explain what this Ansible playbook does" \
-    --file ansible/deploy.yml
-```
-
-#### Debug Errors
-
-```bash
-# Save error output
-terraform apply 2>&1 | tee error.log
-
-# Ask Claude to debug
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "This Terraform apply failed. What's wrong and how do I fix it?" \
-    --file error.log
-```
-
----
-
-## Codex CLI Setup
-
-### Get API Key
-
-1. Visit [OpenAI Platform](https://platform.openai.com/)
-2. Sign up or log in
-3. Navigate to API Keys
-4. Create new API key
-5. Copy the key (starts with `sk-`)
-
-### Configure Codex CLI
-
-=== "Environment Variable"
-
-    ```bash
-    docker run -it --rm \
-      -v $PWD:/workspace \
-      -e OPENAI_API_KEY=sk-... \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      codex "Generate Python script to list all S3 buckets"
-    ```
-
-=== "Config File"
-
-    Create `~/.codex/config.json`:
-    ```json
-    {
-      "api_key": "sk-..."
-    }
-    ```
-
-    Mount it:
-    ```bash
-    docker run -it --rm \
-      -v $PWD:/workspace \
-      -v ~/.codex:/root/.codex \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest
-    ```
-
-### Usage Examples
-
-#### Generate Scripts
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.codex:/root/.codex \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex "Create a bash script to backup PostgreSQL database to S3" \
-    > backup.sh
-```
-
-#### Code Completion
-
-```bash
-# Complete partial code
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.codex:/root/.codex \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  codex --complete \
-    --file partial-script.py
-```
-
----
-
-## GitHub Copilot CLI Setup
-
-### Get Access
-
-1. Subscribe to [GitHub Copilot](https://github.com/features/copilot)
-2. Install GitHub Copilot CLI extension
-3. Authenticate with GitHub
-
-### Configure Copilot CLI
-
-```bash
 docker run -it --rm \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.claude:/root/.claude \
+  -v ~/.claude.json:/root/.claude.json \
+  -v ~/.codex:/root/.codex \
   -v ~/.copilot:/root/.copilot \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot auth login
+  -v ~/.gemini:/root/.gemini \
+  ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Usage Examples
+!!! tip "Create the paths first"
+    If a mounted path doesn't exist on the host, Docker creates it as a root-owned **directory**. That breaks `~/.claude.json`, which must be a file, so the first two lines above come first. Seed the file with `{}` rather than leaving it empty: Claude Code reports an empty `~/.claude.json` as corrupted.
 
-#### Suggest Commands
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.copilot:/root/.copilot \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot suggest "deploy kubernetes application with helm"
-```
-
-#### Explain Commands
-
-```bash
-docker run --rm \
-  -v ~/.copilot:/root/.copilot \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  copilot explain "kubectl rollout status deployment/myapp -n production"
-```
+!!! note "Host logins don't always carry over"
+    Some CLIs keep tokens in the operating system's keychain on macOS and Windows, so mounting the directory doesn't bring the host login with it. Just sign in once inside the container: with the directory mounted, that login is saved and reused. Containers have no browser, so each CLI prints a URL (or a device code) for you to open on your host.
 
 ---
 
-## Antigravity CLI Setup
+## :simple-claude: Claude Code { #claude-code }
 
-### Authenticate
-
-Sign in with Google Antigravity, then mount the local `~/.gemini` directory into the container so `agy` can access its credentials/session state.
-
-### Configure Antigravity CLI
-
-=== "One-Off Prompt"
+=== ":lucide-terminal: Interactive"
 
     ```bash
     docker run -it --rm \
-      -v $PWD:/workspace \
-      -v ~/.gemini:/root/.gemini \
-      -w /workspace \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.claude:/root/.claude \
+      -v ~/.claude.json:/root/.claude.json \
       ghcr.io/jinalshah/devops/images/all-devops:latest \
-      agy "Generate GCP deployment manager template"
+      claude
     ```
 
-=== "Config File"
+    Type `/login` and pick your Claude subscription or Claude Console account. `claude auth status` shows who you're signed in as, and `claude doctor` checks the install.
 
-    Mount your Antigravity CLI credentials/session state:
+=== ":lucide-workflow: CI / headless"
+
+    Use an API key from the [Claude Console](https://platform.claude.com/), or create a long-lived subscription token with `claude setup-token` (needs a Claude subscription):
+
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -e ANTHROPIC_API_KEY \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      claude -p "Summarise what this repository deploys"
+    ```
+
+    Swap `-e ANTHROPIC_API_KEY` for `-e CLAUDE_CODE_OAUTH_TOKEN` to use the subscription token.
+
+**Non-interactive use:** always pass `-p` (`--print`). Without it, `claude` opens the interactive UI even when you redirect the output. There are no `--file` or `--stdin` flags: pipe content in, or name files in the prompt and Claude reads them from the working directory.
+
+```bash
+# Review your uncommitted changes
+git diff | claude -p "Review this diff for security issues and risky changes"
+
+# Explain a failure
+terraform plan 2>&1 | claude -p "Why did this plan fail, and how do I fix it?"
+
+# Let Claude read files itself
+claude -p "Explain what ansible/deploy.yml does, step by step" > deploy-explained.md
+
+# Machine-readable output
+claude -p "List the AWS resources in main.tf" --output-format json
+```
+
+Other handy flags: `--model`, `-c/--continue` (carry on from the last conversation) and `--permission-mode acceptEdits` (let a `-p` run edit files).
+
+---
+
+## :lucide-sparkles: OpenAI Codex CLI { #openai-codex-cli }
+
+=== ":lucide-terminal: Interactive"
+
     ```bash
     docker run -it --rm \
-      -v $PWD:/workspace \
-      -v ~/.gemini:/root/.gemini \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest
+      -v "$PWD":/srv -w /srv \
+      -v ~/.codex:/root/.codex \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      codex login --device-auth
     ```
 
-### Usage Examples
+    `--device-auth` gives you a code to enter in your host browser, which suits containers. After that, run `codex` for the interactive agent, or check the login with `codex login status`.
 
-#### GCP-Specific Tasks
+    To use an API key instead of ChatGPT sign-in, store it once:
+
+    ```bash
+    printenv OPENAI_API_KEY | codex login --with-api-key
+    ```
+
+=== ":lucide-workflow: CI / headless"
+
+    Set `CODEX_API_KEY` for a single `codex exec` run, with no `codex login` step:
+
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -e CODEX_API_KEY \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      codex exec "Summarise what this repository deploys"
+    ```
+
+**Non-interactive use:** use `codex exec` (alias `codex e`). Plain `codex "..."` starts the interactive UI. `codex exec` runs in a read-only sandbox by default. Add `--sandbox workspace-write` when you want it to create or edit files.
 
 ```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.gemini:/root/.gemini \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  agy "Create a Cloud Run service with auto-scaling" \
-    > cloud-run.yaml
+# Review a diff (piped input is added to the prompt)
+git diff | codex exec "Review this diff for security issues"
+
+# Let Codex write files in the project
+codex exec --sandbox workspace-write \
+  "Create scripts/backup-postgres.sh that dumps a PostgreSQL database and uploads it to S3"
+
+# JSONL event stream for tooling
+codex exec --json "List the Terraform modules in this repo"
 ```
 
-#### Multi-Modal Analysis
-
-```bash
-# Analyze architecture diagram
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.gemini:/root/.gemini \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  agy "Describe this infrastructure architecture" \
-    --image architecture.png
-```
+Settings live in `~/.codex/config.toml` and credentials in `~/.codex/auth.json`, which you should treat like a password. Set `CODEX_HOME` to move them. `-m/--model` picks a model, and `codex resume` reopens an earlier session.
 
 ---
 
-## Real-World Workflows
+## :simple-githubcopilot: GitHub Copilot CLI { #github-copilot-cli }
 
-### Workflow 1: Security-First Development
+`copilot` is GitHub's standalone agentic CLI. It is not IDE inline completion, and the old `gh copilot suggest/explain` extension isn't in the image.
 
-```bash
-#!/bin/bash
-# secure-deploy.sh
+=== ":lucide-terminal: Interactive"
 
-# 1. Generate infrastructure code with Claude
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Generate secure AWS EKS cluster with encrypted EBS volumes and VPC endpoints" \
-  > eks-cluster.tf
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.copilot:/root/.copilot \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      copilot
+    ```
 
-# 2. Review with Claude
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this EKS cluster code for security issues" \
-    --file eks-cluster.tf \
-  > security-review.md
+    Type `/login`. In a container it uses the GitHub device flow: open the URL on your host and enter the code.
 
-# 3. Scan with Trivy
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy config eks-cluster.tf
+=== ":lucide-workflow: CI / headless"
 
-# 4. Deploy
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "terraform init && terraform apply"
-```
+    Create a **fine-grained** personal access token with the **Copilot Requests** permission (classic `ghp_` tokens are not supported), and pass it as `COPILOT_GITHUB_TOKEN`:
 
-### Workflow 2: AI-Assisted Troubleshooting
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -e COPILOT_GITHUB_TOKEN \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      copilot -p "Summarise what this repository deploys" --allow-all-tools
+    ```
+
+    Copilot checks `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then `GITHUB_TOKEN`.
+
+**Non-interactive use:** `copilot -p "..."` needs `--allow-all-tools` (or `COPILOT_ALLOW_ALL=true`), because it can't stop to ask for permission. Add `-s/--silent` to print only the answer. There's no `--file` flag: name files in the prompt.
 
 ```bash
-#!/bin/bash
-# ai-troubleshoot.sh
-
-# Capture error
-kubectl apply -f deployment.yaml 2>&1 | tee error.log
-
-# Get AI help
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "This Kubernetes deployment failed. Analyze the error and provide a fix." \
-    --file error.log \
-    --file deployment.yaml \
-  > solution.md
-
-cat solution.md
+copilot -s --allow-all-tools \
+  -p "Review .github/workflows/deploy.yml for security issues and missing caching"
 ```
 
-### Workflow 3: Documentation Generation
-
-```bash
-#!/bin/bash
-# generate-docs.sh
-
-# Generate README for Terraform module
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Generate comprehensive README.md documentation for this Terraform module" \
-    --file main.tf \
-    --file variables.tf \
-    --file outputs.tf \
-  > README.md
-```
-
-### Workflow 4: Multi-Cloud Translation
-
-```bash
-# Translate AWS to GCP
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Convert this AWS Terraform code to equivalent GCP resources" \
-    --file aws/main.tf \
-  > gcp/main.tf
-```
+Other flags: `--model` and `--output-format text|json`. State lives in `~/.copilot` (set `COPILOT_HOME` to move it).
 
 ---
 
-## Comparison Matrix
+## :simple-googlegemini: Google Antigravity CLI { #google-antigravity-cli }
 
-### When to Use Which AI CLI?
+=== ":lucide-terminal: Interactive"
 
-| Use Case | Claude | Codex | Copilot | Gemini |
-|----------|--------|-------|---------|--------|
-| **Security review** | ✅ Best | ⚠️ Good | ⚠️ Good | ⚠️ Good |
-| **Code generation** | ✅ Best | ✅ Best | ✅ Best | ✅ Best |
-| **Architecture design** | ✅ Best | ⚠️ Good | ❌ Limited | ⚠️ Good |
-| **Troubleshooting** | ✅ Best | ⚠️ Good | ⚠️ Good | ⚠️ Good |
-| **Multi-modal (images)** | ❌ No | ❌ No | ❌ No | ✅ Yes |
-| **GCP-specific tasks** | ⚠️ Good | ⚠️ Good | ⚠️ Good | ✅ Best |
-| **Cost** | $$ | $$ | $ | Free tier |
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.gemini:/root/.gemini \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      agy
+    ```
 
-**Recommendations**:
+    Sign in with Google when prompted. With no browser available, `agy` prints a URL: open it on your host, then paste the code it shows you back into the terminal. This works in containers and over SSH. Use `/login` and `/logout` inside `agy` to switch accounts.
 
-- **General DevOps**: Claude (best reasoning)
-- **Quick code snippets**: Codex or Copilot
-- **GCP workloads**: Gemini
-- **Visual analysis**: Gemini (only one with multi-modal)
+=== ":lucide-key-round: Gemini API key"
 
----
+    Setting `GEMINI_API_KEY` on its own is **not** enough, which is different from Gemini CLI. You also have to switch the model provider in `~/.gemini/antigravity-cli/settings.json`:
 
-## Best Practices
+    ```bash
+    mkdir -p ~/.gemini/antigravity-cli
+    echo '{"modelProvider": "gemini"}' > ~/.gemini/antigravity-cli/settings.json
 
-!!! tip "Effective AI Usage"
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.gemini:/root/.gemini \
+      -e GEMINI_API_KEY \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      agy -p "Summarise what this repository deploys"
+    ```
 
-    1. **Be specific**: Detailed prompts get better results
-    2. **Provide context**: Include relevant files with `--file`
-    3. **Iterate**: Refine prompts based on output
-    4. **Review output**: Always review AI-generated code
-    5. **Combine tools**: Use Trivy/TFLint alongside AI review
+    If you already have a `settings.json`, add the `modelProvider` key to it rather than overwriting the file.
 
-!!! tip "Security"
+=== ":simple-googlecloud: ADC (Vertex / enterprise)"
 
-    1. **Never expose API keys**: Use environment variables or mounted config files
-    2. **Review before deploy**: AI-generated code should always be reviewed
-    3. **Scan AI output**: Run security scanners on generated code
-    4. **Cost awareness**: Monitor API usage to avoid unexpected bills
-    5. **Rotate keys**: Regularly rotate API keys
+    Use Application Default Credentials from your host, or a service account key, and set `AGY_ADC_AUTH=true`. This needs Gemini 3 Flash or newer models.
 
-!!! warning "Limitations"
+    ```bash
+    gcloud auth application-default login   # on the host
 
-    - ❌ **AI makes mistakes**: Always review output
-    - ❌ **Not always up-to-date**: May suggest deprecated approaches
-    - ❌ **Context limits**: Large files may be truncated
-    - ❌ **Costs add up**: Monitor usage
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      -e AGY_ADC_AUTH=true \
+      ghcr.io/jinalshah/devops/images/gcp-devops:latest \
+      agy -p "Summarise what this repository deploys"
+    ```
 
----
+    For a service account, mount the key and set `GOOGLE_APPLICATION_CREDENTIALS` to its path inside the container.
 
-## Cost Management
-
-### Track Usage
+**Non-interactive use:** `agy -p "..."` (`--print`), with `--output-format text|json|stream-json` and `--print-timeout 5m`. When a headless run fails, `agy` exits with code `3` and prints `AGY_ERROR: {json}` on stderr, which is easy to catch in CI. There are no `--file`, `--stdin` or `--image` flags: pipe content in, or name files in the prompt.
 
 ```bash
-# Create usage tracking script
-cat > track-ai-usage.sh <<'EOF'
-#!/bin/bash
-DATE=$(date +%Y-%m-%d)
-USAGE_LOG="ai-usage-$DATE.log"
+git diff | agy -p "Review this diff for security issues"
 
-echo "$(date): Claude API call" >> $USAGE_LOG
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "$@"
-EOF
+trivy config --format json . | agy -p "Prioritise these findings and suggest fixes" > trivy-triage.md
 
-chmod +x track-ai-usage.sh
+# Let it edit files without asking
+agy -p "Add descriptions to every variable in modules/vpc/variables.tf" --mode accept-edits
 ```
 
-### Cost Estimates (Approximate)
+Other flags: `--model`, `--effort low|medium|high`, `--mode plan`, `-c/--continue` and `--sandbox`. Subcommands include `agy models`, `agy mcp` and `agy update`, and `agy --version` prints the version. The binary also updates itself in the background.
 
-| Provider | Model | Cost per 1M tokens (input) | Cost per 1M tokens (output) |
-|----------|-------|---------------------------|----------------------------|
-| **Anthropic** | Claude 3.5 Sonnet | $3 | $15 |
-| **OpenAI** | GPT-4 Turbo | $10 | $30 |
-| **GitHub** | Copilot | $10/month (unlimited) | N/A |
-| **Google** | Gemini Pro | Free tier, then $0.50 | $1.50 |
+??? note "Where Antigravity keeps things"
+    - `~/.gemini/antigravity-cli/`: `settings.json`, conversations and logs
+    - `~/.gemini/config/`: `mcp_config.json`, `hooks.json`, skills and plugins
+    - Tokens go in the OS keyring. Containers have no D-Bus, so there they fall back to files under `~/.gemini`, which is why mounting `~/.gemini` keeps you signed in. `~/.antigravity` is not used.
+    - Project context comes from `GEMINI.md` and `AGENTS.md`, and workspace customisations go in `<repo>/.agents/` (`skills/`, `rules/`, `hooks.json`).
 
 ---
+
+## Choosing an assistant
+
+All four are capable agentic assistants: each reads and edits files and runs commands, and several accept images too. Pick based on what your team already pays for and signs in with:
+
+- :material-check: **Already on a Claude plan or the Anthropic API?** Use `claude`.
+- :material-check: **Already on ChatGPT or the OpenAI API?** Use `codex`.
+- :material-check: **Already licensed for GitHub Copilot?** Use `copilot`, with no extra vendor account.
+- :material-check: **Google Workspace, a Gemini API key or Vertex AI?** Use `agy`.
+
+A second assistant is also a cheap second opinion: generate with one, then review with another.
+
+## Good habits
+
+!!! tip "Getting good results"
+    - **Pipe in the evidence.** `git diff`, `terraform plan` output and `trivy` JSON give the model the facts it needs.
+    - **Be specific.** "Check IAM for `*` actions and security groups for `0.0.0.0/0`" beats "review this".
+    - **Keep the checks.** Run `terraform validate`, `tflint`, `ansible-lint` and `trivy` on anything an AI writes, then review it yourself.
+
+!!! warning "Permissions and secrets"
+    - Flags such as `--allow-all-tools`, `--dangerously-skip-permissions` and `--sandbox danger-full-access` let an agent run any command. Use them only in throwaway containers without production credentials mounted.
+    - Pass API keys with `-e VAR` (the value comes from your shell) rather than typing them on the command line, and keep them in your CI's secret store.
+    - `~/.codex/auth.json`, `~/.claude` and `~/.gemini` hold live tokens. Never commit them or bake them into an image.
 
 ## Troubleshooting
 
-??? question "API key not working"
+??? question "My script hangs or opens a full-screen UI"
+    You started the interactive mode. Use `claude -p`, `codex exec`, `copilot -p ... --allow-all-tools` or `agy -p`.
 
-    **Problem**: Authentication error when using AI CLI
+??? question "I have to sign in every time I start a container"
+    The config directory isn't mounted, or it's mounted at the wrong path. Check the table above; for Claude Code, also mount `~/.claude.json`. Then check it's visible inside the container:
 
-    **Solutions**:
-    1. Verify API key is correct and active
-    2. Check config file permissions:
-       ```bash
-       chmod 600 ~/.claude/config.json
-       ```
-    3. Ensure container can access mounted config:
-       ```bash
-       docker run --rm -v ~/.claude:/root/.claude \
-         ghcr.io/jinalshah/devops/images/all-devops:latest \
-         ls -la /root/.claude
-       ```
+    ```bash
+    docker run --rm -v ~/.gemini:/root/.gemini \
+      ghcr.io/jinalshah/devops/images/all-devops:latest ls -la /root/.gemini
+    ```
 
-??? question "Rate limit exceeded"
+??? question "`agy` ignores my `GEMINI_API_KEY`"
+    Add `{"modelProvider": "gemini"}` to `~/.gemini/antigravity-cli/settings.json`. The environment variable alone doesn't switch `agy` away from Google sign-in.
 
-    **Problem**: Too many API requests
+??? question "Copilot rejects my token"
+    Classic `ghp_` tokens aren't supported. Create a fine-grained PAT with the **Copilot Requests** permission on an account that has a Copilot subscription.
 
-    **Solutions**:
-    1. Add delays between requests
-    2. Upgrade to higher tier plan
-    3. Batch requests when possible
-    4. Cache responses locally
+??? question "Codex didn't write the file I asked for"
+    `codex exec` is read-only by default. Add `--sandbox workspace-write`.
 
-??? question "Context too long"
+## Next steps
 
-    **Problem**: Input file too large for AI model
-
-    **Solutions**:
-    1. Split large files into chunks
-    2. Provide only relevant sections
-    3. Use summary/extract approach:
-       ```bash
-       # First, summarize
-       claude "Summarize the main components of this file" --file large-file.tf
-
-       # Then, ask specific questions
-       claude "Review the VPC configuration" --file large-file.tf
-       ```
-
----
-
-## Advanced Integration
-
-### Pre-commit Hook with AI Review
-
-**`.pre-commit-config.yaml`**:
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: ai-code-review
-        name: AI Code Review
-        entry: ./scripts/ai-review.sh
-        language: system
-        files: \.(tf|yml|yaml)$
-        pass_filenames: true
-```
-
-**`scripts/ai-review.sh`**:
-
-```bash
-#!/bin/bash
-for file in "$@"; do
-  docker run --rm \
-    -v $PWD:/workspace \
-    -v ~/.claude:/root/.claude \
-    -w /workspace \
-    ghcr.io/jinalshah/devops/images/all-devops:latest \
-    claude "Quick security review of this file" --file "$file"
-done
-```
-
-### CI/CD Integration
-
-See [AI-Assisted DevOps Workflows](../workflows/ai-assisted-devops.md) for complete CI/CD integration examples.
-
----
-
-## Next Steps
-
-- [AI-Assisted DevOps Workflows](../workflows/ai-assisted-devops.md) - Complete workflow examples
-- [Authentication Guide](../use-images/authentication.md) - Mount AI credentials in containers
-- [Multi-Tool Patterns](../workflows/multi-tool-patterns.md) - Combine AI with other DevOps tools
-- [Security Workflows](../workflows/multi-tool-patterns.md#pattern-2-security-first-workflow) - AI + security scanning
+- [AI-assisted DevOps workflows](../workflows/ai-assisted-devops.md): review, generate and troubleshoot, with CI examples
+- [Authentication guide](../use-images/authentication.md): cloud, SSH and AI credentials in one place
+- [Multi-tool patterns](../workflows/multi-tool-patterns.md): combine AI with Terraform, Trivy and friends

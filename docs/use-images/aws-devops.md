@@ -1,467 +1,232 @@
-# AWS DevOps Image
-
-AWS-optimised container with all essential DevOps tools plus AWS-specific CLIs and libraries. Perfect for AWS-centric workflows while maintaining full platform tool support.
-
+---
+title: aws-devops
 ---
 
-## Pull the Image
+<div class="di-hero" markdown style="background: linear-gradient(120deg, #9a3412 0%, #ea7a0c 55%, #f59e0b 100%)">
 
-=== "GHCR (Recommended)"
+<div class="di-hero-badges"><span>AWS</span><span>amd64 + arm64</span><span>~1.55 GB download</span></div>
 
-    ```bash
-    # Latest version
-    docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
+# aws-devops
 
-    # Specific version (recommended for CI/CD)
-    docker pull ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
-    ```
+The shared DevOps base plus **AWS CLI v2**, the **Session Manager plugin** and AWS-focused Python packages. No Google Cloud SDK.
 
-    !!! tip "Why GHCR?"
-        - **No rate limits** for public images
-        - **Built-in GitHub integration** for CI/CD
-        - **Faster pulls** from GitHub Actions
+`ghcr.io/jinalshah/devops/images/aws-devops`
 
-=== "GitLab Registry"
+[:lucide-play: Quick start](#quick-start){ .md-button .md-button--primary }
+[:lucide-hammer: Build it yourself](../build-images/aws-devops.md){ .md-button }
 
-    ```bash
-    # Latest version
-    docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:latest
+</div>
 
-    # Specific version
-    docker pull registry.gitlab.com/jinal-shah/devops/images/aws-devops:1.0.abc1234
-    ```
+## What's inside
 
-    !!! tip "When to use"
-        - Using GitLab CI/CD pipelines
-        - Need GitLab Container Registry integration
-        - Already authenticated with GitLab
+<div class="grid cards" markdown>
 
-=== "Docker Hub"
+-   :fontawesome-brands-aws:{ .lg .middle } __AWS layer__
 
-    ```bash
-    # Latest version
-    docker pull js01/aws-devops:latest
+    ---
 
-    # Specific version
-    docker pull js01/aws-devops:1.0.abc1234
-    ```
+    - **AWS CLI v2** (official installer for the host architecture)
+    - **Session Manager plugin** for `aws ssm start-session`
+    - Python: **boto3**, **cfn-lint**, **s3cmd**, requests, pytest, bs4, lxml
+    - **crcmod**: a CRC32C checksum library with a C extension (mostly used by `gsutil`; harmless here)
 
-    !!! warning "Rate Limits"
-        Docker Hub has pull rate limits for free accounts:
+-   :lucide-layers:{ .lg .middle } __Shared base__
 
-        - **Unauthenticated**: 100 pulls per 6 hours
-        - **Authenticated**: 200 pulls per 6 hours
+    ---
 
-        Consider using GHCR for CI/CD to avoid rate limit issues.
+    - Terraform (tfswitch), Terragrunt, TFLint, Packer
+    - kubectl, Helm 3, k9s
+    - Ansible, ansible-lint, pre-commit, Task, Trivy
+    - Python 3.14, Node.js LTS, Git, `gh`, jq
+    - `claude`, `codex`, `copilot`, `agy`
+    - `mongosh`, `psql` 17, `mysql` 8.4
 
----
+</div>
 
-## What's Included
+Not included: kustomize as a separate binary (use `kubectl kustomize` or `kubectl apply -k`), yq, the Docker CLI. The full list is in the [tool explorer](quick-reference.md#tool-explorer).
 
-### Base Platform Tools
+!!! info "Size"
+    About 1.55 GB compressed and 4.6 GB unpacked, only slightly smaller than <span class="di-pill di-pill--all">all-devops</span>, because the shared base is most of the size. Pick it for a focused toolset rather than for a big size saving.
 
-All standard DevOps tools from the base image:
-
-- **Infrastructure as Code**: Terraform, Terragrunt, TFLint, Packer
-- **Kubernetes**: kubectl, Helm 3, k9s, kustomize
-- **Security**: Trivy (container scanning), ansible-lint
-- **Configuration Management**: Ansible
-- **Development**: Python 3.14, Node.js 20, Git, jq, yq
-- **AI CLIs**: claude, codex, copilot, agy
-- **Utilities**: gh (GitHub CLI), Task, zsh, vim, curl, wget
-
-### AWS-Specific Additions
-
-Tools optimised for AWS workflows:
-
-- **AWS CLI v2**: Latest AWS command-line interface
-- **AWS Session Manager Plugin**: Direct SSH-like access to EC2 instances
-- **Python Libraries**:
-  - `boto3`: AWS SDK for Python automation
-  - `cfn-lint`: CloudFormation template validation
-  - `s3cmd`: Advanced S3 operations
-  - `crcmod`: CRC32c verification for uploads
-
----
-
-## Quick Start
-
-### Interactive Shell
+## Quick start
 
 ```bash
-# Basic interactive shell with AWS credentials
 docker run -it --rm \
-  -v $PWD:/workspace \  # (1)!
-  -v ~/.aws:/root/.aws \  # (2)!
-  -w /workspace \  # (3)!
+  -v "$PWD":/srv -w /srv \
+  -v ~/.aws:/root/.aws \
   ghcr.io/jinalshah/devops/images/aws-devops:latest
 ```
 
-1. Mount current directory to `/workspace` for file access
-2. Mount AWS credentials for authentication
-3. Set working directory to your project
+Mount `~/.aws` to reuse your credentials, profiles and IAM Identity Center (SSO) token cache.
 
-### One-Off Commands
+## Authentication
 
-=== "AWS CLI"
+```mermaid
+flowchart LR
+  P["~/.aws mount<br/>profiles, SSO cache"] --> C["AWS SDK credential chain"]
+  E["-e AWS_* env vars<br/>CI secrets"] --> C
+  R["Instance / task role<br/>EC2, ECS, EKS"] --> C
+  C --> T["aws, Terraform,<br/>boto3, Ansible"]
+
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  class P,E,R neutral
+  class C,T aws
+```
+
+=== ":lucide-folder-key: Mount ~/.aws (recommended)"
 
     ```bash
-    # Verify AWS identity
     docker run --rm \
       -v ~/.aws:/root/.aws \
+      -e AWS_PROFILE=dev \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
       aws sts get-caller-identity
+    ```
 
-    # List S3 buckets
+    For IAM Identity Center profiles, run `aws sso login --profile dev` first. On the host that works as normal; inside the container add `--use-device-code`, because the default browser flow (AWS CLI 2.22 and later) has to finish on the same machine as the CLI.
+
+=== ":lucide-key-round: Environment variables"
+
+    ```bash
+    # Values come from your shell, so they never appear in the command itself
     docker run --rm \
-      -v ~/.aws:/root/.aws \
+      -e AWS_ACCESS_KEY_ID \
+      -e AWS_SECRET_ACCESS_KEY \
+      -e AWS_SESSION_TOKEN \
+      -e AWS_DEFAULT_REGION=eu-west-2 \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
       aws s3 ls
     ```
 
-=== "Terraform + AWS"
+    Values passed with `-e` are visible in `docker inspect`. Prefer short-lived credentials.
+
+=== ":lucide-server: Instance or task role"
+
+    On EC2, ECS or EKS (IRSA or Pod Identity), the AWS CLI and SDKs pick up the role automatically, with no mounts or variables:
 
     ```bash
-    # Terraform plan with AWS credentials
-    docker run --rm \
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      terraform plan
-
-    # Terraform apply
-    docker run --rm \
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      terraform apply -auto-approve
+    docker run --rm ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      aws sts get-caller-identity
     ```
 
-=== "CloudFormation"
+    On EC2 with IMDSv2 and a hop limit of 1, IMDSv2 responses may not reach containers on a bridge network, because the container counts as an extra network hop. AWS recommends raising the hop limit to 2; `--network host` also avoids the extra hop.
+
+More options, including SSO and assuming roles, are in the [Authentication guide](authentication.md).
+
+## Common tasks
+
+=== ":simple-terraform: Terraform"
 
     ```bash
-    # Validate CloudFormation template
     docker run --rm \
-      -v $PWD:/workspace \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      cfn-lint template.yaml
-
-    # Deploy stack
-    docker run --rm \
-      -v $PWD:/workspace \
+      -v "$PWD":/srv -w /srv \
       -v ~/.aws:/root/.aws \
-      -w /workspace \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      aws cloudformation deploy \
-        --template-file template.yaml \
-        --stack-name my-stack
+      bash -c 'terraform init && terraform plan -out=tfplan'
     ```
 
-=== "Python + Boto3"
+=== ":lucide-file-code: CloudFormation"
 
     ```bash
-    # Run Python script with boto3
+    # Lint, then deploy
     docker run --rm \
-      -v $PWD:/workspace \
+      -v "$PWD":/srv -w /srv \
       -v ~/.aws:/root/.aws \
-      -w /workspace \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      python3 aws-automation.py
+      bash -c 'cfn-lint template.yaml &&
+               aws cloudformation deploy --template-file template.yaml --stack-name my-stack'
     ```
 
----
-
-## Authentication Methods
-
-### Method 1: Mount AWS Credentials (Recommended)
-
-```bash
-docker run -it --rm \
-  -v ~/.aws:/root/.aws \  # (1)!
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws sts get-caller-identity
-```
-
-1. Mounts your local `~/.aws` directory containing `credentials` and `config` files
-
-**Files mounted**:
-- `~/.aws/credentials` - AWS access keys
-- `~/.aws/config` - AWS CLI configuration (regions, output format)
-
-### Method 2: Environment Variables
-
-```bash
-docker run -it --rm \
-  -e AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE \  # (1)!
-  -e AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \  # (2)!
-  -e AWS_DEFAULT_REGION=us-east-1 \  # (3)!
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws s3 ls
-```
-
-1. Your AWS access key ID
-2. Your AWS secret access key
-3. Default AWS region for operations
-
-!!! warning "Security"
-    Environment variables are visible in `docker inspect` output. For production, prefer mounting credentials or using IAM roles.
-
-### Method 3: IAM Role (ECS/EC2)
-
-When running on AWS infrastructure (ECS, EC2, EKS), the container automatically inherits IAM credentials:
-
-```bash
-# No credentials needed - uses instance/task role
-docker run -it --rm \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  aws sts get-caller-identity
-```
-
-**Supported AWS environments**:
-- ECS tasks with task roles
-- EC2 instances with instance profiles
-- EKS pods with IRSA (IAM Roles for Service Accounts)
-
----
-
-## Common Workflows
-
-### Terraform on AWS
-
-```bash
-#!/bin/bash
-# Deploy infrastructure to AWS
-
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  sh -c "
-    terraform init
-    terraform validate
-    terraform plan -out=tfplan
-    terraform apply tfplan
-  "
-```
-
-### Ansible with EC2 Dynamic Inventory
-
-```bash
-# Run playbook against EC2 instances
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -v ~/.ssh:/root/.ssh \  # (1)!
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  ansible-playbook \
-    -i aws_ec2.yml \  # (2)!
-    deploy.yml
-```
-
-1. Mount SSH keys for EC2 instance access
-2. AWS EC2 dynamic inventory plugin
-
-### Security Scanning
-
-```bash
-# Scan CloudFormation templates
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  sh -c "
-    cfn-lint cloudformation/**/*.yaml
-    trivy config cloudformation/
-  "
-```
-
-### Python Automation with Boto3
-
-```bash
-# Run AWS automation script
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest \
-  python3 scripts/cleanup-unused-ebs.py
-```
-
----
-
-## Best Use Cases
-
-!!! success "Perfect For"
-
-    - ✅ **AWS-first DevOps teams**: No GCP tools to reduce image size
-    - ✅ **AWS-only CI/CD pipelines**: Faster startup than multi-cloud image
-    - ✅ **CloudFormation workflows**: Built-in `cfn-lint` validation
-    - ✅ **Terraform on AWS**: Full Terraform + AWS CLI integration
-    - ✅ **Python automation**: Pre-installed boto3 and AWS libraries
-    - ✅ **EKS deployments**: kubectl + Helm + AWS CLI in one image
-
-!!! info "Consider all-devops if you need"
-
-    - Multi-cloud (AWS + GCP) support
-    - `gcloud` CLI for hybrid workflows
-    - Team works across cloud providers
-
----
-
-## Image Size
-
-| Image | Size | AWS Tools |
-|-------|------|-----------|
-| **aws-devops** | ~2.8 GB | AWS CLI, boto3, cfn-lint, Session Manager |
-| all-devops | ~3.2 GB | AWS + GCP tools |
-
-**Size savings**: ~400 MB compared to `all-devops` by excluding GCP-specific tools.
-
----
-
-## Dockerfile Reference
-
-Want to build your own? See [Building AWS DevOps Image](../build-images/aws-devops.md) for:
-
-- Complete Dockerfile
-- Build arguments
-- Customisation options
-- Multi-platform builds
-
----
-
-## Advanced Usage
-
-??? tip "Cache Terraform Plugins"
-
-    Speed up repeated Terraform runs by caching provider plugins:
+=== ":simple-kubernetes: EKS"
 
     ```bash
     docker run --rm \
-      -v $PWD:/workspace \
+      -v "$PWD":/srv -w /srv \
       -v ~/.aws:/root/.aws \
-      -v ~/.terraform.d:/root/.terraform.d \  # (1)!
-      -w /workspace \
+      -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      bash -c 'aws eks update-kubeconfig --region eu-west-2 --name my-cluster &&
+               kubectl get nodes'
+    ```
+
+    The kubeconfig calls `aws eks get-token`, so keep `~/.aws` mounted whenever you use it.
+
+=== ":lucide-terminal: Session Manager"
+
+    ```bash
+    docker run -it --rm \
+      -v ~/.aws:/root/.aws \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      aws ssm start-session --target i-0123456789abcdef0
+    ```
+
+    Inside the container the `aws-ssm <instance-id>` alias does the same.
+
+=== ":simple-ansible: Ansible on EC2"
+
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.aws:/root/.aws \
+      -v ~/.ssh:/root/.ssh:ro \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      ansible-playbook -i aws_ec2.yml deploy.yml
+    ```
+
+    `aws_ec2.yml` is an inventory for the `amazon.aws.aws_ec2` plugin, which uses the boto3 already in the image.
+
+=== ":simple-python: boto3 scripts"
+
+    ```bash
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.aws:/root/.aws \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest \
+      python3 scripts/cleanup-unused-ebs.py
+    ```
+
+## Tips
+
+??? tip "Cache Terraform providers between runs"
+    Terraform only uses a shared plugin cache when you tell it to:
+
+    ```bash
+    mkdir -p ~/.terraform.d/plugin-cache
+    docker run --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.aws:/root/.aws \
+      -v ~/.terraform.d:/root/.terraform.d \
+      -e TF_PLUGIN_CACHE_DIR=/root/.terraform.d/plugin-cache \
       ghcr.io/jinalshah/devops/images/aws-devops:latest \
       terraform init
     ```
 
-    1. Cache Terraform plugins across runs (saves download time)
-
-??? tip "Named Container for Persistent Shell"
-
-    Keep a persistent container for ongoing work:
+??? tip "A host alias"
+    Add this to your `~/.bashrc` or `~/.zshrc`:
 
     ```bash
-    # Create named container
-    docker run -it --name aws-dev \
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest
-
-    # Later, restart the same container
-    docker start -i aws-dev
+    alias aws-devops='docker run -it --rm -v "$PWD":/srv -w /srv -v ~/.aws:/root/.aws -v ~/.ssh:/root/.ssh:ro ghcr.io/jinalshah/devops/images/aws-devops:latest'
     ```
 
-??? tip "Custom Shell Alias"
-
-    Add to `~/.bashrc` or `~/.zshrc`:
-
-    ```bash
-    alias aws-devops='docker run -it --rm \
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -v ~/.ssh:/root/.ssh \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest'
-
-    # Usage
-    aws-devops terraform plan
-    aws-devops aws s3 ls
-    ```
-
----
+    Then run `aws-devops terraform plan` or `aws-devops aws s3 ls`.
 
 ## Troubleshooting
 
-??? question "AWS credentials not found"
+??? question "`Unable to locate credentials`"
+    1. Check that the files are mounted: `docker run --rm -v ~/.aws:/root/.aws ghcr.io/jinalshah/devops/images/aws-devops:latest ls -la /root/.aws`
+    2. If you use named profiles, pass `-e AWS_PROFILE=<name>`.
+    3. For SSO profiles, refresh the session with `aws sso login --profile <name>`.
 
-    **Problem**: `Unable to locate credentials`
+??? question "`You must specify a region`"
+    The image doesn't set a default region. Add `region = eu-west-2` to the profile in `~/.aws/config`, or pass `-e AWS_DEFAULT_REGION=eu-west-2`.
 
-    **Solutions**:
+??? question "Files created in my project are owned by root"
+    Run `sudo chown -R "$(id -u):$(id -g)" .` afterwards, or chown inside the container as the last step. `--user` isn't a good fix because Terraform, `claude` and `HOME` live under `/root`, which only root can read. See [Root-owned files](index.md#recommended-workstation-setup).
 
-    1. Verify credentials exist locally:
-       ```bash
-       cat ~/.aws/credentials
-       ```
+## Next steps
 
-    2. Check mount is working:
-       ```bash
-       docker run --rm -v ~/.aws:/root/.aws \
-         ghcr.io/jinalshah/devops/images/aws-devops:latest \
-         ls -la /root/.aws
-       ```
-
-    3. Use environment variables instead:
-       ```bash
-       docker run --rm \
-         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-         ghcr.io/jinalshah/devops/images/aws-devops:latest \
-         aws sts get-caller-identity
-       ```
-
-??? question "Region errors"
-
-    **Problem**: `You must specify a region`
-
-    **Solutions**:
-
-    1. Set default region in `~/.aws/config`:
-       ```ini
-       [default]
-       region = us-east-1
-       ```
-
-    2. Pass as environment variable:
-       ```bash
-       docker run --rm \
-         -e AWS_DEFAULT_REGION=us-east-1 \
-         -v ~/.aws:/root/.aws \
-         ghcr.io/jinalshah/devops/images/aws-devops:latest \
-         aws s3 ls
-       ```
-
-??? question "Permission denied on files"
-
-    **Problem**: Cannot write files created by container
-
-    **Solution**: Run with your user ID:
-
-    ```bash
-    docker run --rm \
-      --user "$(id -u):$(id -g)" \  # (1)!
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/aws-devops:latest \
-      terraform fmt
-    ```
-
-    1. Use your local user/group ID to match file ownership
-
----
-
-## Next Steps
-
-- [Authentication Guide](authentication.md) - Detailed credential setup
-- [Quick Reference](quick-reference.md) - Command cheat sheet
-- [Docker Compose Examples](docker-compose.md) - Multi-container setups
-- [Terraform Workflows](../workflows/terraform-workflows.md) - Advanced Terraform patterns
-- [CI/CD Integration](../workflows/ci-cd-github.md) - Use in pipelines
+- [Authentication guide](authentication.md)
+- [Quick reference](quick-reference.md)
+- [Terraform workflows](../workflows/terraform-workflows.md)
+- [GitHub Actions](../workflows/ci-cd-github.md)
