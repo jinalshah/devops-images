@@ -1,4 +1,4 @@
-# :simple-circleci: CircleCI
+# CircleCI
 
 Use a DevOps image as the primary container of a Docker executor. Every `run` step then has Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs on `PATH`. The image includes `bash`, so CircleCI's default `/bin/bash -eo pipefail` shell works as usual.
 

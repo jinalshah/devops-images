@@ -1,492 +1,174 @@
-# Image Size Optimisation
+---
+title: Optimisation
+---
 
-Learn how to optimise DevOps Image builds for faster pulls, reduced storage, and improved performance.
+# Size and build optimisation
 
-## Size Breakdown
+How big the images really are, where that size comes from, and what actually works if you need something smaller or faster to build.
 
-Understanding where the size comes from helps identify optimisation opportunities:
+<div class="di-stats">
+  <div class="di-stat"><strong>~1.6 GB</strong><span>all-devops download</span></div>
+  <div class="di-stat"><strong>~5.0 GB</strong><span>all-devops unpacked</span></div>
+  <div class="di-stat"><strong>&lt; 0.5 GB</strong><span>difference between variants</span></div>
+  <div class="di-stat"><strong>2</strong><span>architectures</span></div>
+</div>
+
+## Real sizes
+
+Measured from GHCR (`latest`). arm64 downloads are about 0.05 to 0.1 GB smaller.
+
+| Image | Compressed download | Unpacked on disk (amd64) |
+|-------|---------------------|--------------------------|
+| <span class="di-pill di-pill--all">all-devops</span> | ~1.6 GB | ~5.0 GB |
+| <span class="di-pill di-pill--aws">aws-devops</span> | ~1.55 GB | ~4.6 GB |
+| <span class="di-pill di-pill--gcp">gcp-devops</span> | ~1.5 GB | ~4.6 GB |
+
+The shared **base** is most of the size: Rocky Linux with the build toolchain (gcc, make, the `-devel` libraries), Python compiled from source with its pip packages, Node.js with four AI CLIs, and a dozen standalone binaries. The cloud layers on top are comparatively small, so switching from `all-devops` to a single-cloud image saves only a few hundred MB.
 
 ```mermaid
-pie title all-devops Size Breakdown (~3.2GB)
-    "Rocky Linux Base" : 500
-    "System Packages (yum)" : 800
-    "Python + pip Packages" : 600
-    "Cloud CLIs (AWS + GCP)" : 900
-    "IaC Tools (Terraform, etc)" : 300
-    "Other Tools & Utils" : 100
+flowchart LR
+  B["Shared base<br/>most of the size"] --> A["all-devops<br/>~5.0 GB"]
+  B --> W["aws-devops<br/>~4.6 GB"]
+  B --> G["gcp-devops<br/>~4.6 GB"]
+
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  class B base
+  class A all
+  class W aws
+  class G gcp
 ```
 
-### Component Sizes
+## What works for a smaller image
 
-| Component | Approximate Size | Optimisation Potential |
-|-----------|------------------|----------------------|
-| **Rocky Linux 10 Base** | ~500 MB | ❌ Minimal (required base) |
-| **System Packages** | ~800 MB | ⚠️  Moderate (clean cache) |
-| **Python + Packages** | ~600 MB | ✅ High (reduce packages) |
-| **AWS CLI + gcloud** | ~900 MB | ✅ High (use single-cloud image) |
-| **Terraform & IaC Tools** | ~300 MB | ⚠️  Moderate (pin versions) |
-| **Other Tools** | ~100 MB | ⚠️  Low (essential utils) |
+!!! warning "Deleting in a child image doesn't shrink it"
+    `FROM all-devops` followed by `RUN dnf remove …` or `rm -rf …` hides the files but keeps them in the lower layers, so the image is just as big (or bigger). To really shrink, either change the Dockerfile or copy what you need into a fresh base.
 
----
+=== ":lucide-git-branch: Fork and trim the Dockerfile"
 
-## Quick Wins: Reduce Image Size
+    The most effective option. Delete the install steps you don't need from the `base` stage, then build your target:
 
-### 1. Use Cloud-Specific Images
+    - no AI agents: drop the third `RUN` (Node.js, Claude Code, Codex, Copilot CLI, Antigravity CLI)
+    - no databases: drop the MongoDB, PostgreSQL and MySQL client steps
+    - a single cloud: build `aws-devops` or `gcp-devops` instead of `all-devops`
 
-**Savings**: ~300-400 MB
-
-Instead of `all-devops`, use `aws-devops` or `gcp-devops` if you only need one cloud provider.
-
-| Image | Size | Cloud Tools | Savings |
-|-------|------|-------------|---------|
-| **all-devops** | ~3.2 GB | AWS + GCP | Baseline |
-| **aws-devops** | ~2.8 GB | AWS only | **-400 MB** |
-| **gcp-devops** | ~2.9 GB | GCP only | **-300 MB** |
-
-```bash
-# Instead of
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Use
-docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest  # If AWS-only
-```
-
-### 2. Multi-Stage Builds for Custom Images
-
-**Savings**: Variable, can be 500+ MB
-
-Build a custom image with only the tools you need:
-
-```dockerfile
-# Build stage - includes build tools
-FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS builder
-
-# Install additional tools or build artifacts
-RUN pip3 install --no-cache-dir custom-package
-
-# Final stage - minimal runtime
-FROM rockylinux/rockylinux:10-minimal
-
-# Copy only what you need from builder
-COPY --from=builder /usr/local/bin/custom-tool /usr/local/bin/
-COPY --from=builder /usr/bin/terraform /usr/bin/
-COPY --from=builder /usr/bin/kubectl /usr/bin/
-
-# Your application code
-WORKDIR /workspace
-CMD ["zsh"]
-```
-
-### 3. Remove Unused Python Packages
-
-**Savings**: ~100-200 MB
-
-```dockerfile
-FROM ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Remove packages you don't use
-RUN pip3 uninstall -y ansible && \
-    yum remove -y ansible && \
-    yum clean all
-```
-
-### 4. Clean Package Manager Caches
-
-**Savings**: ~50-100 MB
-
-Already done in base images, but verify in custom builds:
-
-```dockerfile
-RUN yum install -y package-name && \
-    yum clean all && \
-    rm -rf /var/cache/yum
-```
-
----
-
-## Layer Optimisation Strategies
-
-### Order Dockerfile Instructions by Change Frequency
-
-Layers that change less frequently should come first:
-
-**✅ Good**: Maximise cache hits
-
-```dockerfile
-# 1. Base OS (changes almost never)
-FROM rockylinux/rockylinux:10
-
-# 2. System packages (changes rarely)
-RUN yum install -y git curl wget
-
-# 3. Binary downloads (version updates occasionally)
-RUN curl -LO https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_amd64.zip
-
-# 4. Python packages (moderate change frequency)
-RUN pip3 install ansible
-
-# 5. Application code (changes frequently)
-COPY scripts/ /usr/local/bin/
-```
-
-**❌ Bad**: Frequent cache invalidation
-
-```dockerfile
-FROM rockylinux/rockylinux:10
-
-# Application code changes frequently, invalidates all subsequent layers
-COPY scripts/ /usr/local/bin/
-
-# These get rebuilt every time even though they don't change
-RUN yum install -y git curl wget
-RUN pip3 install ansible
-```
-
-### Combine RUN Commands
-
-**✅ Good**: Fewer layers
-
-```dockerfile
-RUN yum install -y \
-      git \
-      curl \
-      wget && \
-    yum clean all && \
-    rm -rf /var/cache/yum
-```
-
-**❌ Bad**: More layers
-
-```dockerfile
-RUN yum install -y git
-RUN yum install -y curl
-RUN yum install -y wget
-RUN yum clean all
-```
-
-### Use .dockerignore
-
-Prevent unnecessary files from being added to the build context:
-
-```gitignore
-# .dockerignore
-.git
-.github
-*.md
-tests/
-.env
-.env.*
-*.log
-.DS_Store
-node_modules/
-__pycache__/
-*.pyc
-.terraform/
-*.tfstate
-*.tfstate.backup
-```
-
-**Savings**: Faster builds, no impact on image size but improves build performance
-
----
-
-## Build Argument Optimisation
-
-### Pin Versions for Reproducibility
-
-```bash
-# Good - consistent builds
-docker build \
-  --build-arg PACKER_VERSION=1.11.2 \
-  --build-arg PYTHON_VERSION=3.14.7 \
-  -t custom-devops:1.0.0 .
-
-# Avoid - unpredictable builds
-docker build -t custom-devops:latest .
-```
-
-### Use BuildKit Cache Mounts
-
-**Savings**: Faster rebuilds (not smaller images, but faster iteration)
-
-```dockerfile
-# syntax=docker/dockerfile:1
-
-FROM rockylinux/rockylinux:10
-
-# Cache pip downloads across builds
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip3 install ansible boto3 requests
-
-# Cache yum packages
-RUN --mount=type=cache,target=/var/cache/yum \
-    yum install -y git curl wget && \
-    yum clean all
-```
-
-Build with BuildKit:
-
-```bash
-DOCKER_BUILDKIT=1 docker build -t custom-devops:latest .
-```
-
----
-
-## Compression and Export Optimisation
-
-### Export and Compress for Distribution
-
-```bash
-# Save image to tar
-docker save ghcr.io/jinalshah/devops/images/all-devops:latest \
-  -o all-devops.tar
-
-# Compress with gzip
-gzip all-devops.tar
-# Result: all-devops.tar.gz (~1.2 GB compressed from ~3.2 GB)
-
-# Or use better compression with zstd
-docker save ghcr.io/jinalshah/devops/images/all-devops:latest | \
-  zstd -19 -o all-devops.tar.zst
-# Result: ~1.0 GB with better compression
-```
-
-### Squash Layers (Use with Caution)
-
-**Savings**: Can reduce size by eliminating intermediate layers
-
-```bash
-docker build --squash -t custom-devops:latest .
-```
-
-!!! warning "Squash Trade-offs"
-    **Pros**:
-
-    - Single layer = smaller total size
-    - Simpler layer structure
-
-    **Cons**:
-
-    - Loses layer caching benefits
-    - Slower rebuilds
-    - Harder to debug
-
-    **Recommendation**: Only squash final production images, not development images
-
----
-
-## Build Performance Optimisation
-
-### Parallel Builds
-
-Build multiple images simultaneously:
-
-```bash
-# Build all variants in parallel
-docker build --target all-devops -t all-devops:latest . &
-docker build --target aws-devops -t aws-devops:latest . &
-docker build --target gcp-devops -t gcp-devops:latest . &
-wait
-```
-
-### Use BuildKit for Better Performance
-
-BuildKit provides:
-
-- ✅ Parallel build stage execution
-- ✅ Better caching
-- ✅ Faster builds
-
-```bash
-# Enable BuildKit globally
-export DOCKER_BUILDKIT=1
-
-# Or per-build
-DOCKER_BUILDKIT=1 docker build -t custom-devops:latest .
-```
-
----
-
-## Before/After Optimisation Examples
-
-### Example 1: AWS-Only Deployment
-
-**Before**: Using `all-devops`
-
-```bash
-# Pull time: ~2-3 minutes (3.2 GB)
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-**After**: Using `aws-devops`
-
-```bash
-# Pull time: ~1.5-2 minutes (2.8 GB)
-docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
-```
-
-**Savings**: ~400 MB, ~30% faster pulls
-
-### Example 2: Custom Build with Minimal Tools
-
-**Before**: Using base image with all tools (~3.2 GB)
-
-**After**: Custom multi-stage build with only Terraform + kubectl
-
-```dockerfile
-FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS base
-
-FROM rockylinux/rockylinux:10-minimal
-COPY --from=base /usr/bin/terraform /usr/bin/
-COPY --from=base /usr/bin/kubectl /usr/bin/
-COPY --from=base /usr/bin/zsh /usr/bin/
-COPY --from=base /root/.oh-my-zsh /root/.oh-my-zsh
-RUN dnf install -y git curl && dnf clean all
-WORKDIR /workspace
-CMD ["zsh"]
-```
-
-**Result**: ~800 MB (75% reduction)
-
----
-
-## CI/CD Optimisation
-
-### 1. Use Image Caching in Pipelines
-
-=== "GitHub Actions"
-
-    ```yaml
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build and push
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+    ```bash
+    docker build --target aws-devops -t aws-devops:slim .
     ```
 
-=== "GitLab CI"
+=== ":lucide-package: Copy binaries into a fresh base"
 
-    ```yaml
-    build:
-      image: docker:latest
-      services:
-        - docker:dind
-      variables:
-        DOCKER_DRIVER: overlay2
-        DOCKER_BUILDKIT: 1
-      script:
-        - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:latest .
+    Many of the tools are static binaries in `/usr/local/bin`, so a multi-stage build can copy just those onto a clean Rocky Linux image:
+
+    ```dockerfile
+    FROM ghcr.io/jinalshah/devops/images/all-devops:latest AS tools
+
+    FROM rockylinux/rockylinux:10
+    COPY --from=tools /usr/local/bin/kubectl   /usr/local/bin/
+    COPY --from=tools /usr/local/bin/terraform /usr/local/bin/
+    COPY --from=tools /usr/local/bin/helm      /usr/local/bin/
+    COPY --from=tools /usr/local/bin/tflint    /usr/local/bin/
+    RUN dnf install -y git jq && dnf clean all && rm -rf /var/cache/dnf
+    WORKDIR /srv
+    CMD ["/bin/bash"]
     ```
 
-### 2. Pin Image Versions
+    This only works for self-contained binaries. Python tools (Ansible, the AWS CLI's dependencies, gcloud) and Node.js tools need their runtimes too, so install those normally.
 
-```yaml
-# Good - immutable, cacheable
-container:
-  image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+=== ":lucide-cloud: Pick a single-cloud image"
 
-# Avoid - unpredictable, cache invalidation
-container:
-  image: ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+    The easiest option, but the smallest saving: `aws-devops` and `gcp-devops` are about 0.4 GB smaller unpacked than `all-devops`.
 
-### 3. Pre-pull Images in Setup
+## Dockerfile habits that keep layers lean
 
-```yaml
-# GitHub Actions example
-- name: Pre-pull image
-  run: docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+<div class="grid cards" markdown>
 
-- name: Run deployment
-  run: |
-    docker run --rm \
-      -v $PWD:/workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234 \
-      terraform apply -auto-approve
-```
+-   :lucide-link:{ .lg .middle } __Clean up in the same `RUN`__
 
----
+    ---
 
-## Monitoring Image Size
+    Files deleted in a later layer still ship. The project Dockerfile removes `/tmp/*`, pip caches and `__pycache__` at the end of each `RUN`.
 
-### Check Layer Sizes
+    ```dockerfile
+    RUN dnf install -y httpd-tools && \
+        dnf clean all && \
+        rm -rf /var/cache/dnf
+    ```
+
+-   :lucide-list-checks:{ .lg .middle } __Order by change frequency__
+
+    ---
+
+    Rarely changing steps first and fast-moving ones last, so a version bump only rebuilds the tail. This is why the AI CLIs, which change most often, sit in the last base `RUN`.
+
+-   :lucide-file-x:{ .lg .middle } __Use `.dockerignore`__
+
+    ---
+
+    Keep `.git`, `site/`, `.terraform/` and state files out of the build context. That speeds up builds, though it doesn't change the image size.
+
+-   :lucide-archive:{ .lg .middle } __Cache mounts for faster rebuilds__
+
+    ---
+
+    BuildKit cache mounts keep package downloads between builds without storing them in the image:
+
+    ```dockerfile
+    # syntax=docker/dockerfile:1
+    RUN --mount=type=cache,target=/var/cache/dnf \
+        --mount=type=cache,target=/root/.cache/pip \
+        dnf install -y httpd-tools && \
+        python3 -m pip install checkov
+    ```
+
+</div>
+
+!!! note "`--squash` isn't an option"
+    `docker build --squash` is a legacy-builder feature and isn't supported with BuildKit, which is now the default builder. Since the Dockerfile already cleans up inside each `RUN`, flattening the layers would save little anyway.
+
+## Faster pulls in CI
+
+- **Pin one tag per pipeline.** Using the same `1.0.<sha>` (or digest) across jobs lets self-hosted runners reuse layers they've already pulled. `latest` moves with every rebuild.
+- **Use GHCR.** Docker Hub rate-limits anonymous pulls.
+- **Hosted runners start empty.** GitHub-hosted runners don't keep container layers between jobs, so each job downloads the image again (about 1.5 to 1.6 GB). If that matters, use self-hosted runners or a single job with several steps.
+
+## Measure it yourself
 
 ```bash
-# View all layers
-docker history ghcr.io/jinalshah/devops/images/all-devops:latest
+# Size of local images
+docker image ls --format 'table {{.Repository}}:{{.Tag}}\t{{.Size}}' | grep devops
 
-# View sizes sorted
-docker history ghcr.io/jinalshah/devops/images/all-devops:latest \
-  --no-trunc \
-  --format "table {{.Size}}\t{{.CreatedBy}}" | \
-  sort -h -r
+# Layer-by-layer breakdown, biggest first
+docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' \
+  ghcr.io/jinalshah/devops/images/all-devops:latest | sort -h -r | head
+
+# Compressed size per architecture, straight from the registry
+docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-### Compare Images
+To analyse the image interactively, use [dive](https://github.com/wagoodman/dive) from your host:
 
 ```bash
-# Get image sizes
-docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | \
-  grep devops
-
-# Expected output:
-# ghcr.io/jinalshah/devops/images/all-devops:latest    3.2GB
-# ghcr.io/jinalshah/devops/images/aws-devops:latest    2.8GB
-# ghcr.io/jinalshah/devops/images/gcp-devops:latest    2.9GB
-```
-
-### Dive Tool Analysis
-
-Use [dive](https://github.com/wagoodman/dive) to analyze layers:
-
-```bash
-# Install dive
-docker pull wagoodman/dive
-
-# Analyze image
 docker run --rm -it \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  wagoodman/dive:latest \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
+  wagoodman/dive:latest ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
----
+## Checklist
 
-## Optimisation Checklist
+- [ ] Use a single-cloud image if you only need one cloud
+- [ ] To really shrink, trim the Dockerfile or copy binaries into a fresh base; don't delete in a child image
+- [ ] Clean package caches (`dnf clean all`, `rm -rf /var/cache/dnf`, `pip --no-cache-dir`) in the same `RUN`
+- [ ] Order steps by how often they change
+- [ ] Add a `.dockerignore`
+- [ ] Use BuildKit cache mounts for faster rebuilds
+- [ ] Pin one tag or digest per pipeline
 
-- [ ] ✅ Use cloud-specific image if possible (`aws-devops` or `gcp-devops`)
-- [ ] ✅ Remove unused Python packages in custom builds
-- [ ] ✅ Combine RUN commands to reduce layers
-- [ ] ✅ Order Dockerfile by change frequency (base → app code)
-- [ ] ✅ Use `.dockerignore` to exclude unnecessary files
-- [ ] ✅ Clean package manager caches (`yum clean all`)
-- [ ] ✅ Pin versions for reproducible builds
-- [ ] ✅ Use BuildKit cache mounts for faster rebuilds
-- [ ] ✅ Enable DOCKER_BUILDKIT=1
-- [ ] ✅ Use multi-stage builds for custom images
-- [ ] ✅ Pin image versions in CI/CD pipelines
-- [ ] ✅ Pre-pull images in CI/CD setup phase
-- [ ] ✅ Monitor layer sizes with `docker history`
+## Next steps
 
----
-
-## Next Steps
-
-- [Customisation Guide](customization.md) - Build your own custom image
-- [Build Images Overview](index.md) - General build instructions
-- [Architecture](../architecture/index.md) - Understand image composition
-- [Choosing an Image](../choosing-an-image.md) - Select the right base image
-
----
-
-## Additional Resources
-
-- [Docker Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
-- [BuildKit Documentation](https://docs.docker.com/build/buildkit/)
-- [Multi-stage Builds](https://docs.docker.com/build/building/multi-stage/)
-- [Dive Tool](https://github.com/wagoodman/dive) - Layer analysis
+- [Customisation guide](customization.md)
+- [Building images](index.md)
+- [Architecture](../architecture/index.md)
+- [Docker build best practices](https://docs.docker.com/build/building/best-practices/)

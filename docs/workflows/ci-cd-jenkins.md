@@ -1,4 +1,4 @@
-# :simple-jenkins: Jenkins
+# Jenkins
 
 Jenkins runs the DevOps image as the build agent: a Docker agent on a node that has Docker, or a pod on Kubernetes. Every `sh` step then runs with Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs on `PATH`.
 

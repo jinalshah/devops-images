@@ -1,4 +1,4 @@
-# :simple-githubactions: GitHub Actions
+# GitHub Actions
 
 Run any job inside a DevOps image with the `container:` key. Every `run:` step then executes in the image, with Terraform, kubectl, Helm, Trivy, the cloud CLIs and the AI CLIs already on `PATH`.
 

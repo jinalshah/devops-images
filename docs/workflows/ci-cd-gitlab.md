@@ -1,4 +1,4 @@
-# :simple-gitlab: GitLab CI
+# GitLab CI
 
 Set `image:` on a job, or once in `default:`, and every `script:` line runs inside the DevOps image. The images are also published to the GitLab registry at `registry.gitlab.com/jinal-shah/devops/images/<image>`, which is handy if your runners only reach GitLab.
 

@@ -1,662 +1,349 @@
-# Terraform Workflows & Patterns
+# Terraform workflows
 
-Advanced Terraform workflow patterns using DevOps Images for infrastructure as code management, state handling, and multi-environment deployments.
+Every image ships Terraform (latest at build time, with `tfswitch` to change it), Terragrunt, TFLint and Trivy. This page covers the day-to-day loop, remote state, Terragrunt, testing and drift detection. The examples use <span class="di-pill di-pill--aws">aws-devops</span>, but they work the same in <span class="di-pill di-pill--all">all-devops</span>, and in <span class="di-pill di-pill--gcp">gcp-devops</span> with a GCS backend.
 
----
+## The loop
 
-## Basic Terraform Workflow
+```mermaid
+flowchart LR
+  I["init"] --> F["fmt + validate"]
+  F --> L["tflint + trivy config"]
+  L --> P["plan -out=tfplan"]
+  P --> R{"review"}
+  P -.-> AI["AI plan summary<br/>claude -p"]
+  AI -.-> R
+  R --> A["apply tfplan"]
+  A -.-> D["scheduled drift check<br/>plan -detailed-exitcode"]
 
-### Standard Development Cycle
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  class I,F,L,P base
+  class AI ai
+  class R aws
+  class A all
+  class D neutral
+```
+
+Start a shell with your project and AWS config mounted:
 
 ```bash
-# Interactive container with project mounted
 docker run -it --rm \
-  -v $PWD:/workspace \
+  -v "$PWD":/srv -w /srv \
   -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
+  ghcr.io/jinalshah/devops/images/aws-devops:latest
+```
 
-# Inside container
+Then, inside the container:
+
+```bash
 terraform init
+terraform fmt -recursive
 terraform validate
-terraform plan
+tflint --init && tflint --recursive
+trivy config --severity HIGH,CRITICAL .
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+The zsh config also has short `tf*` aliases for these; see [Tool basics](../tool-basics/index.md).
+
+## Remote state
+
+=== ":fontawesome-brands-aws: S3"
+
+    ```hcl title="backend.tf"
+    terraform {
+      backend "s3" {
+        bucket       = "my-terraform-state"
+        key          = "production/terraform.tfstate"
+        region       = "eu-west-2"
+        encrypt      = true
+        use_lockfile = true
+      }
+    }
+    ```
+
+    !!! tip "No DynamoDB table needed"
+        `use_lockfile = true` uses S3's native locking. The old `dynamodb_table` argument is deprecated. When migrating, you can set both for a while, then remove `dynamodb_table`.
+
+=== ":simple-googlecloud: GCS"
+
+    ```hcl title="backend.tf"
+    terraform {
+      backend "gcs" {
+        bucket = "my-terraform-state"
+        prefix = "production"
+      }
+    }
+    ```
+
+    GCS locks state automatically.
+
+Useful state commands:
+
+```bash
+terraform state list
+terraform state show aws_instance.web
+terraform state mv aws_instance.old aws_instance.new
+terraform force-unlock <LOCK_ID>   # only if a crashed run left a lock behind
+```
+
+## Multiple environments
+
+A directory per environment, with shared modules, keeps state and blast radius separate:
+
+```text
+terraform/
+├── modules/
+│   ├── vpc/
+│   └── eks/
+└── environments/
+    ├── dev/
+    ├── staging/
+    └── production/
+```
+
+Plan every environment in one container:
+
+```bash
+docker run --rm \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.aws:/root/.aws \
+  ghcr.io/jinalshah/devops/images/aws-devops:latest \
+  bash -c 'for env in dev staging production; do
+    echo "==> $env"
+    terraform -chdir=terraform/environments/$env init -input=false
+    terraform -chdir=terraform/environments/$env plan -input=false -out=tfplan || exit 1
+  done'
+```
+
+Workspaces (`terraform workspace new staging` / `select staging`) also work, but they share one backend configuration and one set of credentials. That usually makes separate directories the safer choice for production.
+
+## Terragrunt
+
+Terragrunt keeps backend and provider config DRY across many stacks.
+
+```text
+infrastructure/
+├── root.hcl
+├── dev/
+│   ├── vpc/terragrunt.hcl
+│   └── eks/terragrunt.hcl
+└── production/
+    ├── vpc/terragrunt.hcl
+    └── eks/terragrunt.hcl
+```
+
+=== "root.hcl"
+
+    ```hcl
+    remote_state {
+      backend = "s3"
+      generate = {
+        path      = "backend.tf"
+        if_exists = "overwrite_terragrunt"
+      }
+      config = {
+        bucket       = "my-terraform-state-${get_aws_account_id()}"
+        key          = "${path_relative_to_include()}/terraform.tfstate"
+        region       = "eu-west-2"
+        encrypt      = true
+        use_lockfile = true
+      }
+    }
+    ```
+
+=== "dev/eks/terragrunt.hcl"
+
+    ```hcl
+    include "root" {
+      path = find_in_parent_folders("root.hcl")
+    }
+
+    terraform {
+      source = "../../../modules/eks"
+    }
+
+    dependency "vpc" {
+      config_path = "../vpc"
+    }
+
+    inputs = {
+      vpc_id     = dependency.vpc.outputs.vpc_id
+      subnet_ids = dependency.vpc.outputs.private_subnet_ids
+    }
+    ```
+
+Run it:
+
+```bash
+cd infrastructure/dev
+terragrunt run --all plan
+terragrunt run --all --non-interactive apply
+terragrunt dag graph            # dependency graph in DOT format
+
+cd eks && terragrunt plan       # a single stack
+```
+
+!!! warning "Old Terragrunt commands"
+    Terragrunt's CLI was redesigned, and the image ships a recent release that is bumped automatically. Update older scripts:
+
+    | Old | New |
+    |-----|-----|
+    | `terragrunt run-all plan` | `terragrunt run --all plan` |
+    | `--terragrunt-non-interactive` | `--non-interactive` |
+    | `terragrunt graph-dependencies` | `terragrunt dag graph` |
+    | `--terragrunt-include-external-dependencies` | `--queue-include-external` |
+
+## Terraform versions with tfswitch
+
+The image has the latest Terraform at build time. If a project needs a different version, `tfswitch` reads `required_version` from your `.tf` files (or a `.terraform-version` file) and installs a match:
+
+```bash
+tfswitch                 # pick the version from required_version / .terraform-version
+tfswitch 1.9.8           # or name it explicitly
+terraform version
+```
+
+If `terraform version` doesn't change, write over the binary on `PATH` with `tfswitch -b "$(command -v terraform)" 1.9.8`. The switch only lasts for the life of the container, so put it at the start of each CI job.
+
+## Testing
+
+=== ":material-check: terraform test"
+
+    Native tests (`*.tftest.hcl`) need nothing beyond Terraform:
+
+    ```hcl title="tests/vpc.tftest.hcl"
+    run "plan_has_three_private_subnets" {
+      command = plan
+
+      assert {
+        condition     = length(aws_subnet.private) == 3
+        error_message = "Expected three private subnets"
+      }
+    }
+    ```
+
+    ```bash
+    terraform init -backend=false
+    terraform test
+    ```
+
+=== ":lucide-shield-check: Static checks"
+
+    ```bash
+    terraform fmt -check -recursive
+    terraform init -backend=false && terraform validate
+    tflint --init && tflint --recursive
+    trivy config --severity HIGH,CRITICAL --exit-code 1 .
+    ```
+
+=== ":lucide-bug: Terratest"
+
+    Terratest is written in Go, and Go isn't in the image. Run Terratest from a Go toolchain image, or build your own image `FROM` a DevOps image and add Go.
+
+## Import existing resources
+
+Use `import` blocks and let Terraform write the config for you:
+
+```hcl title="imports.tf"
+import {
+  to = aws_s3_bucket.logs
+  id = "my-existing-log-bucket"
+}
+```
+
+```bash
+terraform plan -generate-config-out=generated.tf
+# review and tidy generated.tf, then:
 terraform apply
 ```
 
----
+## Drift detection
 
-## Multi-Environment Management
+`-detailed-exitcode` returns 0 for no changes, 2 for changes and 1 for an error:
 
-### Directory Structure
+```bash title="detect-drift.sh"
+#!/usr/bin/env bash
+set -uo pipefail
 
-```
-terraform/
-├── environments/
-│   ├── dev/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── terraform.tfvars
-│   ├── staging/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── terraform.tfvars
-│   └── production/
-│       ├── main.tf
-│       ├── variables.tf
-│       └── terraform.tfvars
-└── modules/
-    ├── vpc/
-    ├── eks/
-    └── rds/
+terraform init -input=false >/dev/null
+terraform plan -input=false -detailed-exitcode -out=drift.tfplan
+case $? in
+  0) echo "No drift" ;;
+  2) echo "Drift detected"; terraform show -no-color drift.tfplan > drift.txt; exit 2 ;;
+  *) echo "terraform plan failed"; exit 1 ;;
+esac
 ```
 
-### Deploy All Environments
+Run it on a schedule from your CI system (a `schedule:` trigger in GitHub Actions, a pipeline schedule in GitLab, a `cron` trigger in Jenkins or a scheduled pipeline in CircleCI), so it runs in the same image as your deploys.
 
-```bash
-#!/bin/bash
-# deploy-all.sh
+## AI help with plans and code
 
-ENVIRONMENTS=("dev" "staging" "production")
+All four AI CLIs are in every image. In scripts, always use their non-interactive modes.
 
-for ENV in "${ENVIRONMENTS[@]}"; do
-  echo "Deploying to $ENV..."
+=== "Summarise a plan"
 
-  docker run --rm \
-    -v $PWD:/workspace \
-    -v ~/.aws:/root/.aws \
-    -w /workspace/environments/$ENV \
-    ghcr.io/jinalshah/devops/images/all-devops:latest \
-    sh -c "
-      terraform init
-      terraform plan -out=tfplan
-      terraform apply tfplan
-    "
-done
-```
+    ```bash
+    terraform show -no-color tfplan \
+      | claude -p "Summarise this Terraform plan for a reviewer. List anything destroyed or replaced first."
+    ```
 
----
+=== "Review the code"
 
-## Terragrunt Patterns
+    ```bash
+    git diff origin/main...HEAD -- '*.tf' \
+      | claude -p "Review this Terraform change for security issues, missing tags and risky defaults."
+    ```
 
-### DRY Configuration with Terragrunt
+=== "Draft a module"
 
-**Project structure**:
+    ```bash
+    mkdir -p modules/vpc
+    claude -p "Write Terraform HCL for an AWS VPC with three public and three private subnets across three AZs. Output only HCL, with no commentary or code fences." \
+      > modules/vpc/main.tf
+    terraform -chdir=modules/vpc init -backend=false
+    terraform -chdir=modules/vpc validate
+    ```
 
-```
-infrastructure/
-├── terragrunt.hcl          # Root config
-├── dev/
-│   └── terragrunt.hcl
-├── staging/
-│   └── terragrunt.hcl
-└── production/
-    └── terragrunt.hcl
-```
+    Always review generated code, then run `validate`, `tflint` and `trivy config` on it.
 
-**Root `terragrunt.hcl`**:
+=== "Codex / Copilot / Antigravity"
 
-```hcl
-remote_state {
-  backend = "s3"
-  config = {
-    bucket         = "my-terraform-state-${get_aws_account_id()}"
-    key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-locks"
-  }
-}
-```
+    ```bash
+    terraform show -no-color tfplan | codex exec "Summarise this plan"
+    terraform show -no-color tfplan | copilot -p "Summarise this plan" --allow-all-tools
+    terraform show -no-color tfplan | agy -p "Summarise this plan"
+    ```
 
-**Deploy with Terragrunt**:
+!!! danger "Plans can contain secrets"
+    A plan can include sensitive values. Check your organisation's policy before sending one to an external AI service, and prefer sending the diff of your `.tf` files instead.
 
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    cd dev
-    terragrunt run-all plan
-    terragrunt run-all apply
-  "
-```
-
----
-
-## State Management
-
-### Remote State with S3 Backend
-
-**backend.tf**:
-
-```hcl
-terraform {
-  backend "s3" {
-    bucket         = "my-terraform-state"
-    key            = "production/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-locks"
-  }
-}
-```
-
-### State Operations
-
-```bash
-# View current state
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform show
-
-# List resources in state
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform state list
-
-# Move resource in state
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform state mv aws_instance.old aws_instance.new
-```
-
----
-
-## Version Management with tfswitch
-
-### Switch Terraform Versions
-
-The DevOps Image includes `tfswitch` for managing multiple Terraform versions:
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Switch to specific version
-    tfswitch 1.6.0
-
-    # Verify version
-    terraform version
-
-    # Run Terraform
-    terraform init
-    terraform plan
-  "
-```
-
-**Using `.terraform-version` file**:
-
-```bash
-# Create version file
-echo "1.6.0" > .terraform-version
-
-# tfswitch automatically uses version from file
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    tfswitch  # Reads .terraform-version
-    terraform version
-  "
-```
-
----
-
-## Testing Infrastructure
-
-### Validation and Linting
-
-```bash
-#!/bin/bash
-# validate.sh - Comprehensive Terraform validation
-
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Format check
-    echo '==> Checking Terraform formatting...'
-    terraform fmt -check -recursive
-
-    # Validate configuration
-    echo '==> Validating Terraform configuration...'
-    terraform init -backend=false
-    terraform validate
-
-    # Run TFLint
-    echo '==> Running TFLint...'
-    tflint --init
-    tflint --recursive
-
-    # Security scan with Trivy
-    echo '==> Scanning for security issues...'
-    trivy config . --severity HIGH,CRITICAL
-  "
-```
-
-### Pre-commit Hooks
-
-**`.pre-commit-config.yaml`**:
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: terraform-fmt
-        name: Terraform Format
-        entry: docker run --rm -v $PWD:/workspace -w /workspace ghcr.io/jinalshah/devops/images/all-devops:latest terraform fmt -check -recursive
-        language: system
-        files: \.tf$
-        pass_filenames: false
-
-      - id: terraform-validate
-        name: Terraform Validate
-        entry: docker run --rm -v $PWD:/workspace -w /workspace ghcr.io/jinalshah/devops/images/all-devops:latest sh -c "terraform init -backend=false && terraform validate"
-        language: system
-        files: \.tf$
-        pass_filenames: false
-
-      - id: tflint
-        name: TFLint
-        entry: docker run --rm -v $PWD:/workspace -w /workspace ghcr.io/jinalshah/devops/images/all-devops:latest sh -c "tflint --init && tflint"
-        language: system
-        files: \.tf$
-        pass_filenames: false
-```
-
-**Install and run**:
-
-```bash
-# Install pre-commit
-pip install pre-commit
-
-# Install hooks
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
----
-
-## Module Development
-
-### Testing Terraform Modules
-
-**Directory structure**:
-
-```
-terraform-aws-vpc/
-├── main.tf
-├── variables.tf
-├── outputs.tf
-├── README.md
-└── examples/
-    ├── basic/
-    │   ├── main.tf
-    │   └── outputs.tf
-    └── advanced/
-        ├── main.tf
-        └── outputs.tf
-```
-
-**Test module example**:
-
-```bash
-#!/bin/bash
-# test-module.sh
-
-cd examples/basic
-
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Validate example
-    terraform init
-    terraform validate
-    terraform plan
-
-    # Deploy for testing
-    terraform apply -auto-approve
-
-    # Run tests (if using Terratest)
-    # go test -v -timeout 30m
-
-    # Cleanup
-    terraform destroy -auto-approve
-  "
-```
-
----
-
-## Cost Estimation
-
-### Estimate Infrastructure Costs
-
-```bash
-# Using Infracost (if installed in custom image)
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    terraform init
-    terraform plan -out=tfplan
-
-    # Generate cost breakdown
-    # infracost breakdown --path tfplan
-  "
-```
-
----
-
-## Import Existing Resources
-
-### Import AWS Resources
-
-```bash
-# Import existing EC2 instance
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform import aws_instance.example i-1234567890abcdef0
-
-# Import VPC
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform import aws_vpc.main vpc-12345678
-```
-
----
-
-## Workspace Management
-
-### Using Terraform Workspaces
-
-```bash
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Inside container
-terraform workspace list
-terraform workspace new dev
-terraform workspace new staging
-terraform workspace new production
-
-# Switch workspace
-terraform workspace select dev
-terraform plan
-
-terraform workspace select production
-terraform plan
-```
-
----
-
-## Drift Detection
-
-### Detect Configuration Drift
-
-```bash
-#!/bin/bash
-# detect-drift.sh
-
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    terraform init
-    terraform plan -detailed-exitcode
-    EXIT_CODE=\$?
-
-    if [ \$EXIT_CODE -eq 0 ]; then
-      echo 'No drift detected'
-    elif [ \$EXIT_CODE -eq 2 ]; then
-      echo 'Drift detected! Run terraform apply to sync.'
-      exit 1
-    else
-      echo 'Error running terraform plan'
-      exit \$EXIT_CODE
-    fi
-  "
-```
-
-**Schedule with cron**:
-
-```bash
-# Run drift detection daily at 9am
-0 9 * * * /path/to/detect-drift.sh
-```
-
----
-
-## AI-Assisted Terraform
-
-### Code Generation with Claude
-
-```bash
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Inside container
-claude "Generate Terraform code to create an AWS VPC with 3 public and 3 private subnets across 3 availability zones" \
-  > vpc.tf
-
-# Review generated code
-cat vpc.tf
-
-# Validate
-terraform init
-terraform validate
-```
-
-### Infrastructure Review
-
-```bash
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    claude 'Review this Terraform code for security issues, best practices, and cost optimization' \
-      --file main.tf \
-      > review-report.md
-
-    cat review-report.md
-  "
-```
-
----
-
-## Documentation Generation
-
-### Auto-Generate Module Docs
-
-```bash
-# Using terraform-docs (if installed in custom image)
-docker run --rm \
-  -v $PWD:/workspace \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "
-    # Generate README.md
-    # terraform-docs markdown table . > README.md
-
-    # Or use Claude to generate docs
-    claude 'Generate comprehensive documentation for this Terraform module' \
-      --file main.tf \
-      --file variables.tf \
-      --file outputs.tf \
-      > README.md
-  "
-```
-
----
-
-## Best Practices
-
-!!! tip "State Management"
-
-    1. **Always use remote state**: Use S3, GCS, or Terraform Cloud
-    2. **Enable state locking**: Prevent concurrent modifications
-    3. **Encrypt state**: Enable encryption at rest
-    4. **Version state files**: Use S3 versioning or equivalent
-    5. **Backup state regularly**: Automated backups of state files
-
-!!! tip "Code Organisation"
-
-    1. **Use modules**: Reusable, testable components
-    2. **Separate environments**: Use workspaces or directories
-    3. **Version pin providers**: Ensure reproducible deployments
-    4. **Use variables**: Make code configurable
-    5. **Document everything**: README, variables descriptions, outputs
-
-!!! tip "Security"
-
-    1. **Never commit secrets**: Use variables, Vault, or parameter stores
-    2. **Scan for vulnerabilities**: Use Trivy, Checkov, or tfsec
-    3. **Least privilege**: Use minimal IAM permissions
-    4. **Review plans**: Always review before apply
-    5. **Audit changes**: Track who deploys what
-
-!!! warning "Common Pitfalls"
-
-    - ❌ **No state locking**: Can lead to corrupted state
-    - ❌ **Hardcoded values**: Makes code inflexible
-    - ❌ **No validation**: Catch errors early with `terraform validate`
-    - ❌ **Large state files**: Break into smaller modules
-    - ❌ **No version pinning**: Can break on provider updates
-
----
+Authentication for each CLI is covered in [AI-assisted DevOps](ai-assisted-devops.md).
 
 ## Troubleshooting
 
-??? question "State lock timeout"
+??? question "`Error acquiring the state lock`"
+    Another run holds the lock. Wait for it to finish, or, if a run crashed, use `terraform force-unlock <LOCK_ID>` with the ID from the error message. In CI, serialise runs per state (for example a `concurrency` group in GitHub Actions or a `resource_group` in GitLab).
 
-    **Problem**: DynamoDB table locked by another process
+??? question "Providers download on every run"
+    The image doesn't set a provider cache. Set `TF_PLUGIN_CACHE_DIR` to a directory you mount or cache:
 
-    **Solution**: Force unlock (use with caution)
     ```bash
-    docker run --rm \
-      -v $PWD:/workspace \
-      -v ~/.aws:/root/.aws \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      terraform force-unlock <LOCK_ID>
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -v ~/.terraform.d/plugin-cache:/root/.terraform.d/plugin-cache \
+      -e TF_PLUGIN_CACHE_DIR=/root/.terraform.d/plugin-cache \
+      ghcr.io/jinalshah/devops/images/aws-devops:latest terraform init
     ```
 
-??? question "Provider registry unreachable"
+??? question "`Unsupported Terraform Core version`"
+    Your `required_version` excludes the image's Terraform. Run `tfswitch` first (see [Terraform versions with tfswitch](#terraform-versions-with-tfswitch)).
 
-    **Problem**: Cannot download providers
+## Next steps
 
-    **Solution**: Use provider mirror or cache
-    ```bash
-    # Create provider mirror
-    mkdir -p ~/.terraform.d/plugin-cache
-
-    docker run --rm \
-      -v $PWD:/workspace \
-      -v ~/.terraform.d:/root/.terraform.d \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      terraform providers mirror ~/.terraform.d/plugin-cache
-    ```
-
-??? question "Module not found"
-
-    **Problem**: Git-based module cannot be cloned
-
-    **Solution**: Mount SSH keys
-    ```bash
-    docker run --rm \
-      -v $PWD:/workspace \
-      -v ~/.ssh:/root/.ssh \
-      -w /workspace \
-      ghcr.io/jinalshah/devops/images/all-devops:latest \
-      terraform init
-    ```
-
----
-
-## Advanced Patterns
-
-### Blue-Green Deployments
-
-```hcl
-# main.tf
-resource "aws_instance" "blue" {
-  count         = var.active_environment == "blue" ? var.instance_count : 0
-  ami           = var.blue_ami
-  instance_type = var.instance_type
-  tags = {
-    Environment = "blue"
-  }
-}
-
-resource "aws_instance" "green" {
-  count         = var.active_environment == "green" ? var.instance_count : 0
-  ami           = var.green_ami
-  instance_type = var.instance_type
-  tags = {
-    Environment = "green"
-  }
-}
-```
-
-### Canary Deployments
-
-```hcl
-# main.tf
-resource "aws_instance" "stable" {
-  count         = var.stable_count
-  ami           = var.stable_ami
-  instance_type = var.instance_type
-}
-
-resource "aws_instance" "canary" {
-  count         = var.canary_count
-  ami           = var.canary_ami
-  instance_type = var.instance_type
-}
-```
-
----
-
-## Next Steps
-
-- [Multi-Tool Patterns](multi-tool-patterns.md) - Combining Terraform with Ansible, Helm
-- [CI/CD Integration](ci-cd-github.md) - Automate Terraform in CI/CD
-- [AI-Assisted DevOps](ai-assisted-devops.md) - Use AI for infrastructure code
-- [Authentication Guide](../use-images/authentication.md) - Configure cloud credentials
+- [Multi-tool patterns](multi-tool-patterns.md)
+- [GitHub Actions](ci-cd-github.md) · [GitLab CI](ci-cd-gitlab.md) · [Jenkins](ci-cd-jenkins.md) · [CircleCI](ci-cd-circleci.md)
+- [AI-assisted DevOps](ai-assisted-devops.md)
