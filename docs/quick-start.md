@@ -1,36 +1,55 @@
 # Quick Start Guide
 
-Get up and running with DevOps Images in 5 minutes.
+Get up and running with DevOps Images in five minutes. All you need is Docker (or any OCI runtime, such as Podman).
 
-## 5-Minute Quickstart
+```mermaid
+flowchart LR
+  A["1. Choose<br/>an image"] --> B["2. Pull it"] --> C["3. Run it"] --> D["4. Try a tool"] --> E["5. Mount your<br/>project and credentials"]
+  classDef s1 fill:#4f46e5,stroke:#3730a3,color:#fff
+  classDef s2 fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef s3 fill:#a21caf,stroke:#86198f,color:#fff
+  classDef s4 fill:#db2777,stroke:#9d174d,color:#fff
+  classDef s5 fill:#ea7a0c,stroke:#c2410c,color:#fff
+  class A s1
+  class B s2
+  class C s3
+  class D s4
+  class E s5
+```
 
-- [ ] **Step 1**: Choose your image
-- [ ] **Step 2**: Pull the image
-- [ ] **Step 3**: Run interactively
-- [ ] **Step 4**: Test a tool
-- [ ] **Step 5**: Set up for real work
+## Step 1: Choose your image
 
-### Step 1: Choose Your Image
+<div class="grid cards di-images" markdown>
 
-!!! question "Which image do I need?"
+-   :lucide-layers: __all-devops__
 
-    **Quick decision**:
+    ---
 
-    - **Multi-cloud or exploring?** → `all-devops`
-    - **AWS only?** → `aws-devops`
-    - **GCP only?** → `gcp-devops`
+    AWS **and** Google Cloud tooling. A good default if you're unsure or work across clouds.
 
-    Need help deciding? See the [complete decision guide](choosing-an-image.md).
+-   :fontawesome-brands-aws: __aws-devops__
 
-### Step 2: Pull the Image
+    ---
 
-=== "all-devops (Recommended)"
+    AWS CLI v2, Session Manager, boto3 and cfn-lint. No Google Cloud SDK.
+
+-   :simple-googlecloud: __gcp-devops__
+
+    ---
+
+    The Google Cloud CLI, GKE auth plugin and docker-credential-gcr. No AWS tooling.
+
+</div>
+
+Still deciding? The [interactive image picker](choosing-an-image.md) asks three questions and gives you the command.
+
+## Step 2: Pull the image
+
+=== "all-devops"
 
     ```bash
     docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
     ```
-
-    **Contains**: AWS + GCP + all base tools (~3.2 GB)
 
 === "aws-devops"
 
@@ -38,414 +57,296 @@ Get up and running with DevOps Images in 5 minutes.
     docker pull ghcr.io/jinalshah/devops/images/aws-devops:latest
     ```
 
-    **Contains**: AWS + all base tools (~2.8 GB)
-
 === "gcp-devops"
 
     ```bash
     docker pull ghcr.io/jinalshah/devops/images/gcp-devops:latest
     ```
 
-    **Contains**: GCP + all base tools (~2.9 GB)
+!!! tip "The first pull takes a minute"
+    Each image is about **1.5–1.6 GB to download** and roughly **4.6–5 GB on disk** once unpacked. After that, starting a container is instant. Grab a coffee! :lucide-coffee:
 
-!!! tip "First pull takes time"
-    Initial pull downloads ~3 GB. Subsequent runs are instant. Grab a coffee! ☕
-
-### Step 3: Run Interactively
+## Step 3: Run it interactively
 
 ```bash
 docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-You should see a `zsh` prompt with Oh My Zsh configured:
+You land in Zsh with Oh My Zsh's `candy` theme. The prompt looks like this:
 
 ```
-➜ /
+root@3f2a1b9c8d7e [10:42:07] [/]
+-> %
 ```
 
-!!! success "You're in!"
-    You're now inside the container with access to all tools.
+Type `exit` (or press ++ctrl+d++) to leave. `--rm` deletes the container afterwards.
 
-### Step 4: Test a Tool
-
-Try a few commands to verify everything works:
+## Step 4: Try a tool
 
 ```bash
-# Check Terraform
 terraform version
-
-# Check kubectl
 kubectl version --client
-
-# Check AWS CLI (all-devops or aws-devops)
-aws --version
-
-# Check gcloud (all-devops or gcp-devops)
-gcloud version
-
-# Check AI CLI
-claude --version
-
-# Exit when done
-exit
+aws --version         # all-devops and aws-devops
+gcloud --version      # all-devops and gcp-devops
+claude --version      # plus codex, copilot and agy
 ```
 
-!!! example "Expected Output"
-    You should see version information for each tool, indicating they're installed and working.
+!!! success "You're in"
+    Every tool prints its version, so everything is installed and on your `PATH`.
 
-### Step 5: Set Up for Real Work
+## Step 5: Set up for real work
 
-Now run with your project files and credentials mounted:
+Mount your project and the credentials you already have on your machine:
 
 ```bash
 docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.ssh:/root/.ssh \
+  -v "$PWD":/srv -w /srv \
+  -v ~/.ssh:/root/.ssh:ro \
   -v ~/.aws:/root/.aws \
   -v ~/.config/gcloud:/root/.config/gcloud \
-  -w /workspace \
   ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-!!! success "Ready to work!"
-    You can now access your project files in `/workspace` and use cloud CLIs with your credentials.
+Your project is at `/srv`, and the cloud CLIs use your existing logins.
+
+## Build your command
+
+Pick an image and toggle what you want mounted. The command updates as you click, ready to copy.
+
+<div class="di-widget" data-di-builder markdown>
+!!! note "Interactive builder"
+    This builder needs JavaScript. Without it, use the command in Step 5 above.
+</div>
+
+| Mount | What it gives you |
+|-------|-------------------|
+| `-v "$PWD":/srv -w /srv` | Your project files, as the working directory |
+| `-v ~/.ssh:/root/.ssh:ro` | SSH keys for Git and servers (read-only) |
+| `-v ~/.aws:/root/.aws` | AWS CLI profiles and SSO cache |
+| `-v ~/.config/gcloud:/root/.config/gcloud` | gcloud logins and configurations |
+| `-v ~/.kube:/root/.kube` | kubeconfig for your clusters |
+| `-v ~/.claude:/root/.claude` | Claude Code login and settings |
+| `-v ~/.codex:/root/.codex` | Codex CLI login and `config.toml` |
+| `-v ~/.copilot:/root/.copilot` | Copilot CLI login and settings |
+| `-v ~/.gemini:/root/.gemini` | Antigravity CLI (`agy`) login and settings |
 
 ---
 
-## What You Get
+## What you get
 
-### All Images Include
+<div class="grid cards" markdown>
 
-✅ **Infrastructure as Code**
+-   :simple-terraform: __Infrastructure as code__
 
-- Terraform (multi-version)
-- Terragrunt
-- TFLint
-- Packer
+    ---
 
-✅ **Kubernetes**
+    Terraform (via tfswitch), Terragrunt, TFLint, Packer
 
-- kubectl
-- Helm 3
-- k9s
+-   :simple-kubernetes: __Kubernetes__
 
-✅ **Configuration & Security**
+    ---
 
-- Ansible + ansible-lint
-- Trivy
-- pre-commit
+    kubectl, Helm 3, k9s
 
-✅ **AI CLI Tools**
+-   :simple-ansible: __Automation and security__
 
-- Claude CLI (Anthropic)
-- Codex CLI (OpenAI)
-- Copilot CLI (GitHub)
-- Antigravity CLI (`agy`, Google)
+    ---
 
-✅ **Development**
+    Ansible, ansible-lint, pre-commit, Task, Trivy
 
-- Python 3.14
-- Node.js LTS
-- Git + GitHub CLI
-- Database clients (mongosh, psql, mysql)
+-   :lucide-bot: __AI coding agents__
 
-✅ **Shells & Utils**
+    ---
 
-- Zsh (default) with Oh My Zsh
-- Bash, Fish
-- jq, curl, wget, vim
+    Claude Code, Codex CLI, Copilot CLI, Antigravity CLI (`agy`)
 
-### Cloud-Specific Tools
+-   :simple-python: __Development__
 
-=== "all-devops"
+    ---
 
-    ✅ AWS CLI v2 + Session Manager
-    ✅ gcloud + docker-credential-gcr
-    ✅ boto3, cfn-lint, s3cmd
+    Python 3.14, Node.js LTS, Git, GitHub CLI, ghorg, Zensical
 
-=== "aws-devops"
+-   :lucide-database: __Databases and network__
 
-    ✅ AWS CLI v2 + Session Manager
-    ✅ boto3, cfn-lint, s3cmd
-    ❌ No GCP tools
+    ---
 
-=== "gcp-devops"
+    mongosh, psql, mysql · dig, nmap, ncat, curl, jq
 
-    ✅ gcloud + docker-credential-gcr
-    ❌ No AWS tools
+</div>
+
+### Cloud tooling per image
+
+| Tool | <span class="di-pill di-pill--all">all-devops</span> | <span class="di-pill di-pill--aws">aws-devops</span> | <span class="di-pill di-pill--gcp">gcp-devops</span> |
+|------|:---:|:---:|:---:|
+| AWS CLI v2 + Session Manager plugin | :material-check: | :material-check: | — |
+| boto3, cfn-lint, s3cmd | :material-check: | :material-check: | — |
+| gcloud, gsutil, bq | :material-check: | — | :material-check: |
+| GKE auth plugin, docker-credential-gcr | :material-check: | — | :material-check: |
+
+Search the whole list in the [tool explorer](use-images/quick-reference.md#tool-explorer).
 
 ---
 
-## Common First Tasks
+## Common first tasks
 
-### Task 1: Run Terraform
-
-```bash
-# Create a simple test file
-cat > main.tf <<'EOF'
-terraform {
-  required_version = ">= 1.0"
-}
-
-output "hello" {
-  value = "Hello from DevOps Images!"
-}
-EOF
-
-# Run Terraform
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  sh -c "terraform init && terraform apply -auto-approve"
-```
-
-### Task 2: Scan for Vulnerabilities
-
-```bash
-# Scan current directory
-docker run --rm -v $PWD:/workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy fs /workspace
-```
-
-### Task 3: Validate Kubernetes Manifests
-
-```bash
-# Assuming you have k8s manifests
-docker run --rm -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  kubectl apply --dry-run=client -f kubernetes/
-```
-
-### Task 4: Use AI CLI
-
-```bash
-# First-time setup: authenticate
-docker run -it --rm \
-  -v ~/.claude:/root/.claude \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude auth login
-
-# Use Claude for code review
-docker run --rm \
-  -v $PWD:/workspace \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  claude "Review this Terraform file for security issues" \
-  --file main.tf
-```
-
----
-
-## Next Steps by Use Case
-
-### For Local Development
-
-1. **Mount your project**: Use `-v $PWD:/workspace`
-2. **Mount credentials**: Add `-v ~/.aws:/root/.aws` and `-v ~/.config/gcloud:/root/.config/gcloud`
-3. **Named container**: Use `--name devops-work` to easily restart
-4. **Authentication**: Set up [cloud credentials](use-images/authentication.md) and [AI CLIs](tool-basics/ai-cli-setup.md)
-
-**Full command**:
-```bash
-docker run -it --name devops-work \
-  -v $PWD:/workspace \
-  -v ~/.ssh:/root/.ssh \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.claude:/root/.claude \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-### For CI/CD
-
-1. **Pin versions**: Use immutable tags like `1.0.abc1234`
-2. **Use secrets**: Configure cloud credentials via CI secrets
-3. **Cache images**: Pre-pull during setup phase
-4. **GHCR registry**: Use `ghcr.io` for best performance
-
-**Example** (GitHub Actions):
-```yaml
-container:
-  image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-```
-
-**Learn more**: [CI/CD Integration](workflows/index.md)
-
-### For Multi-Cloud Teams
-
-1. **Use all-devops**: Maximum flexibility
-2. **Workflows**: Check [multi-cloud patterns](workflows/multi-tool-patterns.md)
-3. **Authentication**: Set up both [AWS and GCP](use-images/authentication.md)
-4. **Organise**: Use subdirectories for cloud-specific configs
-
-### For Security-Focused Teams
-
-1. **Scan everything**: Use Trivy for containers and IaC
-2. **Lint configs**: TFLint for Terraform, ansible-lint for Ansible
-3. **AI review**: Use Claude for security audits
-4. **Pin versions**: Lock to specific image versions
-5. **Scan images**: Run `trivy image` on the DevOps Images themselves
-
-**Learn more**: [Security workflows](workflows/multi-tool-patterns.md#pattern-2-security-first-workflow)
-
----
-
-## Troubleshooting First Run
-
-??? question "Docker: command not found"
-
-    **Problem**: Docker is not installed
-
-    **Solution**: Install Docker Desktop
-
-    - [macOS](https://docs.docker.com/desktop/install/mac-install/)
-    - [Windows](https://docs.docker.com/desktop/install/windows-install/)
-    - [Linux](https://docs.docker.com/engine/install/)
-
-??? question "Cannot connect to Docker daemon"
-
-    **Problem**: Docker daemon is not running
-
-    **Solution**: Start Docker Desktop or Docker service
+=== ":simple-terraform: Terraform"
 
     ```bash
-    # Linux
-    sudo systemctl start docker
+    cat > main.tf <<'EOF'
+    output "hello" {
+      value = "Hello from DevOps Images!"
+    }
+    EOF
 
-    # macOS/Windows
-    # Start Docker Desktop application
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      sh -c "terraform init && terraform apply -auto-approve"
     ```
 
-??? question "Permission denied while trying to connect"
-
-    **Problem**: User doesn't have Docker permissions
-
-    **Solution**: Add user to docker group (Linux)
+=== ":simple-trivy: Security scan"
 
     ```bash
-    sudo usermod -aG docker $USER
-    # Log out and back in for changes to take effect
+    # Scan dependencies, secrets and IaC misconfigurations in the current folder
+    docker run --rm -v "$PWD":/srv -w /srv \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      trivy fs --scanners vuln,secret,misconfig .
     ```
 
-??? question "Image pull is very slow"
+    Trivy downloads its vulnerability database on first run.
 
-    **Problem**: Large image size or slow internet
+=== ":simple-kubernetes: Kubernetes"
 
-    **Solutions**:
+    ```bash
+    # Validate manifests against your cluster's API without changing anything
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -v ~/.kube:/root/.kube \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      kubectl apply --dry-run=server -f k8s/
+    ```
 
-    1. Use GHCR instead of Docker Hub (faster)
-    2. Use smaller cloud-specific images
-    3. Wait for initial pull (only happens once)
-    4. Use a wired connection if possible
+=== ":simple-claude: AI review"
 
-??? question "Tools returning 'command not found'"
+    ```bash
+    # One-time: sign in (opens a URL to visit), then /exit
+    docker run -it --rm -v ~/.claude:/root/.claude \
+      ghcr.io/jinalshah/devops/images/all-devops:latest claude
 
-    **Problem**: Wrong image or tool not included
+    # Review a file non-interactively with -p (print mode)
+    docker run --rm -v "$PWD":/srv -w /srv \
+      -v ~/.claude:/root/.claude \
+      ghcr.io/jinalshah/devops/images/all-devops:latest \
+      sh -c 'cat main.tf | claude -p "Review this Terraform for security issues"'
+    ```
 
-    **Solutions**:
-
-    1. Verify you pulled the correct image
-    2. Check tool availability in [image comparison](choosing-an-image.md)
-    3. For cloud CLIs, ensure you're using the right image variant
+    See [AI CLI setup](tool-basics/ai-cli-setup.md) for Codex, Copilot and Antigravity.
 
 ---
 
-## Quick Reference Card
+## Next steps by use case
 
-### Essential Commands
+=== ":lucide-laptop: Local development"
+
+    Keep a named container around between sessions:
+
+    ```bash
+    docker run -it --name devops-work \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.ssh:/root/.ssh:ro \
+      -v ~/.aws:/root/.aws \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      -v ~/.claude:/root/.claude \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+
+    # Later
+    docker start -ai devops-work
+    ```
+
+    Then set up [cloud credentials](use-images/authentication.md) and [AI CLIs](tool-basics/ai-cli-setup.md).
+
+=== ":lucide-workflow: CI/CD"
+
+    ```yaml
+    container:
+      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+    ```
+
+    - **Pin a tag**: `1.0.<short-sha>` tags are per commit. Scheduled rebuilds refresh them with newer tools, so pin a `@sha256:` digest if you need exact bits.
+    - **Use CI secrets** for credentials, never baked-in files.
+    - Read more in [CI/CD integration](workflows/index.md).
+
+=== ":lucide-shield-check: Security-focused"
+
+    1. Scan code and IaC with `trivy fs` and `trivy config`
+    2. Lint with TFLint and ansible-lint
+    3. Run `pre-commit` hooks in CI
+    4. Pin image digests
+    5. Scan the image itself: `trivy image ghcr.io/jinalshah/devops/images/all-devops:latest`
+
+    See the [security-first workflow](workflows/multi-tool-patterns.md#pattern-2-security-first-workflow).
+
+---
+
+## Handy shell aliases
+
+Add these to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-# Pull latest image
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+# Interactive shell in the current project
+alias devops='docker run -it --rm -v "$PWD":/srv -w /srv -v ~/.ssh:/root/.ssh:ro -v ~/.aws:/root/.aws -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/all-devops:latest'
 
-# Run interactively
-docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Run with project mounted
-docker run -it --rm \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Run single command
-docker run --rm \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform plan
-
-# Check versions
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
-docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest aws --version
-```
-
-### Common Volume Mounts
-
-| Mount | Purpose |
-|-------|---------|
-| `-v $PWD:/workspace` | Project files |
-| `-v ~/.aws:/root/.aws` | AWS credentials |
-| `-v ~/.config/gcloud:/root/.config/gcloud` | GCP credentials |
-| `-v ~/.ssh:/root/.ssh` | SSH keys |
-| `-v ~/.kube:/root/.kube` | Kubernetes config |
-| `-v ~/.claude:/root/.claude` | Claude AI credentials |
-
-### Useful Aliases
-
-Add to your `~/.bashrc` or `~/.zshrc`:
-
-```bash
-# Quick access to DevOps container
-alias devops='docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.ssh:/root/.ssh \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest'
-
-# One-off commands
-alias devops-run='docker run --rm \
-  -v $PWD:/workspace -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:latest'
-
-# Example usage:
-# devops                          # Interactive shell
-# devops-run terraform plan       # Single command
+# One-off commands: devops-run terraform plan
+alias devops-run='docker run --rm -v "$PWD":/srv -w /srv -v ~/.aws:/root/.aws -v ~/.config/gcloud:/root/.config/gcloud ghcr.io/jinalshah/devops/images/all-devops:latest'
 ```
 
 ---
 
-## What's Next?
+## Troubleshooting your first run
 
-🎯 **Ready to go deeper?**
+??? question "`docker: command not found`"
 
-**Learn the Tools**:
+    Install Docker Desktop ([macOS](https://docs.docker.com/desktop/setup/install/mac-install/), [Windows](https://docs.docker.com/desktop/setup/install/windows-install/)) or [Docker Engine on Linux](https://docs.docker.com/engine/install/).
 
-- [Tool Basics Guide](tool-basics/index.md) - Comprehensive tool reference
-- [AI CLI Setup](tool-basics/ai-cli-setup.md) - Claude, Codex, Copilot, Gemini
+??? question "Cannot connect to the Docker daemon"
 
-**Set Up Credentials**:
+    Start Docker Desktop, or on Linux run `sudo systemctl start docker`.
 
-- [Authentication Guide](use-images/authentication.md) - AWS, GCP, SSH, AI CLIs
+??? question "Permission denied while trying to connect (Linux)"
 
-**See Real Examples**:
+    ```bash
+    sudo usermod -aG docker "$USER"
+    # Log out and back in for this to take effect
+    ```
 
-- [Workflows & Patterns](workflows/index.md) - CI/CD integrations
-- [AI-Assisted DevOps](workflows/ai-assisted-devops.md) - AI workflow examples
-- [Multi-Tool Patterns](workflows/multi-tool-patterns.md) - Combining tools
+??? question "The pull is very slow"
 
-**Understand the Images**:
+    It's a 1.5 GB+ download, so the first pull takes a while. Use GHCR (no pull rate limits for public images), pick the single-cloud image if you only need one cloud, and it only happens once per update.
 
-- [Architecture Overview](architecture/index.md) - What's inside
-- [Choosing an Image](choosing-an-image.md) - Detailed comparison
-- [Build & Optimise](build-images/index.md) - Custom builds
+??? question "A tool says `command not found`"
 
-**Get Help**:
+    Check you're using the right variant: `aws` isn't in `gcp-devops` and `gcloud` isn't in `aws-devops`. The [tool explorer](use-images/quick-reference.md#tool-explorer) shows which image has what.
 
-- [Troubleshooting](troubleshooting/index.md) - Common issues
-- [GitHub Issues](https://github.com/jinalshah/devops-images/issues) - Report problems
+More fixes are in [Troubleshooting](troubleshooting/index.md).
 
 ---
 
-🚀 **You're all set! Happy DevOps-ing!**
+## Where next?
+
+<div class="grid cards" markdown>
+
+-   :lucide-book-open: [__Tool basics__](tool-basics/index.md)
+
+    A cheat sheet for every tool.
+
+-   :lucide-key-round: [__Authentication__](use-images/authentication.md)
+
+    AWS, GCP, SSH, Git and AI CLIs.
+
+-   :lucide-bot: [__AI CLI setup__](tool-basics/ai-cli-setup.md)
+
+    Claude, Codex, Copilot and Antigravity.
+
+-   :lucide-workflow: [__Workflows__](workflows/index.md)
+
+    CI/CD recipes and multi-tool patterns.
+
+</div>

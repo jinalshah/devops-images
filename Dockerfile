@@ -273,7 +273,16 @@ RUN \
   npm install -g @github/copilot && \
   \
   # Install Antigravity CLI (agy)
-  curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir /usr/local/bin && \
+  # The endpoint intermittently serves the script gzip-compressed without a
+  # Content-Encoding header, so piping it straight into bash fails at random.
+  # Download it first and decompress when needed.
+  curl -fsSL --retry 3 https://antigravity.google/cli/install.sh -o /tmp/agy-install && \
+  if gzip -t /tmp/agy-install 2>/dev/null; then \
+    gzip -dc /tmp/agy-install > /tmp/agy-install.sh; \
+  else \
+    mv /tmp/agy-install /tmp/agy-install.sh; \
+  fi && \
+  bash /tmp/agy-install.sh --dir /usr/local/bin && \
   \
   # Cleanup
   rm -rf /tmp/* && \
@@ -340,7 +349,7 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
-  gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud components install beta docker-credential-gcr gke-gcloud-auth-plugin --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \
@@ -439,7 +448,7 @@ RUN \
   wget -q -O /tmp/google-cloud-sdk.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-${GCLOUD_ARCH_VALUE}.tar.gz" && \
   tar -zxf /tmp/google-cloud-sdk.tar.gz -C /usr/lib/ && \
   /usr/lib/google-cloud-sdk/install.sh --rc-path=/root/.zshrc --command-completion=true --path-update=true --quiet && \
-  gcloud components install beta docker-credential-gcr --quiet && \
+  gcloud components install beta docker-credential-gcr gke-gcloud-auth-plugin --quiet && \
   gcloud config set core/disable_usage_reporting true && \
   # gcloud config set component_manager/disable_update_check true && \
   rm -rf /usr/lib/google-cloud-sdk/.install/.backup && \

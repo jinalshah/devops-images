@@ -1,463 +1,162 @@
-# Base Layer Architecture
+# Base Layer
 
-The base layer provides a comprehensive DevOps toolkit built on Rocky Linux 10, serving as the foundation for all image variants (all-devops, aws-devops, gcp-devops).
+The `base` stage is the foundation of every image. It is **not published** to any registry, but you can build it yourself:
 
----
+```bash
+docker build --target base -t devops-base:local .
+```
 
-## Design Philosophy
-
-### Why Rocky Linux 10?
-
-!!! success "Key Benefits"
-
-    - **Enterprise-grade stability**: RHEL-compatible, production-ready
-    - **Long-term support**: 10-year lifecycle (until 2035)
-    - **Multi-architecture**: Native amd64 and arm64 support
-    - **Package availability**: Rich ecosystem via dnf/yum
-    - **Security**: SELinux support, regular security updates
-
-**Alternatives considered**:
-
-| Distro | Why Not Chosen |
-|--------|----------------|
-| Ubuntu | Shorter LTS cycles, less enterprise focus |
-| Alpine | Musl libc compatibility issues with some tools |
-| Debian | Older package versions in stable releases |
-
-### Why Zsh as Default Shell?
-
-- **Better UX**: Enhanced tab completion, syntax highlighting
-- **Oh-My-Zsh ready**: Easy customisation for users
-- **Backwards compatible**: Bash scripts still work
-- **Interactive features**: Better history search, glob patterns
+It starts from `rockylinux/rockylinux:10`, runs as `root` (`HOME=/root`) and adds the whole shared toolkit.
 
 ---
 
-## Tool Categories
-
-### Infrastructure as Code
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **Terraform** | Latest | Multi-cloud IaC | ~50 MB |
-| **Terragrunt** | Latest | Terraform wrapper for DRY configs | ~20 MB |
-| **TFLint** | Latest | Terraform linter | ~15 MB |
-| **Packer** | Latest | Image building | ~40 MB |
-| **tfswitch** | Latest | Terraform version manager | ~5 MB |
-
-**Why these tools?**
-
-- **Terraform**: Industry-standard IaC for cloud resources
-- **Terragrunt**: Essential for managing multi-environment Terraform
-- **TFLint**: Catch errors before deployment
-- **Packer**: Build consistent machine images across clouds
-- **tfswitch**: Support multiple Terraform versions per project
-
-### Kubernetes Ecosystem
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **kubectl** | Latest | Kubernetes CLI | ~45 MB |
-| **Helm** | 3.x | Package manager for Kubernetes | ~15 MB |
-| **k9s** | Latest | Terminal UI for Kubernetes | ~30 MB |
-| **kustomize** | Latest | Kubernetes configuration management | ~20 MB |
-
-**Why these tools?**
-
-- **kubectl**: Required for any Kubernetes interaction
-- **Helm 3**: De facto standard for K8s package management
-- **k9s**: Dramatically improves K8s troubleshooting speed
-- **kustomize**: Configuration overlays without templating
-
-### Configuration Management
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **Ansible** | Latest | Agentless automation | ~80 MB |
-| **ansible-lint** | Latest | Playbook validation | ~15 MB |
-
-**Why Ansible?**
-
-- **Agentless**: SSH-based, no agents to manage
-- **YAML-based**: Easy to read and write
-- **Large module library**: Pre-built modules for common tasks
-- **Cloud support**: Native AWS, GCP, Azure modules
-
-### Security & Scanning
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **Trivy** | Latest | Vulnerability scanner | ~40 MB |
-| **trivy-db** | Auto-updated | Vulnerability database | ~200 MB |
-
-**Why Trivy?**
-
-- **Multi-target**: Scans containers, filesystems, IaC configs
-- **Fast**: Parallel scanning, efficient database
-- **Comprehensive**: CVEs, misconfigurations, secrets
-- **CI/CD friendly**: Exit codes, JSON output
-
-### Development Tools
-
-=== "Python Ecosystem"
-
-    | Tool | Version | Purpose | Size Impact |
-    |------|---------|---------|-------------|
-    | **Python** | 3.14 | Scripting, automation | ~100 MB |
-    | **pip** | Latest | Package manager | Included |
-    | **pipx** | Latest | Isolated CLI tools | ~10 MB |
-
-    Python is compiled from source (`PYTHON_VERSION`) and registered with
-    `alternatives` as `/usr/local/bin/python3`, which precedes `/usr/bin` on
-    `PATH`. The distribution's own `/usr/bin/python3` is deliberately left
-    alone - on RHEL/Rocky 10 `dnf` runs from an unversioned
-    `#!/usr/bin/python3` shebang and only works with the system interpreter.
-    Switch back with `alternatives --config python3`.
-
-    **Pre-installed Python packages**:
-    - `requests` - HTTP library
-    - `pyyaml` - YAML parsing
-    - `jinja2` - Templating
-
-=== "Node.js Ecosystem"
-
-    | Tool | Version | Purpose | Size Impact |
-    |------|---------|---------|-------------|
-    | **Node.js** | 20 LTS | JavaScript runtime | ~40 MB |
-    | **npm** | Latest | Package manager | Included |
-    | **npx** | Latest | Package runner | Included |
-
-    **Why Node.js 20 LTS?**
-    - Long-term support until 2026-04-30
-    - Required for AI CLI tools (codex, copilot)
-    - Modern JavaScript features
-
-=== "AI CLI Tools"
-
-    | Tool | Provider | Purpose | Size Impact |
-    |------|----------|---------|-------------|
-    | **claude** | Anthropic | Code review, generation | ~25 MB |
-    | **codex** | OpenAI | Code completion | ~20 MB |
-    | **copilot** | GitHub | IDE integration | ~30 MB |
-    | **agy** | Google | Agentic AI | ~30 MB |
-
-    **Total AI tooling**: ~100 MB (Node.js + CLIs)
-
-### Version Control & CI/CD
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **Git** | Latest | Version control | ~30 MB |
-| **gh** | Latest | GitHub CLI | ~20 MB |
-
-**Why gh CLI?**
-
-- **GitHub integration**: Issues, PRs, workflows from terminal
-- **Authentication**: Manage tokens and SSH keys
-- **CI/CD**: Trigger workflows, check status
-
-### Utilities
-
-| Tool | Version | Purpose | Size Impact |
-|------|---------|---------|-------------|
-| **jq** | Latest | JSON processor | ~2 MB |
-| **yq** | Latest | YAML processor | ~5 MB |
-| **Task** | Latest | Task runner (Makefile alternative) | ~10 MB |
-| **vim** | Latest | Text editor | ~5 MB |
-| **curl** | Latest | HTTP client | ~1 MB |
-| **wget** | Latest | File downloader | ~1 MB |
-| **lftp** | Latest | Multi-protocol file transfer client | ~2 MB |
-| **unzip** | Latest | Archive extraction | ~1 MB |
-| **tar** | Latest | Archive management | Included |
-| **openssh-client** | Latest | SSH operations | ~10 MB |
-
----
-
-## Installation Order
-
-The tools are installed in a specific order to optimise Docker layer caching and minimise rebuild times:
+## Dockerfile layer order
 
 ```mermaid
-graph TD
-    A[Rocky Linux 10 Base] --> B[System Packages]
-    B --> C[Python 3.14]
-    B --> D[Node.js 20 LTS]
-    C --> E[Python Packages]
-    D --> F[AI CLI Tools]
-    B --> G[IaC Tools]
-    B --> H[Kubernetes Tools]
-    B --> I[Security Tools]
-    B --> J[Config Management]
-    G --> K[Terraform Suite]
-    H --> L[kubectl + Helm]
-    I --> M[Trivy + DB]
-    J --> N[Ansible + lint]
-    E --> O[Final Base Layer]
-    F --> O
-    K --> O
-    L --> O
-    M --> O
-    N --> O
+flowchart TB
+  F["FROM rockylinux/rockylinux:10"] --> E["LABEL + ENV<br/>CLOUDSDK_PYTHON, PATH"]
+  E --> C["COPY scripts/*.sh /tmp/"]
+  C --> R1["RUN 1: system packages<br/>gh · mysql · Python 3.14 build · pip<br/>mongosh · psql 17 · Trivy · Oh My Zsh"]
+  R1 --> R2["RUN 2: binaries<br/>kubectl · Terraform · Terragrunt · TFLint<br/>Packer · Helm · ghorg · k9s · Task"]
+  R2 --> R3["RUN 3: Node.js LTS<br/>claude · codex · copilot · agy"]
+  R3 --> T["target RUN<br/>AWS and/or GCP tools"]
+  T --> CMD["CMD /bin/zsh"]
+
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  class F,E,C,CMD neutral
+  class R1,R2 base
+  class R3 ai
+  class T all
 ```
 
-### Layer Strategy
+Each `RUN` ends by cleaning `/tmp`, `/var/tmp`, the pip cache and `__pycache__` directories, so the clean-up happens in the same layer as the install.
 
-1. **System packages first**: Rarely change, heavily cached
-2. **Runtime environments**: Python, Node.js (change quarterly)
-3. **Core tools**: Terraform, kubectl, etc. (change monthly)
-4. **Language packages**: pip/npm packages (change weekly)
-5. **Final configuration**: User setup, entrypoint
-
-**Benefits**:
-- Faster rebuilds (cached layers reused)
-- Smaller layer deltas (only changed tools rebuild)
-- Predictable build times
+!!! info "Why `COPY` comes first"
+    The helper scripts (`00-detect-arch.sh`, `10-zshrc.sh`, `20-bashrc.sh`) are copied before anything is installed. Changing any file in `scripts/` therefore invalidates the whole base and rebuilds everything.
 
 ---
 
-## Size Breakdown
+## RUN 1: system packages and Python
 
-Total base layer size: **~2.0 GB**
+=== ":lucide-package: yum packages"
 
-```mermaid
-pie title Base Layer Size Distribution
-    "Rocky Linux Base" : 500
-    "IaC Tools (Terraform, Packer)" : 125
-    "Kubernetes Tools" : 110
-    "Python Ecosystem" : 150
-    "Node.js + AI CLIs" : 140
-    "Ansible + Config Mgmt" : 95
-    "Security (Trivy + DB)" : 240
-    "System Packages" : 300
-    "Development Tools" : 100
-    "Utilities & Misc" : 240
-```
+    Installed from the Rocky and EPEL repositories, followed by a full `yum update`:
 
-### Optimisation Techniques
+    `bash`, `bash-completion`, `bind-utils` (dig, nslookup, host), `bubblewrap`, `curl`, `findutils`, `fish`, `git`, `iputils`, `jq`, `less`, `lftp`, `make`, `nmap`, `nmap-ncat` (ncat), `openssh-clients`, `openssl`, `python3-pip`, `sqlite-devel`, `telnet`, `tree`, `vim`, `wget`, `unzip`, `zip`, `zsh`.
 
-!!! tip "How We Keep Size Down"
+    Build dependencies for Python stay installed: `gcc`, `make`, `openssl-devel`, `bzip2-devel`, `libffi-devel`, `zlib-devel`. That is handy when a pip package needs to compile.
 
-    1. **Multi-stage builds**: Compile tools in builder stage, copy binaries
-    2. **No build artifacts**: Remove compilers, headers after builds
-    3. **Minimal dependencies**: Only install required packages
-    4. **Single-layer cleanup**: Combine install + cleanup in one RUN command
-    5. **Trivy DB sharing**: Reuse database across all variants
+=== ":lucide-database: Extra repositories"
 
----
+    | Repository | Provides |
+    |------------|----------|
+    | EPEL | `fish` and other extras |
+    | GitHub CLI (`gh-cli.repo`) | `gh` |
+    | MySQL Community 8.4 | `mysql` client |
+    | MongoDB 8.0 | `mongodb-mongosh` |
+    | PGDG (EL-10) | `postgresql17` (`psql`) |
+    | Aqua Security | `trivy` |
 
-## Package Installation Details
+    RHEL 10 dropped the `mysql` packages in favour of MariaDB, so the client comes from MySQL's own repository. The key inside the release RPM has expired, so the build imports `RPM-GPG-KEY-mysql-2025` explicitly. Both URLs are build args (`MYSQL_RELEASE_RPM_URL`, `MYSQL_GPG_KEY_URL`).
 
-### System Packages (dnf/yum)
+=== ":simple-python: Python 3.14"
 
-**Categories installed**:
+    Python is compiled from source (`PYTHON_VERSION`, with `--enable-optimizations`) and registered with `alternatives` as `/usr/local/bin/python3`, which comes before `/usr/bin` on `PATH`.
 
-- **Core utilities**: `coreutils`, `findutils`, `grep`, `sed`, `awk`
-- **Network tools**: `curl`, `wget`, `net-tools`, `bind-utils`
-- **Archive tools**: `tar`, `gzip`, `bzip2`, `xz`, `unzip`
-- **Development**: `gcc`, `g++`, `make`, `pkg-config` (build-time only)
-- **Python deps**: `python3-devel`, `python3-pip`
-- **SSL/TLS**: `ca-certificates`, `openssl`
+    The distribution's `/usr/bin/python3` is left alone on purpose: on Rocky 10, `dnf` uses an unversioned `#!/usr/bin/python3` shebang and only works with the system interpreter. Switch back with `alternatives --config python3`.
 
-**Cleanup strategy**:
-```bash
-dnf install -y <packages> && \
-dnf clean all && \
-rm -rf /var/cache/dnf/*
-```
+    pip packages: `ansible`, `ansible-lint` (with `yamllint`), `jmespath`, `mkdocs-material`, `paramiko`, `pre-commit`, `zensical`.
 
-**Third-party repositories**:
+    !!! warning "Overriding the version"
+        You must pass **both** build args, e.g. `--build-arg PYTHON_VERSION=3.13.7 --build-arg PYTHON_VERSION_TO_USE=python3.13`. A short version such as `3.11` breaks the build.
 
-| Repository | Provides | Notes |
-|------------|----------|-------|
-| EPEL 10 | `fish` and other extras | Enabled via `epel-release` |
-| GitHub CLI | `gh` | `cli.github.com` |
-| MongoDB 8.0 | `mongodb-mongosh` | MongoDB dropped 6.0/7.0 builds for EL10 |
-| PGDG (EL-10) | `postgresql17` | PostgreSQL Global Development Group |
-| Trivy | `trivy` | Aqua Security |
-| MySQL Community | `mysql` | RHEL/Rocky 10 no longer ships the MySQL client - see below |
+=== ":simple-trivy: Trivy"
 
-!!! note "MySQL client on Rocky Linux 10"
+    Installed from Aqua's yum repository. **No vulnerability database is baked in**; Trivy downloads it on the first scan. Mount a cache volume (for example `-v trivy-cache:/root/.cache/trivy`) to avoid downloading it every time.
 
-    RHEL 10 removed the `mysql` packages in favour of MariaDB, so the client is
-    installed from MySQL's own community repository. The signing key bundled in
-    the release RPM has expired, so the build imports the current key
-    (`RPM-GPG-KEY-mysql-2025`) explicitly before installing. Both URLs are
-    exposed as the `MYSQL_RELEASE_RPM_URL` and `MYSQL_GPG_KEY_URL` build args.
+=== ":simple-zsh: Shell setup"
 
-### Binary Downloads
+    - Oh My Zsh with the `candy` theme and its default plugins. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` then `-> %`.
+    - `scripts/10-zshrc.sh` and `scripts/20-bashrc.sh` add the same aliases to zsh and bash, plus `kubectl` and `aws` completion.
 
-Many tools are downloaded as pre-compiled binaries for efficiency:
-
-| Tool | Source | Method |
-|------|--------|--------|
-| Terraform | releases.hashicorp.com | Direct binary download |
-| kubectl | dl.k8s.io | Direct binary download |
-| Helm | get.helm.sh | Install script |
-| Trivy | GitHub releases | Binary download |
-| k9s | GitHub releases | Binary download |
-| gh | GitHub releases | Binary download |
-
-**Benefits**:
-- No compilation time
-- Smaller final image (no build tools)
-- Reproducible builds
+    | Alias | Expands to |
+    |-------|------------|
+    | `l`, `la`, `ll` | `ls -CF`, `ls -A`, `ls -alF` |
+    | `tf`, `tfi`, `tfp`, `tfa`, `tfd` | `terraform`, `init`, `plan`, `apply`, `destroy` |
+    | `tff`, `tfv`, `tfo` | `terraform fmt -recursive`, `validate`, `output` |
+    | `k`, `ka`, `kd`, `kg`, `kl`, `kr` | `kubectl`, `apply`, `describe`, `get`, `logs`, `run` |
+    | `aws-ssm <id>` | `aws ssm start-session --target <id>` |
 
 ---
 
-## Configuration Files
+## RUN 2: downloaded binaries
 
-### Shell Configuration
+`00-detect-arch.sh` maps `uname -m` to each vendor's naming (`amd64`/`arm64`, `x86_64`, `arm`, `64bit`), so the same Dockerfile works on both architectures.
 
-**`/root/.zshrc`**:
-- Oh-My-Zsh framework
-- Plugins: git, docker, terraform, kubectl
-- Custom aliases for common operations
-- Auto-completion enabled
+| Tool | Source | Version |
+|------|--------|---------|
+| kubectl | `storage.googleapis.com` | Latest stable at build time |
+| Terraform | `tfswitch --latest` (tfswitch stays in the image) | Latest at build time |
+| Terragrunt | GitHub releases | Pinned per build, bumped automatically |
+| TFLint | GitHub releases | Pinned per build, bumped automatically |
+| Packer | `releases.hashicorp.com` | Pinned per build, bumped automatically |
+| Helm 3 | `get-helm-3` script | Latest at build time |
+| ghorg | GitHub releases (plus a sample `~/.config/ghorg/conf.yaml`) | Pinned per build, bumped automatically |
+| k9s | GitHub releases (RPM) | Pinned per build, bumped automatically |
+| Task (go-task) | `taskfile.dev` install script | Latest at build time |
 
-### Tool Defaults
+"Pinned per build, bumped automatically" means a Dockerfile `ARG` default that CI overrides with a repository variable. A daily workflow updates those variables to the newest releases; see [Cloud layers](cloud-layers.md#how-ci-builds-the-images).
 
-**Terraform**:
-- Plugin cache enabled: `~/.terraform.d/plugin-cache`
-- Provider mirror configured for faster downloads
-
-**kubectl**:
-- Context switching aliases: `kx`, `kn`
-- Default namespace support
-
-**Ansible**:
-- Host key checking disabled (for automation)
-- Coloured output enabled
+The layer finishes by printing versions (`terraform version`, `kubectl version --client`, `trivy --version`, …), so a broken download fails the build.
 
 ---
 
-## Entrypoint & CMD
+## RUN 3: Node.js and AI agents
 
-### Default Entrypoint
+| Tool | How it is installed |
+|------|---------------------|
+| :simple-nodedotjs: Node.js LTS, npm, npx | NodeSource `setup_lts.x` (current LTS, not pinned) |
+| :simple-claude: Claude Code (`claude`) | Native installer from `claude.ai/install.sh` |
+| :lucide-bot: OpenAI Codex CLI (`codex`) | `npm install -g @openai/codex` |
+| :simple-githubcopilot: GitHub Copilot CLI (`copilot`) | `npm install -g @github/copilot` |
+| :simple-googlegemini: Google Antigravity CLI (`agy`) | Google's installer, into `/usr/local/bin` |
 
-```dockerfile
-ENTRYPOINT ["/bin/zsh"]
-CMD ["-l"]
-```
+None of them are authenticated in the image. See [AI CLI setup](../tool-basics/ai-cli-setup.md).
 
-**Why `-l` (login shell)?**
-- Sources `/root/.zshrc` automatically
-- Loads Oh-My-Zsh configuration
-- Activates custom aliases and completions
+---
 
-### Override Examples
+## Environment and defaults
+
+| Setting | Value |
+|---------|-------|
+| `CMD` | `["/bin/zsh"]` (no `ENTRYPOINT`) |
+| User / home | `root` / `/root` |
+| `ENV CLOUDSDK_PYTHON` | `python3` |
+| `ENV PATH` | `/usr/lib/google-cloud-sdk/bin:/root/.local/bin:$PATH` |
+
+That is the complete list of `ENV` settings. Anything else (cloud regions, credentials, pagers) is up to you at runtime.
 
 ```bash
-# Custom command
-docker run --rm <image> terraform version
+# Run one command instead of the shell
+docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest terraform version
 
-# Interactive bash instead of zsh
-docker run -it --rm <image> /bin/bash
-
-# Run script
-docker run --rm <image> sh -c "terraform init && terraform plan"
+# Use bash instead of zsh
+docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest bash
 ```
 
 ---
 
-## Environment Variables
+## Not included
 
-### Built-in Variables
-
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `PATH` | Includes all tool binaries | Ensure tools are executable |
-| `TERM` | `xterm-256color` | Colour support in terminal |
-| `LANG` | `en_US.UTF-8` | UTF-8 encoding |
-| `TF_PLUGIN_CACHE_DIR` | `~/.terraform.d/plugin-cache` | Speed up Terraform |
-
-### User-Configurable Variables
-
-Users can set these at runtime:
-
-- Cloud credentials (see [Authentication](../use-images/authentication.md))
-- Tool-specific settings
-- CI/CD environment variables
+Install these yourself if you need them: kustomize (but `kubectl kustomize` and `kubectl apply -k` work), yq, pipx, the Docker CLI or daemon, redis-cli, terraform-docs, Go and Java.
 
 ---
 
-## Multi-Architecture Support
+## Next steps
 
-The base layer is built for both architectures:
-
-| Architecture | Support Level | Notes |
-|--------------|---------------|-------|
-| **linux/amd64** | Full | x86_64, most common |
-| **linux/arm64** | Full | Apple Silicon, AWS Graviton |
-
-**Build strategy**:
-- Docker Buildx with QEMU emulation
-- Native builds on each architecture (faster)
-- Manifest list for auto-selection
-
-**Tool compatibility**:
-- All tools have arm64 binaries
-- No emulation needed at runtime
-- Performance equivalent to native
-
----
-
-## Security Hardening
-
-!!! warning "Security Measures"
-
-    1. **No root password**: Root account locked by default
-    2. **Minimal attack surface**: Only required packages installed
-    3. **Updated regularly**: Base image rebuilt weekly
-    4. **Trivy scanning**: Self-scan during build process
-    5. **No secrets**: No API keys or credentials baked in
-
-### Recommended Practices
-
-- Run as non-root user in production (use `--user` flag)
-- Mount secrets as files, not environment variables
-- Use read-only filesystem where possible
-- Scan images before deployment
-
----
-
-## Version Pinning Strategy
-
-### Pinned Versions
-
-**Rocky Linux**: Pinned to `10.x` (major version)
-- Receives security updates
-- No breaking changes within major version
-
-**Node.js**: Pinned to `20.x` LTS
-- LTS until 2026-04-30
-- Stable, production-ready
-
-### Latest Versions
-
-Most tools use `latest` to ensure users get:
-- Security fixes
-- Bug fixes
-- New features
-
-**Trade-off**:
-- ✅ Always up-to-date security
-- ❌ Potential breaking changes (mitigated by semantic versioning)
-
-### Version Lock Recommendations
-
-For CI/CD, use specific image tags:
-```bash
-# Not recommended for production
-ghcr.io/jinalshah/devops/images/all-devops:latest
-
-# Recommended for production
-ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-```
-
----
-
-## Next Steps
-
-- [Cloud Layers](cloud-layers.md) - AWS and GCP additions
-- [Image Comparison](comparison.md) - Tool matrix across variants
-- [Building Images](../build-images/index.md) - Customise your own
+- [Cloud layers](cloud-layers.md): what AWS and GCP add, and how CI builds everything
+- [Image comparison](comparison.md): tool matrix across variants
+- [Customisation](../build-images/customization.md): build your own variant

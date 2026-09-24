@@ -1,378 +1,273 @@
-# Getting Started
+---
+title: Getting Started
+hide:
+  - toc
+---
 
-Welcome to the DevOps Images documentation! This project provides production-ready, multi-architecture container images packed with essential DevOps tools for cloud infrastructure, automation, and platform engineering.
+<div class="di-hero" markdown>
 
-## What Are These Images?
+<div class="di-hero-badges"><span>Rocky Linux 10</span><span>amd64 + arm64</span><span>Rebuilt weekly</span><span>3 registries</span></div>
 
-DevOps Images are pre-built Docker containers that include a comprehensive toolkit for:
+# Your whole DevOps toolbox, in one container
 
-- **Infrastructure as Code** (Terraform, Terragrunt, Packer)
-- **Kubernetes Operations** (kubectl, Helm, k9s)
-- **Configuration Management** (Ansible, pre-commit)
-- **Security Scanning** (Trivy)
-- **Cloud Provider CLIs** (AWS CLI, gcloud)
-- **AI Code Assistants** (Claude, Codex, Copilot, Gemini)
-- **Database Clients** (mongosh, psql, mysql)
-- **Development Tools** (Python, Node.js, Git, GitHub CLI)
+Terraform, Kubernetes, AWS, Google Cloud, Ansible, security scanning, database clients and four AI coding agents, pre-installed and ready to go. You don't need to install anything on your machine or your CI runners.
 
-Built on **Rocky Linux 10** with support for both **AMD64** and **ARM64** architectures, these images eliminate the need to install dozens of tools on your local machine or CI/CD runners.
+[:lucide-rocket: Quick start](quick-start.md){ .md-button .md-button--primary }
+[:lucide-compass: Pick an image](choosing-an-image.md){ .md-button }
+[:simple-github: GitHub](https://github.com/jinalshah/devops-images){ .md-button }
 
-## Choose the Right Image
+</div>
 
-| Image | Best For | Cloud Tools | Size |
-|-------|----------|-------------|------|
-| **all-devops** | Multi-cloud teams, platform engineering, one-stop solution | AWS CLI + gcloud + Session Manager | Largest |
-| **aws-devops** | AWS-focused DevOps, smaller footprint than all-devops | AWS CLI + Session Manager | Medium |
-| **gcp-devops** | GCP-focused DevOps, smaller footprint than all-devops | gcloud + GKE tools | Medium |
+<div class="di-stats">
+  <div class="di-stat"><strong>3</strong><span>image variants</span></div>
+  <div class="di-stat"><strong>40+</strong><span>tools pre-installed</span></div>
+  <div class="di-stat"><strong>4</strong><span>AI coding agents</span></div>
+  <div class="di-stat"><strong>2</strong><span>CPU architectures</span></div>
+</div>
 
-### Common Base Tools (All Images)
+<div class="di-terminal" data-di-terminal></div>
 
-**Infrastructure as Code:**
+## Choose your image
 
-- Terraform with tfswitch for version management
-- Terragrunt for DRY configurations
-- TFLint for linting
-- Packer for image building
+All three images share the same base toolkit. They differ only in which cloud CLIs they add on top.
 
-**Kubernetes & Containers:**
+<div class="grid cards di-images" markdown>
 
-- kubectl (latest stable)
-- Helm 3
-- k9s terminal UI
+-   :lucide-layers:{ .lg .middle } __all-devops__
 
-**Configuration & Automation:**
+    ---
 
-- Ansible & ansible-lint
-- pre-commit hooks
-- Task (go-task) runner
+    Everything: **AWS CLI v2 + Session Manager** *and* **Google Cloud CLI**. Best for multi-cloud and platform teams.
 
-**Security & Quality:**
+    `ghcr.io/jinalshah/devops/images/all-devops`
 
-- Trivy vulnerability scanner
+    [:octicons-arrow-right-24: All DevOps guide](use-images/all-devops.md)
 
-**Development:**
+-   :fontawesome-brands-aws:{ .lg .middle } __aws-devops__
 
-- Python 3.14 with pip
-- Node.js LTS with npm
-- Git & GitHub CLI
-- ghorg (GitHub org cloner)
+    ---
 
-**AI Code Assistants:**
+    AWS CLI v2, Session Manager plugin, boto3, cfn-lint and s3cmd, with no Google Cloud SDK.
 
-- Claude CLI
-- OpenAI Codex CLI
-- GitHub Copilot CLI
-- Google Antigravity CLI (`agy`)
+    `ghcr.io/jinalshah/devops/images/aws-devops`
 
-**Database Clients:**
+    [:octicons-arrow-right-24: AWS DevOps guide](use-images/aws-devops.md)
 
-- MongoDB Shell (mongosh) v8.0
-- PostgreSQL (psql) v17
-- MySQL client
+-   :simple-googlecloud:{ .lg .middle } __gcp-devops__
 
-**Network & Diagnostics:**
+    ---
 
-- dig, nslookup, ncat, telnet
-- curl, wget, lftp
-- jq JSON processor
+    Google Cloud CLI with beta components, `gsutil`, `bq`, `docker-credential-gcr` and the GKE auth plugin, with no AWS tooling.
 
-**Shells:**
+    `ghcr.io/jinalshah/devops/images/gcp-devops`
 
-- Zsh (default, with Oh My Zsh)
-- Bash
-- Fish
+    [:octicons-arrow-right-24: GCP DevOps guide](use-images/gcp-devops.md)
 
-## Why Use These Images?
+</div>
 
-### For Individual Developers
+Not sure? The [interactive image picker](choosing-an-image.md) answers it in three clicks.
 
-✓ **No local tool installation** - Everything pre-configured and ready to use
-✓ **Consistent environment** - Same tools and versions across your team
-✓ **Clean host system** - Keep development tools isolated in containers
-✓ **Multi-version testing** - Test against different tool versions easily
-✓ **Cross-platform** - Works on AMD64 Linux, macOS, and Apple Silicon
+## How the images are layered
 
-### For Teams
+```mermaid
+flowchart TB
+  R["Rocky Linux 10"] --> B["Shared base layer<br/>Terraform · Terragrunt · TFLint · Packer<br/>kubectl · Helm · k9s · Ansible · Trivy<br/>Python 3.14 · Node.js LTS · Git · gh<br/>Claude · Codex · Copilot · Antigravity<br/>mongosh · psql · mysql"]
+  B --> A["all-devops<br/>+ AWS CLI + gcloud"]
+  B --> W["aws-devops<br/>+ AWS CLI + SSM"]
+  B --> G["gcp-devops<br/>+ gcloud + GKE auth"]
 
-✓ **Standardised toolchain** - Everyone uses identical tool versions
-✓ **Fast onboarding** - New team members productive in minutes
-✓ **Multi-cloud ready** - Single image for AWS, GCP, and Kubernetes
-✓ **Version controlled** - Pin to specific image tags for reproducibility
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef os fill:#334155,stroke:#1e293b,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  class R os
+  class B base
+  class A all
+  class W aws
+  class G gcp
+```
 
-### For CI/CD Pipelines
+## What's inside
 
-✓ **Pre-built and cached** - Faster pipeline execution
-✓ **Immutable tags** - Reproducible builds with version pinning
-✓ **Multi-arch support** - Works with ARM and x86 runners
-✓ **Regular updates** - Weekly automated builds with latest tools
+<div class="grid cards" markdown>
 
-## Available Registries
+-   :simple-terraform: __Infrastructure as code__
 
-Images are published to three container registries for redundancy and global availability:
+    ---
 
-| Registry | Image Path | Best For |
+    Terraform (via tfswitch), Terragrunt, TFLint, Packer
+
+-   :simple-kubernetes: __Kubernetes__
+
+    ---
+
+    kubectl (latest stable), Helm 3, k9s
+
+-   :simple-ansible: __Automation__
+
+    ---
+
+    Ansible, ansible-lint, pre-commit, Task (go-task)
+
+-   :simple-trivy: __Security__
+
+    ---
+
+    Trivy for image, filesystem and IaC scanning
+
+-   :lucide-bot: __AI coding agents__
+
+    ---
+
+    Claude Code, OpenAI Codex CLI, GitHub Copilot CLI, Google Antigravity CLI (`agy`)
+
+-   :lucide-database: __Database clients__
+
+    ---
+
+    MongoDB Shell 8.0, PostgreSQL 17 `psql`, MySQL 8.4 client
+
+-   :simple-python: __Languages & dev tools__
+
+    ---
+
+    Python 3.14, Node.js LTS, Git, GitHub CLI, ghorg, Zensical
+
+-   :lucide-network: __Network & shells__
+
+    ---
+
+    dig, nslookup, nmap, ncat, telnet, curl, wget, lftp, jq · zsh (Oh My Zsh), bash, fish
+
+</div>
+
+:lucide-search: Want to search and filter the whole list? Open the [interactive tool explorer](use-images/quick-reference.md#tool-explorer).
+
+## Quick start
+
+=== ":lucide-play: Try it"
+
+    ```bash
+    docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
+
+    This drops you into a Zsh shell with every tool available.
+
+=== ":lucide-folder-open: Work on a project"
+
+    ```bash
+    docker run -it --rm \
+      -v "$PWD":/srv -w /srv \
+      -v ~/.ssh:/root/.ssh:ro \
+      -v ~/.aws:/root/.aws \
+      -v ~/.config/gcloud:/root/.config/gcloud \
+      ghcr.io/jinalshah/devops/images/all-devops:latest
+    ```
+
+    Your project is mounted at `/srv`, and your SSH keys and cloud credentials come with you.
+
+=== ":lucide-workflow: Use in CI"
+
+    ```yaml
+    jobs:
+      plan:
+        runs-on: ubuntu-latest
+        container:
+          image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
+        steps:
+          - uses: actions/checkout@v4
+          - run: terraform init
+          - run: terraform plan
+    ```
+
+    Pin a `1.0.<short-sha>` tag so pipelines don't change under you, or pin the digest (`@sha256:…`) for byte-for-byte reproducibility.
+
+Want every mount option? Use the [`docker run` builder](quick-start.md#build-your-command).
+
+## Registries and tags
+
+Every image is published to three registries:
+
+| Registry | Image path | Best for |
 |----------|------------|----------|
-| **GitHub Container Registry (GHCR)** | `ghcr.io/jinalshah/devops/images/<image>:<tag>` | Primary, recommended for most users |
-| **GitLab Container Registry** | `registry.gitlab.com/jinal-shah/devops/images/<image>:<tag>` | GitLab CI/CD pipelines |
-| **Docker Hub** | `js01/<image>:<tag>` | Alternative, rate-limit considerations |
+| :simple-github: **GitHub Container Registry** | `ghcr.io/jinalshah/devops/images/<image>:<tag>` | Recommended for most users |
+| :simple-gitlab: **GitLab Container Registry** | `registry.gitlab.com/jinal-shah/devops/images/<image>:<tag>` | GitLab CI/CD pipelines |
+| :simple-docker: **Docker Hub** | `js01/<image>:<tag>` | Alternative (mind the pull rate limits) |
 
-Replace `<image>` with `all-devops`, `aws-devops`, or `gcp-devops`.
+| Tag | Example | Use for |
+|-----|---------|---------|
+| **Version** | `1.0.abc1234` | CI/CD: one tag per commit (scheduled rebuilds refresh its tools) |
+| **Architecture-specific** | `1.0.abc1234-amd64` | Debugging a single architecture |
+| **Latest** | `latest` | Local development: always the newest build from `main` |
 
-## Quick Start Guide
+Both **linux/amd64** and **linux/arm64** (including Apple Silicon) are published under the same tag, and Docker pulls the right one automatically.
 
-### Step 1: Pull an Image
+!!! tip "Need byte-for-byte reproducibility?"
+    Images are rebuilt weekly (and whenever tool versions are bumped), and a rebuild of the same commit refreshes its `1.0.<sha>` tag with newer tools. To lock a pipeline to exact bits, pin the digest:
 
-Choose your preferred registry and pull the image:
+    ```bash
+    docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:latest --format '{{json .Manifest.Digest}}'
+    # then use ghcr.io/jinalshah/devops/images/all-devops@sha256:<digest>
+    ```
 
-```bash
-# From GHCR (recommended)
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
+## Why use these images?
 
-# From GitLab
-docker pull registry.gitlab.com/jinal-shah/devops/images/all-devops:latest
+<div class="grid cards" markdown>
 
-# From Docker Hub
-docker pull js01/all-devops:latest
-```
+-   :lucide-user: __For individual developers__
 
-### Step 2: Run the Container
+    ---
 
-**Simple interactive session:**
+    - No local tool installation
+    - Keep your host clean
+    - Same setup on Intel, AMD and Apple Silicon
 
-```bash
-docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+-   :lucide-users: __For teams__
 
-This drops you into a Zsh shell with all tools available.
+    ---
 
-**Production-ready setup with volume mounts:**
+    - Everyone runs identical tool versions
+    - New starters are productive in minutes
+    - Pin a tag or digest for reproducibility
 
-```bash
-docker run -it --name devops-work \
-  -v $PWD:/srv \
-  -v ~/.ssh:/root/.ssh \
-  -v ~/.aws:/root/.aws \
-  -v ~/.config/gcloud:/root/.config/gcloud \
-  -v ~/.claude:/root/.claude \
-  -v ~/.codex:/root/.codex \
-  -v ~/.copilot:/root/.copilot \
-  -v ~/.gemini:/root/.gemini \
-  ghcr.io/jinalshah/devops/images/all-devops:latest
-```
+-   :lucide-git-branch: __For CI/CD__
 
-**Volume mount explanations:**
+    ---
 
-- `-v $PWD:/srv` - Mount current directory as `/srv` for accessing your project files
-- `-v ~/.ssh:/root/.ssh` - Mount SSH keys for Git and remote access
-- `-v ~/.aws:/root/.aws` - Mount AWS credentials (for AWS images)
-- `-v ~/.config/gcloud:/root/.config/gcloud` - Mount GCP credentials (for GCP images)
-- AI CLI mounts - Required for authenticated AI assistant access
+    - Pre-built, so there's no install step in pipelines
+    - Per-commit version tags (or pin a digest)
+    - Works on x86 and ARM runners
+    - Rebuilt weekly with the latest tools
 
-### Step 3: Verify Tools
+</div>
 
-Once inside the container, verify tools are working:
+## Where next?
 
-```bash
-# Infrastructure tools
-terraform version
-kubectl version --client
-ansible --version
+<div class="grid cards" markdown>
 
-# Cloud CLIs (if using all-devops or cloud-specific images)
-aws --version      # AWS images
-gcloud --version   # GCP images
+-   :lucide-rocket: [__Quick start__](quick-start.md)
 
-# Security and quality
-trivy --version
+    Up and running in five minutes.
 
-# Development tools
-python3 --version
-node --version
-git --version
-```
+-   :lucide-container: [__Use the images__](use-images/index.md)
 
-## Image Tags and Versioning
+    Mounts, authentication, Compose and everyday patterns.
 
-### Tag Types
+-   :lucide-workflow: [__Workflows & patterns__](workflows/index.md)
 
-The CI pipeline publishes multiple tag types:
+    GitHub Actions, GitLab CI, Jenkins, CircleCI and Terraform.
 
-| Tag Type | Example | Description | Use For |
-|----------|---------|-------------|---------|
-| **Version** | `1.0.abc1234` | Immutable, based on Git commit | Production, CI/CD |
-| **Arch-specific** | `1.0.abc1234-amd64` | Single architecture | Debugging arch issues |
-| **Latest** | `latest` | Points to latest main build | Development only |
+-   :lucide-hammer: [__Build your own__](build-images/index.md)
 
-### Multi-Architecture Support
+    Build locally, customise and go multi-platform.
 
-All images support both architectures:
+-   :lucide-book-open: [__Tool basics__](tool-basics/index.md)
 
-- **linux/amd64** (x86_64) - Traditional Intel/AMD processors
-- **linux/arm64** (aarch64) - ARM processors, Apple Silicon (M1/M2/M3)
+    A cheat sheet for every tool in the box.
 
-Docker automatically pulls the correct architecture for your platform.
+-   :lucide-life-buoy: [__Troubleshooting__](troubleshooting/index.md)
 
-### Best Practices
+    Fixes for the most common problems.
 
-**For CI/CD and Production:**
-
-```bash
-# ✅ Good - immutable version tag
-docker pull ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-```
-
-**For Local Development:**
-
-```bash
-# ✅ Acceptable - always get latest tools
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-**Avoid in Production:**
-
-```bash
-# ❌ Avoid - tag changes over time, not reproducible
-docker pull ghcr.io/jinalshah/devops/images/all-devops:latest
-```
-
-## Common Use Cases
-
-### Use Case 1: Interactive Development
-
-Perfect for working on infrastructure code without installing tools locally:
-
-```bash
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/aws-devops:latest
-```
-
-Now you can run `terraform`, `ansible`, `kubectl` commands on your project files.
-
-### Use Case 2: CI/CD Pipeline
-
-Use as a base container in GitHub Actions:
-
-```yaml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
-    steps:
-      - uses: actions/checkout@v4
-      - run: terraform init
-      - run: terraform apply -auto-approve
-```
-
-### Use Case 3: One-off Commands
-
-Run tools without entering the container:
-
-```bash
-# Format Terraform files
-docker run --rm -v $PWD:/srv \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt -recursive /srv
-
-# Scan for vulnerabilities
-docker run --rm \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  trivy image nginx:latest
-
-# Run Ansible playbook
-docker run --rm -v $PWD:/srv \
-  ghcr.io/jinalshah/devops/images/all-devops:latest \
-  ansible-playbook /srv/playbook.yml
-```
-
-### Use Case 4: Team Standardization
-
-Create a team-specific wrapper script:
-
-```bash
-#!/bin/bash
-# ~/bin/devops
-
-docker run -it --rm \
-  -v $PWD:/workspace \
-  -v ~/.ssh:/root/.ssh \
-  -v ~/.aws:/root/.aws \
-  -w /workspace \
-  ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234 \
-  "$@"
-```
-
-Now team members can run: `devops terraform plan`
-
-## Next Steps
-
-Choose your path based on what you want to accomplish:
-
-### I want to use pre-built images
-
-→ **[Using the Images](use-images/index.md)** - Pull, run, and integrate with workflows
-
-- [All DevOps Image](use-images/all-devops.md) - Multi-cloud usage
-- [AWS DevOps Image](use-images/aws-devops.md) - AWS-specific usage
-- [GCP DevOps Image](use-images/gcp-devops.md) - GCP-specific usage
-
-### I want to build images locally
-
-→ **[Building Images](build-images/index.md)** - Build, customise, and test locally
-
-- [Building All DevOps](build-images/all-devops.md)
-- [Building AWS DevOps](build-images/aws-devops.md)
-- [Building GCP DevOps](build-images/gcp-devops.md)
-- [Multi-platform Builds](build-images/multi-platform-images.md) - Advanced build workflows
-
-### I want to learn about the tools
-
-→ **[Tool Basics](tool-basics/index.md)** - Comprehensive tool reference
-
-- Detailed descriptions of every tool
-- Basic to advanced usage examples
-- Common use cases and patterns
-
-### I'm having issues
-
-→ **[Troubleshooting](troubleshooting/index.md)** - Common problems and solutions
-
-- Pull and authentication issues
-- Container runtime problems
-- Build failures
-- Platform-specific issues
-
-## Documentation Structure
-
-```
-Getting Started (you are here)
-├── Using Images
-│   ├── Overview and common patterns
-│   ├── All DevOps image
-│   ├── AWS DevOps image
-│   └── GCP DevOps image
-├── Building Images
-│   ├── Local builds
-│   ├── Build customization
-│   ├── Multi-platform builds
-│   └── Image-specific builds
-├── Tool Basics
-│   └── Comprehensive tool reference
-└── Troubleshooting
-    └── Common issues and solutions
-```
-
-## Getting Help
-
-- **Documentation issues**: [Open an issue](https://github.com/jinalshah/devops-images/issues/new) on GitHub
-- **Tool-specific help**: Refer to the [Tool Basics](tool-basics/index.md) section
-- **Build problems**: Check the [Troubleshooting](troubleshooting/index.md) guide
-
-## Quick Links
-
-- [GitHub Repository](https://github.com/jinalshah/devops-images)
-- [GitHub Container Registry](https://github.com/jinalshah/devops-images/pkgs/container/devops%2Fimages%2Fall-devops)
-- [CI/CD Workflows](https://github.com/jinalshah/devops-images/actions)
+</div>

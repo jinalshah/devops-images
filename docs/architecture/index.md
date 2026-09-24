@@ -1,250 +1,149 @@
 # Architecture & Design
 
-## Overview
+One Dockerfile, one shared `base` stage and three published targets. Every image is built natively for **amd64** and **arm64**, then stitched into a single multi-arch tag.
 
-The DevOps Images are built on a layered architecture, starting from a common base layer and extending with cloud-specific tools. All images are multi-architecture, supporting both **amd64** and **arm64** platforms.
+<div class="di-stats">
+  <div class="di-stat"><strong>1</strong><span>Dockerfile</span></div>
+  <div class="di-stat"><strong>3</strong><span>published targets</span></div>
+  <div class="di-stat"><strong>2</strong><span>native architectures</span></div>
+  <div class="di-stat"><strong>3</strong><span>registries</span></div>
+</div>
 
-## Base Layer Architecture
-
-All images start from a common base layer built on Rocky Linux 10:
-
-```mermaid
-graph TB
-    subgraph "Base Layer (All Images)"
-        RL[Rocky Linux 10<br/>Multi-arch: amd64/arm64]
-
-        subgraph "Infrastructure as Code"
-            TF[Terraform + tfswitch]
-            TG[Terragrunt]
-            TFL[TFLint]
-            PK[Packer]
-        end
-
-        subgraph "Kubernetes Tools"
-            KB[kubectl]
-            HM[Helm 3]
-            K9[k9s]
-        end
-
-        subgraph "Development"
-            PY[Python 3.14]
-            ND[Node.js LTS]
-            GT[Git + GitHub CLI]
-        end
-
-        subgraph "AI Assistants"
-            CL[Claude CLI]
-            CD[Codex CLI]
-            CP[Copilot CLI]
-            GM[Antigravity CLI]
-        end
-
-        subgraph "Config & Security"
-            AN[Ansible + ansible-lint]
-            TR[Trivy]
-            PC[pre-commit]
-            TS[Task]
-        end
-
-        subgraph "Database Clients"
-            MG[mongosh v8.0]
-            PG[PostgreSQL 17]
-            MY[MySQL client]
-        end
-
-        subgraph "Shells & Utils"
-            ZS[Zsh + Oh My Zsh]
-            BS[Bash]
-            FS[Fish]
-            JQ[jq, curl, wget]
-        end
-
-        RL --> TF & KB & PY & CL & AN & MG & ZS
-    end
-
-    style RL fill:#4A90E2,color:#fff
-    style TF fill:#623CE4,color:#fff
-    style KB fill:#326CE5,color:#fff
-    style PY fill:#3776AB,color:#fff
-```
-
-## Image Variants
-
-From the base layer, three specialized variants are built:
+## The layer cake
 
 ```mermaid
-graph LR
-    BASE[Base Layer<br/>~2.5GB] --> ALL[all-devops<br/>+AWS CLI<br/>+gcloud<br/>~3.2GB]
-    BASE --> AWS[aws-devops<br/>+AWS CLI<br/>+Session Manager<br/>~2.8GB]
-    BASE --> GCP[gcp-devops<br/>+gcloud<br/>+docker-credential-gcr<br/>~2.9GB]
+flowchart TB
+  R["rockylinux/rockylinux:10"] --> B["base stage (not published)<br/>IaC · Kubernetes · Ansible · Trivy<br/>Python 3.14 · Node.js LTS · AI CLIs<br/>database clients · shells"]
+  B --> A["all-devops<br/>+ AWS CLI v2 + SSM plugin<br/>+ Google Cloud SDK"]
+  B --> W["aws-devops<br/>+ AWS CLI v2 + SSM plugin"]
+  B --> G["gcp-devops<br/>+ Google Cloud SDK"]
 
-    style BASE fill:#4A90E2,color:#fff
-    style ALL fill:#FF6B6B,color:#fff
-    style AWS fill:#FF9F43,color:#fff
-    style GCP fill:#5F8D4E,color:#fff
+  classDef neutral fill:#334155,stroke:#1e293b,color:#fff
+  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
+  classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
+  class R neutral
+  class B base
+  class A all
+  class W aws
+  class G gcp
 ```
 
-## Design Philosophy
+Each target is a single extra `RUN` on top of `base`, followed by `CMD ["/bin/zsh"]`. There is no `ENTRYPOINT` and no multi-stage builder: what gets installed stays installed.
 
-### Why Rocky Linux 10?
+<div class="grid cards" markdown>
 
-- **Enterprise-grade stability**: RHEL-compatible, production-ready
-- **Long-term support**: Extended lifecycle for security updates
-- **Multi-architecture support**: Native amd64 and arm64 builds
-- **Package ecosystem**: Robust RPM ecosystem for DevOps tools
+-   :lucide-layers:{ .lg .middle } __Base layer__
 
-### Why Zsh as Default?
+    ---
 
-- **Developer productivity**: Better autocomplete and syntax highlighting
-- **Oh My Zsh**: Rich plugin ecosystem for cloud tools
-- **Compatibility**: Bash scripts still work in Zsh
-- **Modern defaults**: Better interactive experience
+    Everything every image shares: the OS and build tools, Python, Node.js, IaC, Kubernetes, AI agents and database clients.
 
-### Multi-Architecture Strategy
+    [:octicons-arrow-right-24: Base layer](base-layer.md)
 
-All images are built for both **amd64** (x86_64) and **arm64** (aarch64) architectures, ensuring compatibility with:
+-   :lucide-cloud:{ .lg .middle } __Cloud layers__
 
-- **Intel/AMD machines**: Traditional x86_64 servers and workstations
-- **Apple Silicon**: M1/M2/M3 Mac devices (arm64 native)
-- **AWS Graviton**: ARM-based EC2 instances
-- **Cloud development**: Consistent experience across platforms
+    ---
 
-## Tool Categories
+    What the AWS and GCP layers add, how they are installed, and how the CI pipeline builds and publishes them.
 
-### Infrastructure as Code (IaC)
+    [:octicons-arrow-right-24: Cloud layers](cloud-layers.md)
 
-| Tool | Version Strategy | Purpose |
-|------|------------------|---------|
-| **Terraform** | tfswitch (multi-version) | Infrastructure provisioning |
-| **Terragrunt** | Latest stable | Terraform wrapper for DRY configs |
-| **TFLint** | Latest | Terraform linting and validation |
-| **Packer** | Latest | Image building automation |
+-   :lucide-scale:{ .lg .middle } __Comparison__
 
-### Kubernetes & Container Orchestration
+    ---
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **kubectl** | Latest stable | Kubernetes cluster management |
-| **Helm 3** | Latest | Kubernetes package manager |
-| **k9s** | Latest | Terminal UI for Kubernetes |
+    Side-by-side tool matrix, real sizes and a quick decision tree.
 
-### Cloud Provider CLIs
+    [:octicons-arrow-right-24: Compare images](comparison.md)
 
-| Tool | Availability | Purpose |
-|------|--------------|---------|
-| **AWS CLI v2** | all-devops, aws-devops | AWS service management |
-| **AWS Session Manager** | all-devops, aws-devops | EC2 instance access |
-| **gcloud** | all-devops, gcp-devops | GCP service management |
-| **docker-credential-gcr** | all-devops, gcp-devops | GCR authentication |
+</div>
 
-### Configuration Management
+## Design choices
 
-| Tool | Purpose |
-|------|---------|
-| **Ansible** | Configuration automation |
-| **ansible-lint** | Playbook validation |
-| **pre-commit** | Git hook framework |
-| **Task** | Modern task runner (Make alternative) |
+<div class="grid cards" markdown>
 
-### Security & Scanning
+-   :simple-rockylinux:{ .lg .middle } __Rocky Linux 10__
 
-| Tool | Purpose |
-|------|---------|
-| **Trivy** | Vulnerability scanning for containers and IaC |
+    ---
 
-### AI-Powered Development
+    RHEL-compatible, long support lifecycle, RPM repositories for almost every tool here, and official images for both amd64 and arm64.
 
-All images include four AI CLI assistants for code generation, review, and troubleshooting:
+-   :simple-zsh:{ .lg .middle } __Zsh by default__
 
-| Tool | Provider | Best For |
-|------|----------|----------|
-| **Claude CLI** | Anthropic | Code review, architecture, long context |
-| **Codex CLI** | OpenAI | Code generation, quick snippets |
-| **Copilot CLI** | GitHub | IDE integration, GitHub workflows |
-| **Antigravity CLI** | Google | Agentic workflows, GCP-specific tasks |
+    ---
 
-### Development Tools
+    Oh My Zsh with the `candy` theme, kubectl and AWS completion, and handy aliases (`k`, `kg`, `tfp`, `aws-ssm`…). Bash and fish are there too.
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Python 3** | 3.14 | Scripting, tooling |
-| **Node.js** | LTS | JavaScript tooling |
-| **Git** | Latest | Version control |
-| **GitHub CLI (gh)** | Latest | GitHub automation |
+-   :lucide-cpu:{ .lg .middle } __Native multi-arch__
 
-### Database Clients
+    ---
 
-| Client | Version | Purpose |
-|--------|---------|---------|
-| **mongosh** | v8.0 | MongoDB shell |
-| **psql** | PostgreSQL 17 | PostgreSQL client |
-| **mysql** | Latest | MySQL client |
+    amd64 and arm64 are built on native GitHub runners in parallel, so Apple Silicon and Graviton users get a real arm64 image with no emulation.
 
-### Network & Utilities
+-   :lucide-refresh-cw:{ .lg .middle } __Always fresh__
 
-- **dig, nslookup** - DNS troubleshooting
-- **ncat, telnet** - Network connectivity testing
-- **curl, wget** - HTTP clients
-- **jq** - JSON processing
-- **tree** - Directory visualisation
-- **vim, less** - Text editors/pagers
+    ---
 
-## Build Process
+    Rebuilt every Sunday, plus whenever the daily version check finds a new Terragrunt, TFLint, Packer, k9s, ghorg, gcloud or Python release.
 
-### Multi-Stage Build Strategy
+</div>
 
-```mermaid
-graph TD
-    START[Dockerfile] --> BASE_BUILD[Base Stage: Rocky Linux 10]
-    BASE_BUILD --> TOOLS[Install Base Tools]
-    TOOLS --> BRANCH{Target?}
+## What's in every image
 
-    BRANCH -->|all-devops| AWS_TOOLS[Install AWS Tools]
-    BRANCH -->|aws-devops| AWS_TOOLS
-    BRANCH -->|gcp-devops| GCP_TOOLS[Install GCP Tools]
+| Category | Tools |
+|----------|-------|
+| :simple-terraform: **Infrastructure as code** | Terraform (via tfswitch), Terragrunt, TFLint, Packer |
+| :simple-kubernetes: **Kubernetes** | kubectl (latest stable), Helm 3, k9s |
+| :simple-ansible: **Automation** | Ansible, ansible-lint, pre-commit, Task (go-task) |
+| :simple-trivy: **Security** | Trivy (the vulnerability DB downloads on first scan) |
+| :lucide-bot: **AI coding agents** | Claude Code (`claude`), OpenAI Codex CLI (`codex`), GitHub Copilot CLI (`copilot`), Google Antigravity CLI (`agy`) |
+| :simple-python: **Languages** | Python 3.14 (compiled from source), Node.js LTS with npm and npx |
+| :simple-github: **Git** | git, GitHub CLI (`gh`), ghorg |
+| :lucide-database: **Database clients** | `mongosh` (MongoDB 8.0 repo), `psql` 17, `mysql` 8.4 |
+| :lucide-network: **Network & utilities** | dig, nslookup, nmap, ncat, telnet, curl, wget, lftp, jq, tree, vim, less, zip/unzip |
+| :lucide-terminal: **Shells** | zsh (default), bash, fish |
 
-    AWS_TOOLS --> GCP_TOOLS_ALL{all-devops?}
-    GCP_TOOLS_ALL -->|Yes| GCP_TOOLS
-    GCP_TOOLS_ALL -->|No| FINAL_AWS[aws-devops Final]
+Cloud CLIs are the only difference between images:
 
-    GCP_TOOLS --> FINAL_CHECK{all-devops?}
-    FINAL_CHECK -->|Yes| FINAL_ALL[all-devops Final]
-    FINAL_CHECK -->|No| FINAL_GCP[gcp-devops Final]
+| Tool | <span class="di-pill di-pill--all">all-devops</span> | <span class="di-pill di-pill--aws">aws-devops</span> | <span class="di-pill di-pill--gcp">gcp-devops</span> |
+|------|:---:|:---:|:---:|
+| AWS CLI v2 + Session Manager plugin | ✅ | ✅ | — |
+| boto3, cfn-lint, s3cmd | ✅ | ✅ | — |
+| gcloud, gsutil, bq | ✅ | — | ✅ |
+| `docker-credential-gcr`, `gke-gcloud-auth-plugin` | ✅ | — | ✅ |
 
-    style START fill:#4A90E2,color:#fff
-    style FINAL_ALL fill:#FF6B6B,color:#fff
-    style FINAL_AWS fill:#FF9F43,color:#fff
-    style FINAL_GCP fill:#5F8D4E,color:#fff
-```
+## How the Dockerfile is ordered
 
-### Layer Optimization
+Docker rebuilds everything after the first changed instruction, so the order matters:
 
-The build process is optimized for layer caching:
+1. `COPY scripts/*.sh /tmp/`: the shell-config and architecture helper scripts come in **first**, so editing them invalidates the whole base.
+2. System packages, Python build, pip packages, database clients, Trivy and Oh My Zsh (one big `RUN`).
+3. Downloaded binaries: kubectl, Terraform, Terragrunt, TFLint, Packer, Helm, ghorg, k9s, Task.
+4. Node.js LTS and the four AI CLIs.
+5. The per-target cloud `RUN`.
 
-1. **Base OS packages** - Changes rarely
-2. **Binary downloads** - Version updates occasionally
-3. **Python/Node packages** - Moderate update frequency
-4. **Configuration files** - Most frequently changed
+The full breakdown is on the [base layer](base-layer.md#dockerfile-layer-order) page.
 
-This ordering minimizes rebuild time and maximizes cache hits.
+## Sizes
 
-## Size Comparison
+These are measured from GHCR. The three images are within 0.5 GB of each other because the shared base makes up most of each one.
 
-Approximate compressed image sizes:
+| Image | Compressed download | Unpacked on disk (amd64) |
+|-------|---------------------|--------------------------|
+| <span class="di-pill di-pill--all">all-devops</span> | ~1.6 GB | ~5.0 GB |
+| <span class="di-pill di-pill--aws">aws-devops</span> | ~1.55 GB | ~4.6 GB |
+| <span class="di-pill di-pill--gcp">gcp-devops</span> | ~1.5 GB | ~4.6 GB |
 
-| Image | Size | Base + Cloud Tools | Use Case |
-|-------|------|-------------------|----------|
-| **base** | ~2.5GB | Base only | Single-cloud or custom |
-| **all-devops** | ~3.2GB | AWS + GCP | Multi-cloud teams |
-| **aws-devops** | ~2.8GB | AWS only | AWS-first teams |
-| **gcp-devops** | ~2.9GB | GCP only | GCP-first teams |
+arm64 downloads are about 0.05 to 0.1 GB smaller.
 
-!!! tip "Size Optimisation"
-    If you only need a subset of tools, consider building a custom image. See [Build Images > Customisation](../build-images/customization.md) for details.
+!!! tip "Need something slimmer?"
+    Build your own variant from the same Dockerfile. See [Customisation](../build-images/customization.md).
 
-## Next Steps
+## Next steps
 
-- [Choose the right image](../choosing-an-image.md) for your use case
-- [Understand base layer tools](base-layer.md) in detail
-- [Explore cloud-specific additions](cloud-layers.md)
-- [Compare all variants](comparison.md) side-by-side
+- [Choose the right image](../choosing-an-image.md)
+- [Base layer in detail](base-layer.md)
+- [Cloud layers and the CI pipeline](cloud-layers.md)
+- [Compare the images side by side](comparison.md)
