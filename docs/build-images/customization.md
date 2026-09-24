@@ -737,6 +737,6 @@ custom-devops-image/
 ## Next Steps
 
 - [Build Images Guide](index.md) - Building from source
-- [Optimisation Guide](optimisation.md) - Reduce image size
+- [Optimisation Guide](optimization.md) - Reduce image size
 - [Multi-Platform Images](multi-platform-images.md) - Build for multiple architectures
 - [Architecture Overview](../architecture/index.md) - Understand image layers

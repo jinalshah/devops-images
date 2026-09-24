@@ -240,7 +240,7 @@ Approximate compressed image sizes:
 | **gcp-devops** | ~2.9GB | GCP only | GCP-first teams |
 
 !!! tip "Size Optimisation"
-    If you only need a subset of tools, consider building a custom image. See [Build Images > Customisation](../build-images/customisation.md) for details.
+    If you only need a subset of tools, consider building a custom image. See [Build Images > Customisation](../build-images/customization.md) for details.
 
 ## Next Steps
 

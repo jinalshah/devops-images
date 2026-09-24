@@ -377,7 +377,7 @@ If building from the repository, additional test scripts are available:
 
 ### Reduce Image Size
 
-See [Optimisation Guide](optimisation.md) for detailed size reduction techniques.
+See [Optimisation Guide](optimization.md) for detailed size reduction techniques.
 
 ---
 
@@ -581,7 +581,7 @@ RUN curl -o /usr/local/bin/custom-tool https://example.com/tool
 docker build -f Dockerfile.custom -t all-devops:custom .
 ```
 
-See [Customisation Guide](customisation.md) for detailed examples.
+See [Customisation Guide](customization.md) for detailed examples.
 
 ### Automated Builds
 
@@ -625,7 +625,7 @@ Detailed build instructions for each variant:
 
 ## Next Steps
 
-- [Optimisation Guide](optimisation.md) - Reduce size and build time
-- [Customisation Guide](customisation.md) - Extend with custom tools
+- [Optimisation Guide](optimization.md) - Reduce size and build time
+- [Customisation Guide](customization.md) - Extend with custom tools
 - [Multi-Platform Guide](multi-platform-images.md) - Build for amd64 and arm64
 - [Architecture Overview](../architecture/index.md) - Understand image layers

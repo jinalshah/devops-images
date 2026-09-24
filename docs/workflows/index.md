@@ -120,7 +120,7 @@ terraform apply -auto-approve
 
 **Best Image**: Any variant (all include Trivy, TFLint, ansible-lint)
 
-**See**: [Multi-Tool Patterns > Security Workflows](multi-tool-patterns.md#security-first-workflow)
+**See**: [Multi-Tool Patterns > Security Workflows](multi-tool-patterns.md#pattern-2-security-first-workflow)
 
 ### Scenario 3: AI-Assisted Code Review
 
