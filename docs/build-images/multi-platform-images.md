@@ -51,7 +51,7 @@ docker buildx build --platform linux/arm64 --target all-devops \
 ```
 
 !!! warning "`--load` and multiple platforms don't mix"
-    `--platform linux/amd64,linux/arm64 --load` fails with Docker's classic image store, because it can hold only one platform per tag. Use `--push` to a registry, or build and load one platform at a time. (With the containerd image store enabled in Docker Desktop, loading multi-platform images does work.)
+    `--platform linux/amd64,linux/arm64 --load` fails with Docker's classic image store, because it can hold only one platform per tag. Use `--push` to a registry, or build and load one platform at a time. With the containerd image store (the default in Docker Desktop and for new installs of Docker Engine 29 and later), loading multi-platform images does work.
 
 ## Build both and push
 
@@ -106,9 +106,9 @@ Repeat with `--target aws-devops` or `--target gcp-devops` for the other images.
 docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 
-The output lists one manifest per platform, plus the index **digest**. Pin that digest (`image@sha256:…`) when you need strict reproducibility, because `1.0.<sha>` tags are refreshed by scheduled rebuilds.
+The output shows the index **digest** and one manifest per platform, each followed by an `unknown/unknown` attestation manifest. Pin that digest (`image@sha256:…`) when you need strict reproducibility, because `1.0.<sha>` tags are refreshed by scheduled rebuilds.
 
-To run a specific architecture, for example to reproduce an arm64-only problem on an amd64 machine:
+To run a specific architecture, for example to reproduce an arm64-only problem on an amd64 machine (this needs the QEMU handlers described above):
 
 ```bash
 docker run --rm --platform linux/arm64 \

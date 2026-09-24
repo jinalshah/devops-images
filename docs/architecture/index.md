@@ -95,7 +95,7 @@ Each target is a single extra `RUN` on top of `base`, followed by `CMD ["/bin/zs
 | Category | Tools |
 |----------|-------|
 | :simple-terraform: **Infrastructure as code** | Terraform (via tfswitch), Terragrunt, TFLint, Packer |
-| :simple-kubernetes: **Kubernetes** | kubectl (latest stable), Helm 3, k9s |
+| :simple-kubernetes: **Kubernetes** | kubectl, Helm 3, k9s |
 | :simple-ansible: **Automation** | Ansible, ansible-lint, pre-commit, Task (go-task) |
 | :simple-trivy: **Security** | Trivy (the vulnerability DB downloads on first scan) |
 | :lucide-bot: **AI coding agents** | Claude Code (`claude`), OpenAI Codex CLI (`codex`), GitHub Copilot CLI (`copilot`), Google Antigravity CLI (`agy`) |
@@ -118,7 +118,7 @@ Cloud CLIs are the only difference between images:
 
 Docker rebuilds everything after the first changed instruction, so the order matters:
 
-1. `COPY scripts/*.sh /tmp/`: the shell-config and architecture helper scripts come in **first**, so editing them invalidates the whole base.
+1. `COPY scripts/*.sh /tmp/`: every `.sh` file in `scripts/` comes in **first**, so editing any of them invalidates the whole base.
 2. System packages, Python build, pip packages, database clients, Trivy and Oh My Zsh (one big `RUN`).
 3. Downloaded binaries: kubectl, Terraform, Terragrunt, TFLint, Packer, Helm, ghorg, k9s, Task.
 4. Node.js LTS and the four AI CLIs.

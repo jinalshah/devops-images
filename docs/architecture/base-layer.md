@@ -32,10 +32,10 @@ flowchart TB
   class T all
 ```
 
-Each `RUN` ends by cleaning `/tmp`, `/var/tmp`, the pip cache and `__pycache__` directories, so the clean-up happens in the same layer as the install.
+Each `RUN` ends by cleaning `/tmp`, `/var/tmp` and the pip cache (plus the yum cache, `__pycache__` directories or the npm cache, depending on the step), so the clean-up happens in the same layer as the install.
 
 !!! info "Why `COPY` comes first"
-    The helper scripts (`00-detect-arch.sh`, `10-zshrc.sh`, `20-bashrc.sh`) are copied before anything is installed. Changing any file in `scripts/` therefore invalidates the whole base and rebuilds everything.
+    The helper scripts (`00-detect-arch.sh`, `10-zshrc.sh`, `20-bashrc.sh`) are copied before anything is installed, and the `scripts/*.sh` glob also picks up `update_tool_versions.sh`. Changing any `.sh` file in `scripts/` therefore invalidates the whole base and rebuilds everything.
 
 ---
 
@@ -79,7 +79,7 @@ Each `RUN` ends by cleaning `/tmp`, `/var/tmp`, the pip cache and `__pycache__` 
 
 === ":simple-zsh: Shell setup"
 
-    - Oh My Zsh with the `candy` theme and its default plugins. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` then `-> %`.
+    - Oh My Zsh with the `candy` theme and its default plugins. The prompt looks like `root@<host> [HH:MM:SS] [/srv]` then `-> #` (`#` because you are root).
     - `scripts/10-zshrc.sh` and `scripts/20-bashrc.sh` add the same aliases to zsh and bash, plus `kubectl` and `aws` completion.
 
     | Alias | Expands to |
@@ -98,12 +98,12 @@ Each `RUN` ends by cleaning `/tmp`, `/var/tmp`, the pip cache and `__pycache__` 
 
 | Tool | Source | Version |
 |------|--------|---------|
-| kubectl | `storage.googleapis.com` | Latest stable at build time |
+| kubectl | `stable.txt` from the legacy `storage.googleapis.com/kubernetes-release` bucket | Whatever that file names; the bucket stopped updating at v1.31.0 (current releases are on `dl.k8s.io`) |
 | Terraform | `tfswitch --latest` (tfswitch stays in the image) | Latest at build time |
 | Terragrunt | GitHub releases | Pinned per build, bumped automatically |
 | TFLint | GitHub releases | Pinned per build, bumped automatically |
 | Packer | `releases.hashicorp.com` | Pinned per build, bumped automatically |
-| Helm 3 | `get-helm-3` script | Latest at build time |
+| Helm 3 | `get-helm-3` script | Latest Helm 3 release at build time (not Helm 4) |
 | ghorg | GitHub releases (plus a sample `~/.config/ghorg/conf.yaml`) | Pinned per build, bumped automatically |
 | k9s | GitHub releases (RPM) | Pinned per build, bumped automatically |
 | Task (go-task) | `taskfile.dev` install script | Latest at build time |

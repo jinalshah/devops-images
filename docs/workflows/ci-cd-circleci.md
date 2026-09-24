@@ -137,8 +137,8 @@ workflows:
 !!! warning "Each `run` step is a new shell"
     `export FOO=bar` in one `run` step is gone in the next. Append exports to `$BASH_ENV` instead, as the `aws-oidc` command does. CircleCI sources that file at the start of every later step.
 
-!!! info "OIDC needs a context"
-    `$CIRCLE_OIDC_TOKEN_V2` is only issued to jobs that use at least one context. Set `AWS_ROLE_ARN` in that context, and give the IAM role a trust policy for your CircleCI organisation's OIDC provider.
+!!! info "OIDC setup"
+    CircleCI puts the job's OIDC token in `$CIRCLE_OIDC_TOKEN_V2`. Set `AWS_ROLE_ARN` in the `aws-terraform` context, and give the IAM role a trust policy for your CircleCI organisation's OIDC provider.
 
 ## Cloud credentials
 
@@ -272,7 +272,7 @@ jobs:
 ??? question "A variable set in one step is empty in the next"
     Write it to `$BASH_ENV` (`echo 'export FOO=bar' >> "$BASH_ENV"`) instead of using a bare `export`.
 
-??? question "`Unknown variable(s): parameters.xyz` in an executor"
+??? question "An executor fails with an error about an undeclared parameter"
     The executor uses `<< parameters.xyz >>` without declaring it. Add it under the executor's `parameters:` key, as in [A reusable executor](#a-reusable-executor).
 
 ??? question "Slow job start"

@@ -102,7 +102,7 @@ flowchart TB
 
     ---
 
-    kubectl (latest stable), Helm 3, k9s
+    kubectl, Helm 3, k9s
 
 -   :simple-ansible: __Automation__
 

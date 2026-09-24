@@ -76,7 +76,7 @@ You land in Zsh with Oh My Zsh's `candy` theme. The prompt looks like this:
 
 ```
 root@3f2a1b9c8d7e [10:42:07] [/]
--> %
+-> #
 ```
 
 Type `exit` (or press ++ctrl+d++) to leave. `--rm` deletes the container afterwards.
@@ -319,7 +319,7 @@ alias devops-run='docker run --rm -v "$PWD":/srv -w /srv -v ~/.aws:/root/.aws -v
 
 ??? question "The pull is very slow"
 
-    It's a 1.5 GB+ download, so the first pull takes a while. Use GHCR (no pull rate limits for public images), pick the single-cloud image if you only need one cloud, and it only happens once per update.
+    It's a 1.5 GB+ download, so the first pull takes a while. Use GHCR rather than Docker Hub, which rate-limits anonymous pulls, pick the single-cloud image if you only need one cloud, and it only happens once per update.
 
 ??? question "A tool says `command not found`"
 

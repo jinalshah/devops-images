@@ -85,7 +85,7 @@ flowchart TD
         js01/all-devops:latest
         ```
 
-    2. **Check the tag.** Only `latest`, `1.0.<7-char sha>` and `1.0.<sha>-amd64` / `-arm64` exist. There is no `1.0` tag and no semver tags. To list published tags on GHCR (your `gh` token needs the `read:packages` scope):
+    2. **Check the tag.** Only `latest`, `1.0.<7-char sha>` and `1.0.<sha>-amd64` / `-arm64` exist. There is no `1.0` tag and no semver tags. To list published tags on GHCR (the packages API needs authentication even for public images, and your `gh` token needs the `read:packages` scope: `gh auth refresh -s read:packages`):
 
         ```bash
         gh api /users/jinalshah/packages/container/devops%2Fimages%2Fall-devops/versions \
@@ -108,7 +108,7 @@ flowchart TD
     - log in to Docker Hub (`docker login`) so the higher authenticated limit applies. In GitHub Actions:
 
         ```yaml
-        - uses: docker/login-action@v3
+        - uses: docker/login-action@v4
           with:
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -169,7 +169,7 @@ flowchart TD
         ```
 
     !!! warning
-        With `--user`, `HOME` is still `/root`, which a non-root user can't write to, hence `-e HOME=/tmp`. The shell configuration and aliases in `/root` won't load either. Binaries in `/usr/local/bin` and `/usr/bin` work normally.
+        With `--user`, `HOME` doesn't point at a directory that user can write to (the image has no account for your UID), hence `-e HOME=/tmp`. The shell configuration and aliases in `/root` won't load either. Binaries in `/usr/local/bin` and `/usr/bin` work normally.
 
     Docker Desktop on macOS and Windows maps ownership for you, so this mostly affects Linux hosts.
 
@@ -502,7 +502,7 @@ See [AI CLI setup](../tool-basics/ai-cli-setup.md) for full configuration.
     docker buildx build --platform linux/arm64 --target all-devops -t all-devops:arm64 --load .
     ```
 
-    Multi-platform builds (`--platform linux/amd64,linux/arm64`) can't be loaded into the classic image store, so push them to a registry with `--push` instead.
+    Multi-platform builds (`--platform linux/amd64,linux/arm64`) can't be loaded into the classic image store, so push them to a registry with `--push` instead. The containerd image store (the default in Docker Desktop and for new installs of Docker Engine 29 and later) can load them.
 
 ---
 

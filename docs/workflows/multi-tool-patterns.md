@@ -169,19 +169,19 @@ To wire this into a pipeline, see [GitHub Actions](ci-cd-github.md#security-scan
 ```yaml title=".pre-commit-config.yaml"
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.96.1
+    rev: v1.109.1
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
       - id: terraform_tflint
 
   - repo: https://github.com/ansible/ansible-lint
-    rev: v24.12.2
+    rev: v26.9.0
     hooks:
       - id: ansible-lint
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer

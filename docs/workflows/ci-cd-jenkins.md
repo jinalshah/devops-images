@@ -119,7 +119,10 @@ pipeline {
     }
 
     stage('Apply') {
-      when { branch 'main' }
+      when {
+        beforeInput true
+        branch 'main'
+      }
       input {
         message 'Apply this plan to production?'
         ok 'Apply'

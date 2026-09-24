@@ -104,7 +104,7 @@ plan:
   artifacts:
     paths: [$TF_ROOT/tfplan]
     reports:
-      terraform: $TF_ROOT/plan-summary.json
+      terraform: terraform/plan-summary.json
     expire_in: 1 week
 
 apply:
@@ -143,9 +143,8 @@ The three `validate` jobs have no dependencies on each other, so they run in par
     ```yaml
     deploy-gcp:
       image: registry.gitlab.com/jinal-shah/devops/images/gcp-devops:1.0.abc1234
-      variables:
-        GOOGLE_APPLICATION_CREDENTIALS: $GCP_SA_KEY   # for Terraform
       script:
+        - export GOOGLE_APPLICATION_CREDENTIALS="$GCP_SA_KEY"   # for Terraform
         - gcloud auth activate-service-account --key-file="$GCP_SA_KEY"   # for gcloud
         - gcloud config set project my-project
         - cd terraform/gcp && terraform init -input=false && terraform apply -input=false -auto-approve
@@ -240,7 +239,7 @@ security-scan:
 
 ## AI review as a merge request note
 
-`CI_JOB_TOKEN` can't create merge request notes, so create a **project access token** with the `api` scope (Reporter role or higher). Store it as a masked variable called `GITLAB_REVIEW_TOKEN`, and your Anthropic key as `ANTHROPIC_API_KEY`.
+`CI_JOB_TOKEN` can't create merge request notes, so create a **project access token** with the `api` scope (Reporter role or higher). On GitLab.com, project access tokens need a Premium or Ultimate subscription. Store it as a masked variable called `GITLAB_REVIEW_TOKEN`, and your Anthropic key as `ANTHROPIC_API_KEY`.
 
 ```yaml
 ai-review:

@@ -5,7 +5,7 @@
 The docs site is at **[devops.jin.al](https://devops.jin.al/)** (also reachable from [jinalshah.github.io/devops-images](https://jinalshah.github.io/devops-images/)).
 
 !!! tip "Find things fast"
-    Press ++slash++ or ++s++ to search, and use the :lucide-sun: / :lucide-moon: toggle in the header to switch between light and dark mode.
+    Press ++slash++ to search, and use the :lucide-sun: / :lucide-moon: toggle in the header to switch between light and dark mode.
 
 ## How the site is built
 
@@ -50,7 +50,7 @@ The docs are built with [Zensical](https://zensical.org/) and configured in `zen
 
 ## Docs deployment
 
-`.github/workflows/docs.yml` builds and deploys the docs when changes under `docs/**` or to `zensical.toml` are pushed to `main`. Pull requests that touch the docs run the build without deploying, so broken links show up before merge.
+`.github/workflows/docs.yml` builds and deploys the docs when changes under `docs/**`, to `zensical.toml` or to the workflow itself are pushed to `main` (it can also be run manually). Pull requests that touch the docs run the build without deploying, so build errors show up before merge.
 
 ## Common issues
 

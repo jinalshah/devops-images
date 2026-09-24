@@ -24,7 +24,7 @@ Multi-architecture container images with a comprehensive DevOps toolchain for AW
 - Packer
 
 **Kubernetes & Containers:**
-- kubectl (latest stable)
+- kubectl
 - Helm 3
 - k9s (terminal UI)
 
@@ -316,14 +316,16 @@ docker run --rm ghcr.io/jinalshah/devops/images/all-devops:latest uname -m
 
 ### Files Created as Root
 
-When running commands that create files, they're owned by root. Use `--user` to match host permissions:
+When running commands that create files, they're owned by root. Hand them back to your user afterwards:
 
 ```bash
-docker run --rm --user "$(id -u):$(id -g)" \
-  -v $PWD:/srv \
+docker run --rm -v "$PWD":/srv -w /srv \
+  -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
   ghcr.io/jinalshah/devops/images/all-devops:latest \
-  terraform fmt -recursive /srv
+  bash -c 'terraform fmt -recursive && chown -R "$HOST_UID:$HOST_GID" /srv'
 ```
+
+Running with `--user "$(id -u):$(id -g)"` is not a drop-in fix: `/root` is only readable by root, and `terraform` (a tfswitch symlink into `/root/.terraform.versions`) and `claude` (in `/root/.local/bin`) live under it.
 
 ### Authentication Issues
 

@@ -89,7 +89,7 @@ flowchart LR
 
     ---
 
-    Files deleted in a later layer still ship. The project Dockerfile removes `/tmp/*`, pip caches and `__pycache__` at the end of each `RUN`.
+    Files deleted in a later layer still ship. The project Dockerfile removes `/tmp/*` and pip caches at the end of each `RUN` (and `__pycache__` in most of them).
 
     ```dockerfile
     RUN dnf install -y httpd-tools && \
@@ -101,7 +101,7 @@ flowchart LR
 
     ---
 
-    Rarely changing steps first and fast-moving ones last, so a version bump only rebuilds the tail. This is why the AI CLIs, which change most often, sit in the last base `RUN`.
+    Rarely changing steps first and fast-moving ones last, so a version bump only rebuilds the tail. In this Dockerfile the AI CLIs, which change most often, sit in the last base `RUN`.
 
 -   :lucide-file-x:{ .lg .middle } __Use `.dockerignore`__
 
@@ -144,7 +144,7 @@ docker image ls --format 'table {{.Repository}}:{{.Tag}}\t{{.Size}}' | grep devo
 docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' \
   ghcr.io/jinalshah/devops/images/all-devops:latest | sort -h -r | head
 
-# Compressed size per architecture, straight from the registry
+# Platforms and digests in the published manifest list (no sizes)
 docker buildx imagetools inspect ghcr.io/jinalshah/devops/images/all-devops:latest
 ```
 

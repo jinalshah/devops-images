@@ -23,15 +23,15 @@
   var TOOLS = [
     // Infrastructure as code
     { n: "Terraform", d: "Infrastructure as code (via tfswitch)", c: "iac", i: BASE, cmd: "terraform version" },
-    { n: "tfswitch", d: "Switch Terraform versions", c: "iac", i: BASE, cmd: "tfswitch --latest" },
+    { n: "tfswitch", d: "Switch Terraform versions", c: "iac", i: BASE, cmd: "tfswitch --version" },
     { n: "Terragrunt", d: "DRY Terraform wrapper", c: "iac", i: BASE, cmd: "terragrunt --version" },
     { n: "TFLint", d: "Terraform linter", c: "iac", i: BASE, cmd: "tflint --version" },
     { n: "Packer", d: "Machine image builder", c: "iac", i: BASE, cmd: "packer version" },
     { n: "Ansible", d: "Configuration management", c: "iac", i: BASE, cmd: "ansible --version" },
     { n: "ansible-lint", d: "Ansible playbook linter", c: "iac", i: BASE, cmd: "ansible-lint --version" },
     // Kubernetes
-    { n: "kubectl", d: "Kubernetes CLI (latest stable)", c: "k8s", i: BASE, cmd: "kubectl version --client" },
-    { n: "Helm", d: "Kubernetes package manager", c: "k8s", i: BASE, cmd: "helm version" },
+    { n: "kubectl", d: "Kubernetes CLI", c: "k8s", i: BASE, cmd: "kubectl version --client" },
+    { n: "Helm", d: "Kubernetes package manager (Helm 3)", c: "k8s", i: BASE, cmd: "helm version" },
     { n: "k9s", d: "Kubernetes terminal UI", c: "k8s", i: BASE, cmd: "k9s version" },
     // Cloud
     { n: "AWS CLI v2", d: "Amazon Web Services CLI", c: "cloud", i: "aw", cmd: "aws --version" },
@@ -69,7 +69,7 @@
     { n: "nmap / ncat", d: "Port scanning and netcat", c: "net", i: BASE, cmd: "nmap --version" },
     { n: "curl / wget", d: "HTTP clients", c: "net", i: BASE, cmd: "curl --version" },
     { n: "lftp", d: "FTP / SFTP client", c: "net", i: BASE, cmd: "lftp --version" },
-    { n: "telnet", d: "Raw TCP checks", c: "net", i: BASE, cmd: "which telnet" },
+    { n: "telnet", d: "Raw TCP checks", c: "net", i: BASE, cmd: "command -v telnet" },
     { n: "jq", d: "JSON processor", c: "net", i: BASE, cmd: "jq --version" },
     { n: "Zsh + Oh My Zsh", d: "Default shell (also bash, fish)", c: "net", i: BASE, cmd: "zsh --version" }
   ];
@@ -197,7 +197,7 @@
       var mounts = { project: true, ssh: true, aws: true, gcloud: true };
       var command = runCommand({ image: image, mounts: mounts, persist: answers.where === "laptop" });
       if (answers.where !== "laptop") {
-        command += "\n\n# In CI, pin a per-commit tag (or a @sha256 digest), for example:\n# " + REGISTRIES.ghcr + image + ":1.0.<short-sha>";
+        command += "\n\n# In CI, pin a per-commit tag (refreshed by scheduled rebuilds) or, for true reproducibility, a @sha256 digest:\n# " + REGISTRIES.ghcr + image + ":1.0.<short-sha>";
       }
       var box = el("div", { class: "di-result", "data-image": image }, [
         el("h4", { html: "Use <span class=\"di-pill di-pill--" + image.split("-")[0] + "\">" + image + "</span>" }),
@@ -324,7 +324,7 @@
 
   var TERMINAL_SCRIPT = [
     ["c", "docker run -it --rm ghcr.io/jinalshah/devops/images/all-devops"],
-    ["o", "Welcome to all-devops on Rocky Linux 10"],
+    ["o", "Rocky Linux 10 · zsh with Oh My Zsh (candy theme)"],
     ["c", "terraform version"],
     ["o", "Terraform v1.x (managed by tfswitch)"],
     ["c", "aws --version && gcloud --version | head -1"],

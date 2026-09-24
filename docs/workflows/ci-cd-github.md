@@ -44,9 +44,9 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::123456789012:role/github-terraform
           aws-region: eu-west-2
@@ -91,7 +91,7 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: terraform fmt -check -recursive terraform/
       - run: |
           cd terraform
@@ -105,8 +105,8 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::123456789012:role/github-terraform-plan
           aws-region: eu-west-2
@@ -114,7 +114,7 @@ jobs:
           cd terraform
           terraform init -input=false
           terraform plan -input=false -out=tfplan
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tfplan
           path: terraform/tfplan
@@ -127,12 +127,12 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/aws-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: tfplan
           path: terraform
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::123456789012:role/github-terraform-apply
           aws-region: eu-west-2
@@ -155,7 +155,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::123456789012:role/github-deploy
           aws-region: eu-west-2
@@ -172,7 +172,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: projects/123456/locations/global/workloadIdentityPools/github/providers/github
           service_account: deploy@my-project.iam.gserviceaccount.com
@@ -214,12 +214,12 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Trivy (vulnerabilities, secrets, misconfigurations)
         run: trivy fs --scanners vuln,secret,misconfig --format sarif --output trivy.sarif .
 
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy.sarif
 
@@ -250,7 +250,7 @@ jobs:
 === "EKS"
 
     ```yaml
-    - uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: arn:aws:iam::123456789012:role/github-deploy
         aws-region: eu-west-2
@@ -264,7 +264,7 @@ jobs:
 === "GKE"
 
     ```yaml
-    - uses: google-github-actions/auth@v2
+    - uses: google-github-actions/auth@v3
       with:
         workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
         service_account: ${{ vars.GCP_DEPLOY_SA }}
@@ -279,16 +279,15 @@ jobs:
 
 ## Caching Terraform providers
 
-The image doesn't set a provider cache, so set one per job and cache it with `actions/cache`:
+The image doesn't set a provider cache, so set one per job and cache it with `actions/cache`. In a `container:` job, `${{ github.workspace }}` expands to the runner host's path rather than the path inside the container, so build the path from `$GITHUB_WORKSPACE` in a step instead:
 
 ```yaml title="Optimised Terraform job"
-env:
-  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
-
 steps:
-  - uses: actions/checkout@v4
-  - run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
-  - uses: actions/cache@v4
+  - uses: actions/checkout@v7
+  - run: |
+      echo "TF_PLUGIN_CACHE_DIR=$GITHUB_WORKSPACE/.terraform-plugin-cache" >> "$GITHUB_ENV"
+      mkdir -p "$GITHUB_WORKSPACE/.terraform-plugin-cache"
+  - uses: actions/cache@v6
     with:
       path: .terraform-plugin-cache
       key: tf-providers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/.terraform.lock.hcl') }}
@@ -316,7 +315,7 @@ jobs:
     container:
       image: ghcr.io/jinalshah/devops/images/all-devops:1.0.abc1234
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -389,8 +388,8 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ inputs.role-arn }}
           aws-region: eu-west-2

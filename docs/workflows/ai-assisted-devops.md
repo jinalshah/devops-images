@@ -199,7 +199,7 @@ The images already contain `git`, `gh` and all four assistants, so a review job 
         container:
           image: ghcr.io/jinalshah/devops/images/all-devops:latest
         steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v7
             with:
               fetch-depth: 0
 
@@ -207,6 +207,7 @@ The images already contain `git`, `gh` and all four assistants, so a review job 
             env:
               ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
             run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
               git diff "origin/${{ github.base_ref }}...HEAD" -- terraform ansible \
                 | claude -p "Review this pull request diff for security issues, bugs and
                   risky infrastructure changes. Be specific and concise; use Markdown." \
@@ -215,7 +216,7 @@ The images already contain `git`, `gh` and all four assistants, so a review job 
           - name: Comment on the PR
             env:
               GH_TOKEN: ${{ github.token }}
-            run: gh pr comment ${{ github.event.pull_request.number }} --body-file review.md
+            run: gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --body-file review.md
     ```
 
 === ":simple-githubactions: GitHub Actions + Copilot"
@@ -225,6 +226,7 @@ The images already contain `git`, `gh` and all four assistants, so a review job 
             env:
               COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
             run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
               git diff "origin/${{ github.base_ref }}...HEAD" -- terraform > /tmp/pr.diff
               copilot -s --allow-all-tools \
                 -p "Review the diff in /tmp/pr.diff for security issues and risky changes. Use Markdown." \
