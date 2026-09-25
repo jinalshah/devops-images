@@ -46,8 +46,8 @@ flowchart LR
   C -- "terraform / kubectl / aws / gcloud" --> Cloud["Your cloud accounts<br/>and clusters"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   class H,R neutral
   class C all
   class Cloud base

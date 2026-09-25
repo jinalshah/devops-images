@@ -72,14 +72,14 @@ flowchart LR
 
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef ai fill:#d97706,stroke:#b45309,color:#fff
   class HA,CA aws
   class HG,CG gcp
   class HS,CS base
   class HC,HX,HP,HM,CC,CX,CP,CM ai
-  style Host fill:#1e293b,stroke:#6366f1,color:#fff
-  style Container fill:#1e293b,stroke:#6366f1,color:#fff
+  style Host fill:#1e293b,stroke:#0ea5e9,color:#fff
+  style Container fill:#1e293b,stroke:#0ea5e9,color:#fff
 ```
 
 | Host path | Container path | Used by | Available in |

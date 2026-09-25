@@ -15,9 +15,9 @@ flowchart TD
   Q -->|"A few binaries in a small image"| M["Multi-stage copy<br/>into a fresh base"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef ai fill:#d97706,stroke:#b45309,color:#fff
   class Q neutral
   class E all
   class F base

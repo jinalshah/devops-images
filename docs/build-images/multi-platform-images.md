@@ -24,13 +24,13 @@ flowchart LR
   T --> R3["Docker Hub"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class X,Y neutral
   class XT,YT base
   class M,T all
   class R1,R2,R3 neutral
-  style matrix fill:#1e293b,stroke:#6366f1,color:#fff
+  style matrix fill:#1e293b,stroke:#0ea5e9,color:#fff
 ```
 
 `latest` is only pushed from `main`. When you pull, Docker picks the matching entry from the manifest automatically.

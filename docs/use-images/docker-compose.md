@@ -13,8 +13,8 @@ flowchart LR
   D --> S3[("minio<br/>S3 API")]
   D --> Docs["docs<br/>zensical serve"]
 
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
   class D all
   class PG,MG,S3 base

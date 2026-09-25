@@ -49,9 +49,9 @@ flowchart LR
   VM --> INV["hosts.ini<br/>from terraform output"]
   INV --> ANS["ansible-playbook"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class TF,KC,INV base
   class EKS,VM aws
   class HELM,ANS all
@@ -113,10 +113,10 @@ flowchart LR
   G --> D["apply"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef ai fill:#d97706,stroke:#b45309,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class C neutral
   class T,L,A,P base
   class AI ai
@@ -228,9 +228,9 @@ flowchart LR
   D --> I["helm upgrade --install<br/>--wait"]
   I --> V["kubectl rollout status"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class L,R,S base
   class D gcp
   class I,V all

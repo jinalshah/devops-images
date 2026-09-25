@@ -11,7 +11,7 @@ flowchart LR
   B["base"] --> L["gcp-devops layer<br/>Google Cloud SDK tarball,<br/>beta, docker-credential-gcr,<br/>gke-gcloud-auth-plugin"]
   L --> I["gcp-devops:local"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
   class B base
   class L,I gcp

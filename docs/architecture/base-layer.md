@@ -23,9 +23,9 @@ flowchart TB
   T --> CMD["CMD /bin/zsh"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef ai fill:#d97706,stroke:#b45309,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class F,E,C,CMD neutral
   class R1,R2 base
   class R3 ai

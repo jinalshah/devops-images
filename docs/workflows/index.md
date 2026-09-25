@@ -25,19 +25,19 @@ flowchart TB
   REG --> ALL & AWS & GCP
   IMG --> JOBS
 
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef ai fill:#db2777,stroke:#9d174d,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef ai fill:#d97706,stroke:#b45309,color:#fff
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
   class GHA,GLC,JNK,CCI,REG neutral
   class ALL all
   class AWS aws
   class GCP gcp
   class JOBS base
-  style CI fill:#1e293b,stroke:#6366f1,color:#fff
-  style IMG fill:#1e293b,stroke:#6366f1,color:#fff
+  style CI fill:#1e293b,stroke:#0ea5e9,color:#fff
+  style IMG fill:#1e293b,stroke:#0ea5e9,color:#fff
 ```
 
 All three images share the same base, so every job can run the same Terraform, Kubernetes, Ansible, security and AI tools. The only difference is the cloud CLI: <span class="di-pill di-pill--all">all-devops</span> has AWS and Google Cloud, <span class="di-pill di-pill--aws">aws-devops</span> has AWS only and <span class="di-pill di-pill--gcp">gcp-devops</span> has Google Cloud only.

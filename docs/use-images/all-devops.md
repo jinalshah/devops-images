@@ -2,7 +2,7 @@
 title: all-devops
 ---
 
-<div class="di-hero" markdown style="background: linear-gradient(120deg, #5b21b6 0%, #7c3aed 50%, #db2777 100%)">
+<div class="di-hero" markdown style="background: linear-gradient(120deg, #064e3b 0%, #047857 45%, #0d9488 100%)">
 
 <div class="di-hero-badges"><span>AWS + Google Cloud</span><span>amd64 + arm64</span><span>~1.6 GB download</span></div>
 
@@ -54,10 +54,10 @@ flowchart LR
   W["AWS layer<br/>AWS CLI v2, Session Manager,<br/>boto3, cfn-lint, s3cmd"] --> A
   G["GCP layer<br/>gcloud, gsutil, bq,<br/>gke-gcloud-auth-plugin"] --> A
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class B base
   class W aws
   class G gcp
