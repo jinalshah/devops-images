@@ -1,0 +1,578 @@
+/* ==========================================================================
+   DevOps Images – custom theme
+   A colourful layer on top of the Zensical (classic) theme: gradient header,
+   per-image colour coding, hero banner, cards, tool chips and the styles for
+   the interactive widgets in javascripts/extra.js.
+   ========================================================================== */
+
+/* ---------- Palette ------------------------------------------------------ */
+
+:root {
+  --di-sky: #0369a1;
+  --di-cyan: #0891b2;
+  --di-teal: #0d9488;
+  --di-amber: #f59e0b;
+  --di-amber-deep: #d97706;
+
+  /* One colour per image, used consistently across every page */
+  --di-all: #059669;
+  --di-aws: #ea7a0c;
+  --di-gcp: #2563eb;
+  --di-base: #0891b2;
+
+  --di-gradient: linear-gradient(120deg, #0c4a6e 0%, #0369a1 40%, #0891b2 75%, #0d9488 100%);
+  --di-gradient-soft: linear-gradient(120deg, rgba(3, 105, 161, .10), rgba(8, 145, 178, .10) 50%, rgba(13, 148, 136, .10));
+
+  --di-card-bg: var(--md-default-bg-color);
+  --di-card-border: rgba(3, 105, 161, .18);
+  --di-radius: .8rem;
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0369a1;
+  --md-primary-fg-color--light: #38bdf8;
+  --md-primary-fg-color--dark: #075985;
+  --md-accent-fg-color: #d97706;
+  --md-accent-fg-color--transparent: rgba(245, 158, 11, .1);
+  --md-typeset-a-color: #0369a1;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0ea5e9;
+  --md-primary-fg-color--light: #7dd3fc;
+  --md-primary-fg-color--dark: #0c4a6e;
+  --md-accent-fg-color: #fbbf24;
+  --md-accent-fg-color--transparent: rgba(251, 191, 36, .12);
+  --md-typeset-a-color: #7dd3fc;
+  --md-default-bg-color: #0b1120;
+  --md-code-bg-color: #111b2e;
+  --di-card-bg: #111827;
+  --di-card-border: rgba(125, 211, 252, .18);
+  --di-aws: #fb923c;
+  --di-gcp: #60a5fa;
+  --di-all: #34d399;
+  --di-base: #22d3ee;
+}
+
+/* ---------- Header and tabs --------------------------------------------- */
+
+.md-header,
+.md-tabs {
+  background: var(--di-gradient);
+}
+
+.md-tabs__link--active,
+.md-tabs__item--active .md-tabs__link {
+  font-weight: 700;
+}
+
+.md-tabs__link--active::after,
+.md-tabs__item--active .md-tabs__link::after {
+  content: "";
+  display: block;
+  height: 3px;
+  margin-top: .25rem;
+  border-radius: 3px;
+  background: var(--di-amber);
+}
+
+/* ---------- Headings ----------------------------------------------------- */
+
+.md-typeset h1 {
+  font-weight: 800;
+  background: var(--di-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.md-typeset h2 {
+  font-weight: 700;
+  padding-bottom: .3rem;
+  border-bottom: 2px solid transparent;
+  border-image: var(--di-gradient) 1;
+}
+
+/* ---------- Hero banner (home page) -------------------------------------- */
+
+.md-typeset .di-hero {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 2rem;
+  padding: 2.2rem 2rem 2rem;
+  border-radius: 1.2rem;
+  color: #fff;
+  background: var(--di-gradient);
+  box-shadow: 0 1rem 2.5rem -1rem rgba(3, 105, 161, .55);
+}
+
+.md-typeset .di-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -60% auto;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .22), transparent 65%);
+  pointer-events: none;
+}
+
+.md-typeset .di-hero h1 {
+  margin: 0 0 .6rem;
+  font-size: 2.3rem;
+  line-height: 1.15;
+  color: #fff;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+}
+
+.md-typeset .di-hero p {
+  max-width: 38rem;
+  margin: 0 0 1.2rem;
+  font-size: .95rem;
+  opacity: .95;
+}
+
+.md-typeset .di-hero .md-button {
+  margin: .25rem .4rem .25rem 0;
+  color: #fff;
+  border-color: rgba(255, 255, 255, .7);
+}
+
+.md-typeset .di-hero .md-button--primary {
+  color: #075985;
+  background: #fff;
+  border-color: #fff;
+}
+
+.md-typeset .di-hero .md-button:hover {
+  color: #075985;
+  background: #fde68a;
+  border-color: #fde68a;
+}
+
+.md-typeset .di-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-bottom: 1rem;
+}
+
+.md-typeset .di-hero-badges span {
+  padding: .15rem .6rem;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .35);
+}
+
+/* ---------- Stats row ---------------------------------------------------- */
+
+.md-typeset .di-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: .8rem;
+  margin: 1.5rem 0;
+}
+
+.md-typeset .di-stat {
+  padding: .9rem 1rem;
+  border-radius: var(--di-radius);
+  background: var(--di-gradient-soft);
+  border: 1px solid var(--di-card-border);
+  text-align: center;
+}
+
+.md-typeset .di-stat strong {
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  background: var(--di-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.md-typeset .di-stat span {
+  font-size: .72rem;
+  opacity: .8;
+}
+
+/* ---------- Cards -------------------------------------------------------- */
+
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border-radius: var(--di-radius);
+  border: 1px solid var(--di-card-border);
+  background: var(--di-card-bg);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  transform: translateY(-3px);
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 .8rem 1.6rem -.8rem rgba(3, 105, 161, .45);
+}
+
+/* Colour-coded image cards: add .di-all / .di-aws / .di-gcp to the grid */
+.md-typeset .grid.cards.di-images > ul > li {
+  border-top: 4px solid var(--di-all);
+}
+
+.md-typeset .grid.cards.di-images > ul > li:nth-child(2) {
+  border-top-color: var(--di-aws);
+}
+
+.md-typeset .grid.cards.di-images > ul > li:nth-child(3) {
+  border-top-color: var(--di-gcp);
+}
+
+/* ---------- Coloured image pills ---------------------------------------- */
+
+.md-typeset .di-pill {
+  display: inline-block;
+  padding: .05rem .55rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.md-typeset .di-pill--all { background: var(--di-all); }
+.md-typeset .di-pill--aws { background: var(--di-aws); }
+.md-typeset .di-pill--gcp { background: var(--di-gcp); }
+.md-typeset .di-pill--base { background: var(--di-base); }
+
+/* ---------- Tables ------------------------------------------------------- */
+
+.md-typeset table:not([class]) {
+  border-radius: var(--di-radius);
+  overflow: hidden;
+  border: 1px solid var(--di-card-border);
+}
+
+.md-typeset table:not([class]) th {
+  color: #fff;
+  background: linear-gradient(120deg, #075985, #0891b2);
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background: var(--md-accent-fg-color--transparent);
+}
+
+/* ---------- Admonitions: a little extra colour -------------------------- */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: var(--di-radius);
+}
+
+/* ---------- Animated terminal (home page) ------------------------------- */
+
+.md-typeset .di-terminal {
+  margin: 1.5rem 0;
+  border-radius: var(--di-radius);
+  overflow: hidden;
+  background: #0b1220;
+  box-shadow: 0 1rem 2rem -1rem rgba(0, 0, 0, .6);
+  font-family: var(--md-code-font-family);
+  font-size: .75rem;
+}
+
+.md-typeset .di-terminal__bar {
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+  padding: .55rem .8rem;
+  background: #1e293b;
+}
+
+.md-typeset .di-terminal__bar i {
+  width: .7rem;
+  height: .7rem;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+.md-typeset .di-terminal__bar i:nth-child(2) { background: #fbbf24; }
+.md-typeset .di-terminal__bar i:nth-child(3) { background: #34d399; }
+
+.md-typeset .di-terminal__bar span {
+  margin-left: .5rem;
+  color: #94a3b8;
+  font-size: .7rem;
+}
+
+.md-typeset .di-terminal__body {
+  min-height: 13.5rem;
+  margin: 0;
+  padding: .9rem 1rem;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.md-typeset .di-terminal__body .p { color: #fbbf24; }
+.md-typeset .di-terminal__body .c { color: #fde68a; }
+.md-typeset .di-terminal__body .o { color: #a6e3a1; }
+
+.md-typeset .di-terminal__cursor {
+  display: inline-block;
+  width: .5em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: #e2e8f0;
+  animation: di-blink 1s steps(1) infinite;
+}
+
+@keyframes di-blink {
+  50% { opacity: 0; }
+}
+
+/* ---------- Interactive widgets (shared) -------------------------------- */
+
+.md-typeset .di-widget {
+  margin: 1.5rem 0;
+  padding: 1.2rem 1.3rem;
+  border-radius: 1rem;
+  border: 1px solid var(--di-card-border);
+  background: var(--di-gradient-soft);
+}
+
+.md-typeset .di-widget h3 {
+  margin-top: 0;
+}
+
+.md-typeset .di-question {
+  margin: 0 0 1rem;
+}
+
+.md-typeset .di-question > p {
+  margin: 0 0 .4rem;
+  font-weight: 700;
+}
+
+.md-typeset .di-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.md-typeset .di-chip {
+  cursor: pointer;
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--di-card-border);
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 600;
+  transition: all .15s ease;
+}
+
+.md-typeset .di-chip:hover {
+  border-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .di-chip[aria-pressed="true"] {
+  /* The theme styles focused buttons with a more specific rule */
+  color: #fff !important;
+  border-color: transparent;
+  background: var(--di-gradient);
+  box-shadow: 0 .3rem .8rem -.3rem rgba(8, 145, 178, .6);
+}
+
+.md-typeset .di-result {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--di-radius);
+  background: var(--md-default-bg-color);
+  border-left: 5px solid var(--di-all);
+  animation: di-pop .25s ease;
+}
+
+.md-typeset .di-result[data-image="aws-devops"] { border-left-color: var(--di-aws); }
+.md-typeset .di-result[data-image="gcp-devops"] { border-left-color: var(--di-gcp); }
+
+.md-typeset .di-result h4 {
+  margin: 0 0 .4rem;
+  font-size: 1rem;
+}
+
+@keyframes di-pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Generated command block with a copy button */
+.md-typeset .di-command {
+  position: relative;
+  margin: .8rem 0 0;
+}
+
+.md-typeset .di-command pre {
+  margin: 0;
+  padding: .9rem 1rem;
+  border-radius: .6rem;
+  overflow-x: auto;
+  background: #0b1220;
+  color: #e2e8f0;
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+.md-typeset .di-copy {
+  position: absolute;
+  top: .45rem;
+  right: .45rem;
+  cursor: pointer;
+  padding: .2rem .6rem;
+  border: 0;
+  border-radius: .4rem;
+  font: inherit;
+  font-size: .65rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--di-sky);
+}
+
+.md-typeset .di-copy:hover {
+  background: var(--di-amber-deep);
+}
+
+.md-typeset .di-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  align-items: center;
+  margin: .6rem 0;
+}
+
+.md-typeset .di-field label {
+  font-weight: 700;
+  font-size: .75rem;
+}
+
+.md-typeset .di-field select,
+.md-typeset .di-field input[type="search"] {
+  padding: .35rem .6rem;
+  border-radius: .5rem;
+  border: 1.5px solid var(--di-card-border);
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font: inherit;
+  font-size: .75rem;
+}
+
+.md-typeset .di-field input[type="search"] {
+  flex: 1 1 14rem;
+}
+
+/* Tool explorer grid */
+.md-typeset .di-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: .6rem;
+  margin-top: 1rem;
+}
+
+.md-typeset .di-tool {
+  padding: .6rem .75rem;
+  border-radius: .7rem;
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--di-card-border);
+  border-left: 4px solid var(--di-base);
+  transition: transform .15s ease;
+}
+
+.md-typeset .di-tool:hover {
+  transform: translateY(-2px);
+}
+
+.md-typeset .di-tool[data-cat="cloud"] { border-left-color: var(--di-aws); }
+.md-typeset .di-tool[data-cat="ai"] { border-left-color: var(--di-amber-deep); }
+.md-typeset .di-tool[data-cat="k8s"] { border-left-color: var(--di-gcp); }
+.md-typeset .di-tool[data-cat="iac"] { border-left-color: var(--di-teal); }
+.md-typeset .di-tool[data-cat="data"] { border-left-color: var(--di-amber); }
+
+.md-typeset .di-tool strong {
+  display: block;
+  font-size: .78rem;
+}
+
+.md-typeset .di-tool small {
+  display: block;
+  margin: .1rem 0 .35rem;
+  font-size: .65rem;
+  opacity: .75;
+}
+
+.md-typeset .di-tool .di-dots {
+  display: flex;
+  gap: .25rem;
+}
+
+.md-typeset .di-dots b {
+  padding: 0 .35rem;
+  border-radius: 999px;
+  font-size: .55rem;
+  color: #fff;
+}
+
+.md-typeset .di-dots b.all { background: var(--di-all); }
+.md-typeset .di-dots b.aws { background: var(--di-aws); }
+.md-typeset .di-dots b.gcp { background: var(--di-gcp); }
+
+.md-typeset .di-count {
+  font-size: .72rem;
+  opacity: .8;
+}
+
+/* ---------- Mermaid: roomier diagrams ------------------------------------ */
+
+.md-typeset .mermaid {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+/* ---------- Small screens ------------------------------------------------ */
+
+@media screen and (max-width: 44.9375em) {
+  .md-typeset .di-hero {
+    padding: 1.6rem 1.2rem;
+  }
+
+  .md-typeset .di-hero h1 {
+    font-size: 1.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset .grid.cards > ul > li,
+  .md-typeset .di-tool,
+  .md-typeset .di-result {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ---------- Mermaid colours ---------------------------------------------- */
+/* Diagrams colour their nodes with the site palette, so labels are white.
+   Nodes without their own class get a slate fill, and subgraphs set a dark
+   fill in the diagram source so their white titles stay readable. */
+
+:root,
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-mermaid-label-fg-color: #fff;
+  --md-mermaid-label-bg-color: #475569;
+  --md-mermaid-node-bg-color: #475569;
+  --md-mermaid-node-fg-color: #334155;
+}
