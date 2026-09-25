@@ -11,8 +11,8 @@ flowchart LR
   AWS --> A["all-devops"]
   GCP --> A
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
   class B base
@@ -115,8 +115,8 @@ flowchart LR
   MF --> DH["Docker Hub"]
 
   classDef neutral fill:#334155,stroke:#1e293b,color:#fff
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
   class PR,S,M,U,GH,GL,DH neutral
@@ -124,7 +124,7 @@ flowchart LR
   class JA all
   class JW aws
   class JG gcp
-  style Triggers fill:#1e293b,stroke:#6366f1,color:#fff
+  style Triggers fill:#1e293b,stroke:#0ea5e9,color:#fff
 ```
 
 1. **Triggers**: `image-builder.yml` runs on pull requests, manual dispatch and every Sunday at 03:00 UTC. Separately, `update-tool-versions.yml` runs daily at 02:00 UTC, bumps the version repo variables (gcloud, Packer, Terragrunt, TFLint, ghorg, k9s, Python) and dispatches `image-builder.yml` if anything changed.

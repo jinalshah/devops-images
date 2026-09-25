@@ -76,9 +76,9 @@ flowchart TB
   B --> W["aws-devops<br/>+ AWS CLI + SSM"]
   B --> G["gcp-devops<br/>+ gcloud + GKE auth"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef os fill:#334155,stroke:#1e293b,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   classDef gcp fill:#2563eb,stroke:#1d4ed8,color:#fff
   class R os

@@ -15,9 +15,9 @@ flowchart LR
   Z --> S["Static site<br/>(site/)"]
   S --> GP["gh-pages branch"]
   GP --> WEB["devops.jin.al"]
-  classDef src fill:#4f46e5,stroke:#3730a3,color:#fff
-  classDef tool fill:#7c3aed,stroke:#5b21b6,color:#fff
-  classDef out fill:#db2777,stroke:#9d174d,color:#fff
+  classDef src fill:#0369a1,stroke:#075985,color:#fff
+  classDef tool fill:#059669,stroke:#047857,color:#fff
+  classDef out fill:#d97706,stroke:#b45309,color:#fff
   class MD src
   class Z,S tool
   class GP,WEB out

@@ -11,7 +11,7 @@ flowchart LR
   B["base"] --> L["aws-devops layer<br/>crcmod, pytest, s3cmd, boto3,<br/>cfn-lint, requests, bs4, lxml,<br/>AWS CLI v2, Session Manager plugin"]
   L --> I["aws-devops:local"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
   classDef aws fill:#ea7a0c,stroke:#c2410c,color:#fff
   class B base
   class L,I aws

@@ -11,8 +11,8 @@ flowchart LR
   B["base"] --> L["all-devops layer<br/>AWS pip packages, AWS CLI v2,<br/>Session Manager plugin,<br/>Google Cloud SDK + components"]
   L --> I["all-devops:local"]
 
-  classDef base fill:#0d9488,stroke:#0f766e,color:#fff
-  classDef all fill:#7c3aed,stroke:#5b21b6,color:#fff
+  classDef base fill:#0891b2,stroke:#0e7490,color:#fff
+  classDef all fill:#059669,stroke:#047857,color:#fff
   class B base
   class L,I all
 ```

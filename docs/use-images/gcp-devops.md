@@ -2,7 +2,7 @@
 title: gcp-devops
 ---
 
-<div class="di-hero" markdown style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 55%, #0d9488 100%)">
+<div class="di-hero" markdown style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 55%, #0891b2 100%)">
 
 <div class="di-hero-badges"><span>Google Cloud</span><span>GKE ready</span><span>amd64 + arm64</span><span>~1.5 GB download</span></div>
 

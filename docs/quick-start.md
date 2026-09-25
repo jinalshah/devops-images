@@ -5,10 +5,10 @@ Get up and running with DevOps Images in five minutes. All you need is Docker (o
 ```mermaid
 flowchart LR
   A["1. Choose<br/>an image"] --> B["2. Pull it"] --> C["3. Run it"] --> D["4. Try a tool"] --> E["5. Mount your<br/>project and credentials"]
-  classDef s1 fill:#4f46e5,stroke:#3730a3,color:#fff
-  classDef s2 fill:#7c3aed,stroke:#5b21b6,color:#fff
-  classDef s3 fill:#a21caf,stroke:#86198f,color:#fff
-  classDef s4 fill:#db2777,stroke:#9d174d,color:#fff
+  classDef s1 fill:#0369a1,stroke:#075985,color:#fff
+  classDef s2 fill:#059669,stroke:#047857,color:#fff
+  classDef s3 fill:#0d9488,stroke:#0f766e,color:#fff
+  classDef s4 fill:#d97706,stroke:#b45309,color:#fff
   classDef s5 fill:#ea7a0c,stroke:#c2410c,color:#fff
   class A s1
   class B s2
