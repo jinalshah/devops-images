@@ -11,8 +11,12 @@ TERRAGRUNT_VERSION=$(curl -s https://api.github.com/repos/gruntwork-io/terragrun
 TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | jq -r .tag_name | sed 's/^v//')
 GHORG_VERSION=$(curl -s https://api.github.com/repos/gabrie30/ghorg/releases/latest | jq -r .tag_name | sed 's/^v//')
 K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name | sed 's/^v//')
-PYTHON_VERSION=$(curl -s 'https://api.github.com/repos/python/cpython/tags?per_page=20' | jq -r '.[].name' | grep -E '^v3\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V | tail -n1)
-PYTHON_VERSION_TO_USE="python${PYTHON_VERSION%.*}"
+# Python stays on one minor version and only picks up its patch releases.
+# A brand-new minor (e.g. 3.15) usually breaks Ansible until it catches up,
+# so bump PYTHON_MINOR by hand once Ansible supports the new release.
+PYTHON_MINOR="3.14"
+PYTHON_VERSION=$(git ls-remote --tags --refs https://github.com/python/cpython "v${PYTHON_MINOR}.*" | grep -oE "v${PYTHON_MINOR}\.[0-9]+$" | sed 's/^v//' | sort -V | tail -n1)
+PYTHON_VERSION_TO_USE="python${PYTHON_MINOR}"
 
 repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
@@ -46,6 +50,11 @@ update_var() {
   local var_name="$1"
   local new_value="$2"
   local current_value
+  # A failed lookup (e.g. API rate limit) must never overwrite a good value
+  if [[ -z "$new_value" || "$new_value" == "null" ]]; then
+    echo "ERROR: could not fetch a version for $var_name" >&2
+    exit 1
+  fi
   current_value=$(gh_var "$var_name" || true)
   if [[ "$current_value" != "$new_value" ]]; then
     echo "Updating $var_name: $current_value -> $new_value"
